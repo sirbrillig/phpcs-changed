@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<ruleset name="phpcsDiff">
+ <description>phpcsDiff</description>
+ <rule ref="VariableAnalysis"/>
+ <rule ref="ImportDetection"/>
+</ruleset>
