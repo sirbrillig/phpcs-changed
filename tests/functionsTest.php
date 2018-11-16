@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/index.php';
 
 use PHPUnit\Framework\TestCase;
+use PhpcsDiff\PhpcsMessages;
 use function PhpcsDiff\getNewPhpcsOutput;
 
 final class PhpcsDiffTest extends TestCase {
@@ -37,10 +38,10 @@ EOF;
 			[ 'line' => 112 ],
 			[ 'line' => 115 ],
 		];
-		$actual = getNewPhpcsOutput($diff, $oldFilePhpcs, $newFilePhpcs);
-		$expected = [
+		$actual = getNewPhpcsOutput($diff, PhpcsMessages::fromArrays($oldFilePhpcs), PhpcsMessages::fromArrays($newFilePhpcs));
+		$expected = PhpcsMessages::fromArrays([
 			[ 'line' => 20 ],
-		];
-		$this->assertEquals($expected, $actual, 'Expected: ' . json_encode($expected, JSON_PRETTY_PRINT) . "\nActual: " . json_encode($actual, JSON_PRETTY_PRINT));
+		]);
+		$this->assertEquals($expected, $actual);
 	}
 }
