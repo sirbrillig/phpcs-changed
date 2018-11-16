@@ -19,6 +19,19 @@ class DiffLineMap {
 				return $diffLine->getOldLineNumber();
 			}
 		}
+		// go through each changed line in the new file (each DiffLine of type context or add)
+		// if the new line number is greater than the line number we are looking for
+		// then add the last difference between the old and new lines to the line number we are looking for
+		$lineNumberDelta = 0;
+		foreach ($this->diffLines as $diffLine) {
+			if ($diffLine->getType()->isRemove()) {
+				continue;
+			}
+			if ($diffLine->getNewLineNumber() > $lineNumber) {
+				return $lineNumber + $lineNumberDelta;
+			}
+			$lineNumberDelta = $diffLine->getNewLineNumber() - $diffLine->getOldLineNumber();
+		}
 		throw new \Exception("No line number found matching {$lineNumber}");
 	}
 
