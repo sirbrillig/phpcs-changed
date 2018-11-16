@@ -5,10 +5,10 @@ require_once dirname(__DIR__) . '/index.php';
 
 use PHPUnit\Framework\TestCase;
 use PhpcsDiff\PhpcsMessages;
-use function PhpcsDiff\getNewPhpcsOutput;
+use function PhpcsDiff\getNewPhpcsMessages;
 
 final class PhpcsDiffTest extends TestCase {
-	public function testPhpcsFilter() {
+	public function testGetNewPhpcsMessages() {
 		$diff = <<<EOF
 Index: review-stuck-orders.php
 ===================================================================
@@ -38,7 +38,7 @@ EOF;
 			[ 'line' => 112 ],
 			[ 'line' => 115 ],
 		];
-		$actual = getNewPhpcsOutput($diff, PhpcsMessages::fromArrays($oldFilePhpcs), PhpcsMessages::fromArrays($newFilePhpcs));
+		$actual = getNewPhpcsMessages($diff, PhpcsMessages::fromArrays($oldFilePhpcs), PhpcsMessages::fromArrays($newFilePhpcs));
 		$expected = PhpcsMessages::fromArrays([
 			[ 'line' => 20 ],
 		]);

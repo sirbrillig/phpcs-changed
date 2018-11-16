@@ -12,7 +12,7 @@ require_once __DIR__ . '/PhpcsDiff/DiffLineMap.php';
 require_once __DIR__ . '/PhpcsDiff/PhpcsMessage.php';
 require_once __DIR__ . '/PhpcsDiff/PhpcsMessages.php';
 
-function getNewPhpcsOutput(string $unifiedDiff, PhpcsMessages $oldPhpcsMessages, PhpcsMessages $newPhpcsMessages): PhpcsMessages {
+function getNewPhpcsMessages(string $unifiedDiff, PhpcsMessages $oldPhpcsMessages, PhpcsMessages $newPhpcsMessages): PhpcsMessages {
 	$map = DiffLineMap::fromUnifiedDiff($unifiedDiff);
 	return PhpcsMessages::fromArrays(array_values(array_filter($newPhpcsMessages->getMessages(), function($newMessage) use ($oldPhpcsMessages, $map) {
 		$lineNumber = $newMessage->getLineNumber();
