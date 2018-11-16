@@ -23,16 +23,20 @@ class DiffLineMap {
 		// if the new line number is greater than the line number we are looking for
 		// then add the last difference between the old and new lines to the line number we are looking for
 		$lineNumberDelta = 0;
+		$lastOldLine = 0;
+		$lastNewLine = 0;
 		foreach ($this->diffLines as $diffLine) {
+			$lastOldLine = $diffLine->getOldLineNumber() ?? $lastOldLine;
+			$lastNewLine = $diffLine->getNewLineNumber() ?? $lastNewLine;
 			if ($diffLine->getType()->isRemove()) {
 				continue;
 			}
-			if ($diffLine->getNewLineNumber() > $lineNumber) {
+			if (($diffLine->getNewLineNumber() ?? 0) > $lineNumber) {
 				return $lineNumber + $lineNumberDelta;
 			}
-			$lineNumberDelta = $diffLine->getNewLineNumber() - $diffLine->getOldLineNumber();
+			$lineNumberDelta = ($diffLine->getOldLineNumber() ?? 0) - ($diffLine->getNewLineNumber() ?? 0);
 		}
-		throw new \Exception("No line number found matching {$lineNumber}");
+		return $lastOldLine + ($lineNumber - $lastNewLine);
 	}
 
 	public static function fromUnifiedDiff(string $unifiedDiff): DiffLineMap {
@@ -59,7 +63,7 @@ class DiffLineMap {
 
 			// Parse a hunk
 			if ($oldStartLine !== null && $newStartLine !== null) {
-				$lines[] = new DiffLine((int)$currentOldLine, (int)$currentNewLine, self::getDiffLineTypeForLine($diffStringLine));
+				$lines[] = new DiffLine((int)$currentOldLine, (int)$currentNewLine, self::getDiffLineTypeForLine($diffStringLine), $diffStringLine);
 				if (self::isLineDiffRemoval($diffStringLine)) {
 					$currentOldLine ++;
 				} else if (self::isLineDiffAddition($diffStringLine)) {

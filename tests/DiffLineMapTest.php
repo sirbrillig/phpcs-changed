@@ -129,5 +129,6 @@ EOF;
 		$this->assertEquals(8, $map->getOldLineNumberForLine(7));
 		$this->assertEquals(12, $map->getOldLineNumberForLine(14));
 		$this->assertEquals(13, $map->getOldLineNumberForLine(15));
+		$this->assertEquals(15, $map->getOldLineNumberForLine(17));
 	}
 }

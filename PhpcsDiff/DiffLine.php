@@ -9,9 +9,11 @@ class DiffLine {
 	private $oldLine = null;
 	private $newLine = null;
 	private $type = null;
+	private $line = null;
 
-	public function __construct(int $oldLine, int $newLine, DiffLineType $type) {
+	public function __construct(int $oldLine, int $newLine, DiffLineType $type, string $line) {
 		$this->type = $type;
+		$this->line = $line;
 		if (! $type->isAdd()) {
 			$this->oldLine = $oldLine;
 		}
@@ -32,10 +34,14 @@ class DiffLine {
 		return $this->type;
 	}
 
+	public function getLine(): string {
+		return $this->line;
+	}
+
 	public function __toString(): string {
 		$oldLine = $this->oldLine ?? 'none';
 		$newLine = $this->newLine ?? 'none';
 		$type = (string)$this->type;
-		return "({$type}) {$oldLine} => {$newLine}";
+		return "({$type}) {$oldLine} => {$newLine}: {$this->line}";
 	}
 }
