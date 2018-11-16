@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 use function PhpcsDiff\getNewPhpcsOutput;
 
 final class PhpcsDiffTest extends TestCase {
-	public function testFirstThing() {
+	public function testPhpcsFilter() {
 		$diff = <<<EOF
 Index: review-stuck-orders.php
 ===================================================================
