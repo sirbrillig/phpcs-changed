@@ -33,4 +33,8 @@ class DiffLineType {
 	public function isContext(): bool {
 		return $this->type === 'context';
 	}
+
+	public function __toString(): string {
+		return $this->type;
+	}
 }

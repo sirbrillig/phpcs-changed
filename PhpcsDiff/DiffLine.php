@@ -27,4 +27,15 @@ class DiffLine {
 	public function getNewLineNumber(): ?int {
 		return $this->newLine;
 	}
+
+	public function getType(): DiffLineType {
+		return $this->type;
+	}
+
+	public function __toString(): string {
+		$oldLine = $this->oldLine ?? 'none';
+		$newLine = $this->newLine ?? 'none';
+		$type = (string)$this->type;
+		return "({$type}) {$oldLine} => {$newLine}";
+	}
 }
