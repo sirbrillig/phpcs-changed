@@ -127,5 +127,7 @@ EOF;
 EOF;
 		$map = DiffLineMap::fromUnifiedDiff($diff);
 		$this->assertEquals(8, $map->getOldLineNumberForLine(7));
+		$this->assertEquals(12, $map->getOldLineNumberForLine(14));
+		$this->assertEquals(13, $map->getOldLineNumberForLine(15));
 	}
 }
