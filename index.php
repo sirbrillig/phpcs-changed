@@ -17,8 +17,9 @@ function getNewPhpcsOutput($unifiedDiff, $oldPhpcsMessages, $newPhpcsMessages): 
 			return true;
 		}
 		$oldLineNumber = $map->getOldLineNumberForLine($lineNumber);
-		return count(array_values(array_filter($oldPhpcsMessages, function($oldMessage) use ($oldLineNumber) {
+		$oldMessagesContainingOldLineNumber = array_values(array_filter($oldPhpcsMessages, function($oldMessage) use ($oldLineNumber) {
 			return ($oldMessage['line'] ?? null) === $oldLineNumber;
-		})) > 0);
+		}));
+		return ! count($oldMessagesContainingOldLineNumber) > 0;
 	}));
 }

@@ -41,6 +41,6 @@ EOF;
 		$expected = [
 			[ 'line' => 20 ],
 		];
-		$this->assertEquals($expected, $actual);
+		$this->assertEquals($expected, $actual, 'Expected: ' . json_encode($expected, JSON_PRETTY_PRINT) . "\nActual: " . json_encode($actual, JSON_PRETTY_PRINT));
 	}
 }
