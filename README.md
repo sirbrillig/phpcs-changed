@@ -13,3 +13,15 @@ It will return an instance of PhpcsMessages which is a filtered list of the thir
 This represents the output of running phpcs. You can create one from real phpcs JSON output by using `PhpcsMessages::fromPhpcsJson()`.
 
 To read the phpcs JSON output from an instance of PhpcsMessages, you can run `$instance->toPhpcsJson()`.
+
+## Example
+
+```php
+getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput))->toPhpcsJson();
+```
+
+outputs:
+
+```json
+{"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":1,"messages":[{"line":20,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foobar."},{"line":21,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foobar."}]}}}
+```
