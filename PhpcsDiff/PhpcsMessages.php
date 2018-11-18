@@ -17,10 +17,10 @@ class PhpcsMessages {
 		$this->messages = $messages;
 	}
 
-	public static function fromArrays(array $messages): self {
-		return new self(array_map(function($messageArray) {
+	public static function fromArrays(array $messages, string $file = null): self {
+		return new self(array_map(function($messageArray) use ($file) {
 			if (is_array($messageArray)) {
-				return new PhpcsMessage($messageArray['line'] ?? null, 'STDIN', $messageArray);
+				return new PhpcsMessage($messageArray['line'] ?? null, $file ?? 'STDIN', $messageArray);
 			}
 			return $messageArray;
 		}, $messages));
@@ -31,13 +31,23 @@ class PhpcsMessages {
 		if (! $parsed) {
 			throw new \Exception('Failed to decode phpcs JSON');
 		}
-		if (! isset($parsed['files']['STDIN']['messages'])) {
+		if (! isset($parsed['files']) || ! is_array($parsed['files'])) {
+			throw new \Exception('Failed to find files in phpcs JSON');
+		}
+		$fileNames = array_map(function($fileName) {
+			return $fileName;
+		}, array_keys($parsed['files']));
+		if (count($fileNames) < 1) {
+			throw new \Exception('Failed to find files in phpcs JSON');
+		}
+		$file = $fileNames[0];
+		if (! isset($parsed['files'][$file]['messages'])) {
 			throw new \Exception('Failed to find messages in phpcs JSON');
 		}
-		if (! is_array($parsed['files']['STDIN']['messages'])) {
+		if (! is_array($parsed['files'][$file]['messages'])) {
 			throw new \Exception('Failed to find messages array in phpcs JSON');
 		}
-		return self::fromArrays($parsed['files']['STDIN']['messages']);
+		return self::fromArrays($parsed['files'][$file]['messages'], $file);
 	}
 
 	public function getMessages(): array {
@@ -51,6 +61,7 @@ class PhpcsMessages {
 	}
 
 	public function toPhpcsJson(): string {
+		$file = isset($this->messages[0]) ? $this->messages[0]->getFile() : 'STDIN';
 		$messages = array_map(function($message) {
 			return $message->toPhpcsArray();
 		}, $this->messages);
@@ -61,13 +72,13 @@ class PhpcsMessages {
 				'fixable' => 0,
 			],
 			'files' => [
-				'STDIN' => [
+				$file => [
 					'errors' => 0,
 					'warnings' => count($messages),
 					'messages' => $messages,
 				],
 			],
 		];
-		return json_encode($dataForJson);
+		return json_encode($dataForJson, JSON_UNESCAPED_SLASHES);
 	}
 }
