@@ -20,7 +20,7 @@ class PhpcsMessages {
 	public static function fromArrays(array $messages, string $file = null): self {
 		return new self(array_map(function($messageArray) use ($file) {
 			if (is_array($messageArray)) {
-				return new PhpcsMessage($messageArray['line'] ?? null, $file ?? 'STDIN', $messageArray);
+				return new PhpcsMessage($messageArray['line'] ?? null, $file ?? 'STDIN', $messageArray['type'] ?? 'ERROR', $messageArray);
 			}
 			return $messageArray;
 		}, $messages));
@@ -62,19 +62,25 @@ class PhpcsMessages {
 
 	public function toPhpcsJson(): string {
 		$file = isset($this->messages[0]) ? $this->messages[0]->getFile() : 'STDIN';
+		$errors = array_values(array_filter($this->messages, function($message) {
+			return $message->getType() === 'ERROR';
+		}));
+		$warnings = array_values(array_filter($this->messages, function($message) {
+			return $message->getType() === 'WARNING';
+		}));
 		$messages = array_map(function($message) {
 			return $message->toPhpcsArray();
 		}, $this->messages);
 		$dataForJson = [
 			'totals' => [
-				'errors' => 0,
-				'warnings' => count($messages),
+				'errors' => count($errors),
+				'warnings' => count($warnings),
 				'fixable' => 0,
 			],
 			'files' => [
 				$file => [
-					'errors' => 0,
-					'warnings' => count($messages),
+					'errors' => count($errors),
+					'warnings' => count($warnings),
 					'messages' => $messages,
 				],
 			],

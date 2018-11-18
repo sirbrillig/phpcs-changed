@@ -6,11 +6,13 @@ namespace PhpcsDiff;
 class PhpcsMessage {
 	private $line;
 	private $file;
+	private $type;
 	private $otherProperties;
 
-	public function __construct(int $line, string $file, array $otherProperties) {
+	public function __construct(int $line, string $file, string $type, array $otherProperties) {
 		$this->line = $line;
 		$this->file = $file;
+		$this->type = $type;
 		$this->otherProperties = $otherProperties;
 	}
 
@@ -20,6 +22,10 @@ class PhpcsMessage {
 
 	public function getFile(): string {
 		return $this->file;
+	}
+
+	public function getType(): string {
+		return $this->type;
 	}
 
 	public function toPhpcsArray(): array {
