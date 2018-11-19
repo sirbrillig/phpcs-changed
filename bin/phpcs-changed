@@ -38,9 +38,12 @@ function runManualMode($diffFile, $phpcsOldFile, $phpcsNewFile) {
 		fwrite(STDERR, 'Cannot read input files.' . PHP_EOL);
 		die(1);
 	}
-	$changedFilePhpcsOutput = getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput))->toPhpcsJson();
-	echo $changedFilePhpcsOutput . PHP_EOL;
-	die(1); // TODO: exit with 0 if there are no messages
+	$changedMessages = getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput));
+	if (count($changedMessages->getMessages()) < 1) {
+		die(0);
+	}
+	echo $changedMessages->toPhpcsJson() . PHP_EOL;
+	die(1);
 }
 
 $options = getopt(
