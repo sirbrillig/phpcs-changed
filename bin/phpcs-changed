@@ -26,6 +26,9 @@ Automatic mode will gather data itself if you specify the version control system
 
 --svn <FILE>  This is the file to check.
 
+All modes support the following options:
+
+--standard <STANDARD>  The phpcs standard to use.
 EOF;
 	die(0);
 }
@@ -57,6 +60,7 @@ $options = getopt(
 		'phpcs-orig:',
 		'phpcs-new:',
 		'svn:',
+		'standard:',
 	]
 );
 
@@ -76,6 +80,8 @@ $svnFile = $options['svn'] ?? null;
 if ($svnFile) {
 	$svn = 'svn';
 	$phpcs = 'phpcs';
+	$phpcsStandard = $options['standard'] ?? null;
+	$phpcsStandardOption = $phpcsStandard ? ' --standard ' . escapeshellarg($phpcsStandard) : '';
 	if (! is_readable($svnFile)) {
 		fwrite(STDERR, "Cannot read file '{$svnFile}'" . PHP_EOL);
 		die(1);
@@ -85,12 +91,12 @@ if ($svnFile) {
 		fwrite(STDERR, "Cannot get svn diff for file '{$svnFile}'" . PHP_EOL);
 		die(1);
 	}
-	$oldFilePhpcsOutput = shell_exec("${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json");
+	$oldFilePhpcsOutput = shell_exec("${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption);
 	if (! $oldFilePhpcsOutput) {
 		fwrite(STDERR, "Cannot get old phpcs output for file '{$svnFile}'" . PHP_EOL);
 		die(1);
 	}
-	$newFilePhpcsOutput = shell_exec("cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json ");
+	$newFilePhpcsOutput = shell_exec("cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption);
 	if (! $newFilePhpcsOutput) {
 		fwrite(STDERR, "Cannot get new phpcs output for file '{$svnFile}'" . PHP_EOL);
 		die(1);
