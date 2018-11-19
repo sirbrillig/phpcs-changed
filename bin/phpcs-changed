@@ -7,8 +7,8 @@ if ('cli' !== php_sapi_name()) {
 
 require_once __DIR__ . '/../index.php';
 
-use function PhpcsDiff\getNewPhpcsMessages;
-use PhpcsDiff\PhpcsMessages;
+use function PhpcsChanged\getNewPhpcsMessages;
+use PhpcsChanged\PhpcsMessages;
 
 function getDebug($debugEnabled) {
 	return function(...$outputs) use ($debugEnabled) {

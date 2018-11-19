@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace PhpcsDiff;
+namespace PhpcsChanged;
 
-use PhpcsDiff\DiffLine;
-use PhpcsDiff\DiffLineType;
+use PhpcsChanged\DiffLine;
+use PhpcsChanged\DiffLineType;
 
 class DiffLineMap {
 	private $diffLines = [];

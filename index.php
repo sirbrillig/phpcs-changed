@@ -1,16 +1,16 @@
 <?php
 declare(strict_types=1);
 
-namespace PhpcsDiff;
+namespace PhpcsChanged;
 
-use PhpcsDiff\DiffLineMap;
-use PhpcsDiff\PhpcsMessages;
+use PhpcsChanged\DiffLineMap;
+use PhpcsChanged\PhpcsMessages;
 
-require_once __DIR__ . '/PhpcsDiff/DiffLine.php';
-require_once __DIR__ . '/PhpcsDiff/DiffLineType.php';
-require_once __DIR__ . '/PhpcsDiff/DiffLineMap.php';
-require_once __DIR__ . '/PhpcsDiff/PhpcsMessage.php';
-require_once __DIR__ . '/PhpcsDiff/PhpcsMessages.php';
+require_once __DIR__ . '/PhpcsChanged/DiffLine.php';
+require_once __DIR__ . '/PhpcsChanged/DiffLineType.php';
+require_once __DIR__ . '/PhpcsChanged/DiffLineMap.php';
+require_once __DIR__ . '/PhpcsChanged/PhpcsMessage.php';
+require_once __DIR__ . '/PhpcsChanged/PhpcsMessages.php';
 
 function getNewPhpcsMessages(string $unifiedDiff, PhpcsMessages $oldPhpcsMessages, PhpcsMessages $newPhpcsMessages): PhpcsMessages {
 	$map = DiffLineMap::fromUnifiedDiff($unifiedDiff);

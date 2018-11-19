@@ -1,6 +1,6 @@
 {
-    "name": "sirbrillig/phpcs-diff",
-    "description": "Library to filter phpcs reports for new changes only",
+    "name": "sirbrillig/phpcs-changed",
+    "description": "Run phpcs on files, but only report warnings/errors from lines which were changed.",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -19,7 +19,7 @@
     ],
     "autoload": {
         "psr-4": {
-            "PhpcsDiff\\": "PhpcsDiff/"
+            "PhpcsChanged\\": "PhpcsChanged/"
         }
     },
     "require": {

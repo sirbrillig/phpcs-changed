@@ -4,7 +4,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/index.php';
 
 use PHPUnit\Framework\TestCase;
-use PhpcsDiff\PhpcsMessages;
+use PhpcsChanged\PhpcsMessages;
 
 final class PhpcsMessagesTest extends TestCase {
 	public function testFromPhpcsJson() {

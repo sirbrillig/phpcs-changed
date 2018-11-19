@@ -27,8 +27,8 @@ To read the phpcs JSON output from an instance of PhpcsMessages, you can run `$i
 ### PHP Usage
 
 ```php
-use function PhpcsDiff\getNewPhpcsMessages;
-use PhpcsDiff\PhpcsMessages;
+use function PhpcsChanged\getNewPhpcsMessages;
+use PhpcsChanged\PhpcsMessages;
 $changedMessages = getNewPhpcsMessages(
 	$unifiedDiff,
 	PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput),

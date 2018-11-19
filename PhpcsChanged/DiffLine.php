@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace PhpcsDiff;
+namespace PhpcsChanged;
 
-use PhpcsDiff\DiffLineType;
+use PhpcsChanged\DiffLineType;
 
 class DiffLine {
 	private $oldLine = null;

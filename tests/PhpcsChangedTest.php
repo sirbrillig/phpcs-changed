@@ -4,10 +4,10 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/index.php';
 
 use PHPUnit\Framework\TestCase;
-use PhpcsDiff\PhpcsMessages;
-use function PhpcsDiff\getNewPhpcsMessages;
+use PhpcsChanged\PhpcsMessages;
+use function PhpcsChanged\getNewPhpcsMessages;
 
-final class PhpcsDiffTest extends TestCase {
+final class PhpcsChangedTest extends TestCase {
 	public function testGetNewPhpcsMessages() {
 		$diff = <<<EOF
 Index: review-stuck-orders.php

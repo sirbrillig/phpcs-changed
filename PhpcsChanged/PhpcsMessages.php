@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace PhpcsDiff;
+namespace PhpcsChanged;
 
-use PhpcsDiff\PhpcsMessage;
+use PhpcsChanged\PhpcsMessage;
 
 class PhpcsMessages {
 	private $messages = [];

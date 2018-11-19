@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace PhpcsDiff;
+namespace PhpcsChanged;
 
 class DiffLineType {
 	private $type;
