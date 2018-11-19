@@ -112,21 +112,21 @@ if ($svnFile) {
 	if (! $unifiedDiff) {
 		printErrorAndExit("Cannot get svn diff for file '{$svnFile}'");
 	}
-	debug($unifiedDiff);
+	$debug($unifiedDiff);
 	$oldFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
 	$debug($oldFilePhpcsOutputCommand);
 	$oldFilePhpcsOutput = shell_exec($oldFilePhpcsOutputCommand);
 	if (! $oldFilePhpcsOutput) {
 		printErrorAndExit("Cannot get old phpcs output for file '{$svnFile}'");
 	}
-	debug($oldFilePhpcsOutput);
+	$debug($oldFilePhpcsOutput);
 	$newFilePhpcsOutputCommand = "cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
 	$debug($newFilePhpcsOutputCommand);
 	$newFilePhpcsOutput = shell_exec($newFilePhpcsOutputCommand);
 	if (! $newFilePhpcsOutput) {
 		printErrorAndExit("Cannot get new phpcs output for file '{$svnFile}'");
 	}
-	debug($newFilePhpcsOutput);
+	$debug($newFilePhpcsOutput);
 	printMessagesAndExit(getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput)));
 }
 
