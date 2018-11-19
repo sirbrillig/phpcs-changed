@@ -1,0 +1,76 @@
+#!/usr/bin/env php
+<?php
+// Make sure this script is being run over the PHP CLI!
+if ('cli' !== php_sapi_name()) {
+	return;
+}
+
+require_once __DIR__ . '/../index.php';
+
+use function PhpcsDiff\getNewPhpcsMessages;
+use PhpcsDiff\PhpcsMessages;
+
+function printHelp() {
+	echo <<<EOF
+Runs phpcs on changed sections of files!
+
+This can be run in two modes: manual or automatic.
+
+Manual mode requires these three arguments:
+
+--diff <FILE>  A file containing a unified diff of the changes.
+--phpcs-orig <FILE>  A file containing the JSON output of phpcs on the unchanged file.
+--phpcs-new <FILE>  A file containing the JSON output of phpcs on the changed file.
+
+Automatic mode will gather data itself if you specify the version control system:
+
+--svn <FILE>  This is the file to check.
+
+EOF;
+	die(0);
+}
+
+function runManualMode($diffFile, $phpcsOldFile, $phpcsNewFile) {
+	$unifiedDiff = file_get_contents($diffFile);
+	$oldFilePhpcsOutput = file_get_contents($phpcsOldFile);
+	$newFilePhpcsOutput = file_get_contents($phpcsNewFile);
+	if (! $unifiedDiff || ! $oldFilePhpcsOutput || ! $newFilePhpcsOutput) {
+		fwrite(STDERR, 'Cannot read input files.' . PHP_EOL);
+		die(1);
+	}
+	$changedFilePhpcsOutput = getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput))->toPhpcsJson();
+	echo $changedFilePhpcsOutput . PHP_EOL;
+	die(1); // TODO: exit with 0 if there are no messages
+}
+
+$options = getopt(
+	'h',
+	[
+		'help',
+		'diff:',
+		'phpcs-orig:',
+		'phpcs-new:',
+		'svn:',
+	]
+);
+
+if (isset($options['h']) || isset($options['help'])) {
+	printHelp();
+}
+
+$diffFile = $options['diff'] ?? null;
+$phpcsOldFile = $options['phpcs-orig'] ?? null;
+$phpcsNewFile = $options['phpcs-new'] ?? null;
+
+if ($diffFile && $phpcsOldFile && $phpcsNewFile) {
+	runManualMode($diffFile, $phpcsOldFile, $phpcsNewFile);
+}
+
+$svnFile = $options['svn'] ?? null;
+if ($svnFile) {
+	// TODO: add this mode
+	fwrite(STDERR, 'Automatic mode not yet implemented. Sorry!' . PHP_EOL);
+	die(1);
+}
+
+printHelp();

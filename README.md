@@ -14,9 +14,11 @@ This represents the output of running phpcs. You can create one from real phpcs 
 
 To read the phpcs JSON output from an instance of PhpcsMessages, you can run `$instance->toPhpcsJson()`.
 
-## Example
+## PHP Usage
 
 ```php
+use function PhpcsDiff\getNewPhpcsMessages;
+use PhpcsDiff\PhpcsMessages;
 getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput))->toPhpcsJson();
 ```
 
@@ -24,4 +26,21 @@ outputs:
 
 ```json
 {"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":1,"messages":[{"line":20,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foobar."},{"line":21,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foobar."}]}}}
+```
+
+## CLI Usage
+
+To use this, you'll need data from your version control system and from phpcs. Here's an example using svn:
+
+```
+svn diff file.php > file.php.diff
+svn cat file.php | phpcs -s > file.php.orig.phpcs
+cat file.php | phpcs -s > file.php.phpcs
+phpcs-changed --diff file.php.diff --phpcs-orig file.php.orig.phpcs --phpcs-new file.php.phpcs
+```
+
+Alernatively:
+
+```
+phpcs-changed --svn file.php
 ```
