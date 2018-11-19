@@ -131,3 +131,9 @@ Both will output:
   }
 }
 ```
+
+## Installation
+
+```
+composer global require sirbrillig/phpcs-changed
+```
