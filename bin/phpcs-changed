@@ -107,26 +107,27 @@ if ($svnFile) {
 		printErrorAndExit("Cannot read file '{$svnFile}'");
 	}
 	$unifiedDiffCommand = "{$svn} diff " . escapeshellarg($svnFile);
-	$debug($unifiedDiffCommand);
+	$debug('running diff command:', $unifiedDiffCommand);
 	$unifiedDiff = shell_exec($unifiedDiffCommand);
 	if (! $unifiedDiff) {
 		printErrorAndExit("Cannot get svn diff for file '{$svnFile}'");
 	}
-	$debug($unifiedDiff);
+	$debug('diff command output:', $unifiedDiff);
 	$oldFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
-	$debug($oldFilePhpcsOutputCommand);
+	$debug('running orig phpcs command:', $oldFilePhpcsOutputCommand);
 	$oldFilePhpcsOutput = shell_exec($oldFilePhpcsOutputCommand);
 	if (! $oldFilePhpcsOutput) {
 		printErrorAndExit("Cannot get old phpcs output for file '{$svnFile}'");
 	}
-	$debug($oldFilePhpcsOutput);
+	$debug('orig phpcs command output:', $oldFilePhpcsOutput);
 	$newFilePhpcsOutputCommand = "cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
-	$debug($newFilePhpcsOutputCommand);
+	$debug('running new phpcs command:', $newFilePhpcsOutputCommand);
 	$newFilePhpcsOutput = shell_exec($newFilePhpcsOutputCommand);
 	if (! $newFilePhpcsOutput) {
 		printErrorAndExit("Cannot get new phpcs output for file '{$svnFile}'");
 	}
-	$debug($newFilePhpcsOutput);
+	$debug('new phpcs command output:', $newFilePhpcsOutput);
+	$debug('processing data...');
 	printMessagesAndExit(getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput)));
 }
 
