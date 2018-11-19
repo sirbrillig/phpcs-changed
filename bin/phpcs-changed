@@ -38,10 +38,10 @@ function runManualMode($diffFile, $phpcsOldFile, $phpcsNewFile) {
 		fwrite(STDERR, 'Cannot read input files.' . PHP_EOL);
 		die(1);
 	}
-	printMessages(getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput)));
+	printMessagesAndExit(getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput)));
 }
 
-function printMessages(PhpcsMessages $messages) {
+function printMessagesAndExit(PhpcsMessages $messages) {
 	if (count($messages->getMessages()) < 1) {
 		die(0);
 	}
@@ -95,7 +95,7 @@ if ($svnFile) {
 		fwrite(STDERR, "Cannot get new phpcs output for file '{$svnFile}'" . PHP_EOL);
 		die(1);
 	}
-	printMessages(getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput)));
+	printMessagesAndExit(getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput)));
 }
 
 printHelp();
