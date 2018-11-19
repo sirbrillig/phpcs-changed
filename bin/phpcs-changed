@@ -85,12 +85,12 @@ if ($svnFile) {
 		fwrite(STDERR, "Cannot get svn diff for file '{$svnFile}'" . PHP_EOL);
 		die(1);
 	}
-	$oldFilePhpcsOutput = shell_exec("${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json " . escapeshellarg($svnFile));
+	$oldFilePhpcsOutput = shell_exec("${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json");
 	if (! $oldFilePhpcsOutput) {
 		fwrite(STDERR, "Cannot get old phpcs output for file '{$svnFile}'" . PHP_EOL);
 		die(1);
 	}
-	$newFilePhpcsOutput = shell_exec("{$phpcs} --report=json " . escapeshellarg($svnFile));
+	$newFilePhpcsOutput = shell_exec("cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json ");
 	if (! $newFilePhpcsOutput) {
 		fwrite(STDERR, "Cannot get new phpcs output for file '{$svnFile}'" . PHP_EOL);
 		die(1);
