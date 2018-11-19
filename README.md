@@ -1,6 +1,12 @@
-This allows running [phpcs](https://github.com/squizlabs/PHP_CodeSniffer) on files, but only report warnings/errors from lines which have been changed.
+Run [phpcs](https://github.com/squizlabs/PHP_CodeSniffer) on files, but only report warnings/errors from lines which were changed.
 
-There is a PHP library that can be used as well as a CLI script that you can just run on your files.
+This is both a PHP library that can be used manually as well as a CLI script that you can just run on your files.
+
+## What is this for?
+
+Let's say that you need to add a feature to a large legacy file which has many phpcs errors. If you try to run phpcs on that file, there is so much noise it's impossible to notice any errors which you may have added yourself.
+
+Using this script you can get phpcs output which applies only to the changes you have made and ignores the unchanged errors.
 
 ## 🐘 PHP Library
 
@@ -23,18 +29,57 @@ To read the phpcs JSON output from an instance of PhpcsMessages, you can run `$i
 ```php
 use function PhpcsDiff\getNewPhpcsMessages;
 use PhpcsDiff\PhpcsMessages;
-getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput))->toPhpcsJson();
+$changedMessages = getNewPhpcsMessages(
+	$unifiedDiff,
+	PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput),
+	PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput)
+);
+echo $changedMessages->toPhpcsJson();
 ```
 
-outputs:
+This will output:
 
 ```json
-{"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":1,"messages":[{"line":20,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foobar."},{"line":21,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foobar."}]}}}
+{
+  "totals": {
+    "errors": 0,
+    "warnings": 1,
+    "fixable": 0
+  },
+  "files": {
+    "STDIN": {
+      "errors": 0,
+      "warnings": 1,
+      "messages": [
+        {
+          "line": 20,
+          "type": "WARNING",
+          "severity": 5,
+          "fixable": false,
+          "column": 5,
+          "source": "ImportDetection.Imports.RequireImports.Import",
+          "message": "Found unused symbol Foobar."
+        },
+        {
+          "line": 21,
+          "type": "WARNING",
+          "severity": 5,
+          "fixable": false,
+          "column": 5,
+          "source": "ImportDetection.Imports.RequireImports.Import",
+          "message": "Found unused symbol Foobar."
+        }
+      ]
+    }
+  }
+}
 ```
 
 ## 👩‍💻 CLI Usage
 
-To use this, you'll need data from your version control system and from phpcs. Here's an example using svn:
+To use this, you'll need data from your version control system and from phpcs.
+
+Here's an example using svn:
 
 ```
 svn diff file.php > file.php.diff
@@ -43,8 +88,46 @@ cat file.php | phpcs --report=json > file.php.phpcs
 phpcs-changed --diff file.php.diff --phpcs-orig file.php.orig.phpcs --phpcs-new file.php.phpcs
 ```
 
-Alernatively:
+Alernatively, we can have the script use svn and phpcs itself:
 
 ```
 phpcs-changed --svn file.php
+```
+
+Both will output:
+
+```json
+{
+  "totals": {
+    "errors": 0,
+    "warnings": 1,
+    "fixable": 0
+  },
+  "files": {
+    "STDIN": {
+      "errors": 0,
+      "warnings": 1,
+      "messages": [
+        {
+          "line": 20,
+          "type": "WARNING",
+          "severity": 5,
+          "fixable": false,
+          "column": 5,
+          "source": "ImportDetection.Imports.RequireImports.Import",
+          "message": "Found unused symbol Foobar."
+        },
+        {
+          "line": 21,
+          "type": "WARNING",
+          "severity": 5,
+          "fixable": false,
+          "column": 5,
+          "source": "ImportDetection.Imports.RequireImports.Import",
+          "message": "Found unused symbol Foobar."
+        }
+      ]
+    }
+  }
+}
 ```
