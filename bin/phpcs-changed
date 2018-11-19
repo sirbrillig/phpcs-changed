@@ -21,6 +21,11 @@ function getDebug($debugEnabled) {
 	};
 }
 
+function printErrorAndExit($output) {
+	fwrite(STDERR, $output . PHP_EOL);
+	die(1);
+}
+
 function printHelp() {
 	echo <<<EOF
 Runs phpcs on changed sections of files!
@@ -50,8 +55,7 @@ function runManualMode($diffFile, $phpcsOldFile, $phpcsNewFile) {
 	$oldFilePhpcsOutput = file_get_contents($phpcsOldFile);
 	$newFilePhpcsOutput = file_get_contents($phpcsNewFile);
 	if (! $unifiedDiff || ! $oldFilePhpcsOutput || ! $newFilePhpcsOutput) {
-		fwrite(STDERR, 'Cannot read input files.' . PHP_EOL);
-		die(1);
+		printErrorAndExit('Cannot read input files.');
 	}
 	printMessagesAndExit(getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput)));
 }
@@ -99,31 +103,27 @@ if ($svnFile) {
 	$phpcsStandard = $options['standard'] ?? null;
 	$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
 	if (! is_readable($svnFile)) {
-		fwrite(STDERR, "Cannot read file '{$svnFile}'" . PHP_EOL);
-		die(1);
+		printErrorAndExit("Cannot read file '{$svnFile}'");
 	}
 	$unifiedDiffCommand = "{$svn} diff " . escapeshellarg($svnFile);
 	$debug($unifiedDiffCommand);
 	$unifiedDiff = shell_exec($unifiedDiffCommand);
 	if (! $unifiedDiff) {
-		fwrite(STDERR, "Cannot get svn diff for file '{$svnFile}'" . PHP_EOL);
-		die(1);
+		printErrorAndExit("Cannot get svn diff for file '{$svnFile}'");
 	}
 	debug($unifiedDiff);
 	$oldFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
 	$debug($oldFilePhpcsOutputCommand);
 	$oldFilePhpcsOutput = shell_exec($oldFilePhpcsOutputCommand);
 	if (! $oldFilePhpcsOutput) {
-		fwrite(STDERR, "Cannot get old phpcs output for file '{$svnFile}'" . PHP_EOL);
-		die(1);
+		printErrorAndExit("Cannot get old phpcs output for file '{$svnFile}'");
 	}
 	debug($oldFilePhpcsOutput);
 	$newFilePhpcsOutputCommand = "cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
 	$debug($newFilePhpcsOutputCommand);
 	$newFilePhpcsOutput = shell_exec($newFilePhpcsOutputCommand);
 	if (! $newFilePhpcsOutput) {
-		fwrite(STDERR, "Cannot get new phpcs output for file '{$svnFile}'" . PHP_EOL);
-		die(1);
+		printErrorAndExit("Cannot get new phpcs output for file '{$svnFile}'");
 	}
 	debug($newFilePhpcsOutput);
 	printMessagesAndExit(getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput)));
