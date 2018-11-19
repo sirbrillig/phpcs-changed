@@ -22,6 +22,7 @@ function getDebug($debugEnabled) {
 }
 
 function printErrorAndExit($output) {
+	fwrite(STDERR, 'Fatal error!' . PHP_EOL);
 	fwrite(STDERR, $output . PHP_EOL);
 	die(1);
 }
