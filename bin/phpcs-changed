@@ -97,7 +97,7 @@ if ($svnFile) {
 	$svn = 'svn';
 	$phpcs = 'phpcs';
 	$phpcsStandard = $options['standard'] ?? null;
-	$phpcsStandardOption = $phpcsStandard ? ' --standard ' . escapeshellarg($phpcsStandard) : '';
+	$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
 	if (! is_readable($svnFile)) {
 		fwrite(STDERR, "Cannot read file '{$svnFile}'" . PHP_EOL);
 		die(1);
@@ -109,6 +109,7 @@ if ($svnFile) {
 		fwrite(STDERR, "Cannot get svn diff for file '{$svnFile}'" . PHP_EOL);
 		die(1);
 	}
+	debug($unifiedDiff);
 	$oldFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
 	$debug($oldFilePhpcsOutputCommand);
 	$oldFilePhpcsOutput = shell_exec($oldFilePhpcsOutputCommand);
@@ -116,6 +117,7 @@ if ($svnFile) {
 		fwrite(STDERR, "Cannot get old phpcs output for file '{$svnFile}'" . PHP_EOL);
 		die(1);
 	}
+	debug($oldFilePhpcsOutput);
 	$newFilePhpcsOutputCommand = "cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
 	$debug($newFilePhpcsOutputCommand);
 	$newFilePhpcsOutput = shell_exec($newFilePhpcsOutputCommand);
@@ -123,6 +125,7 @@ if ($svnFile) {
 		fwrite(STDERR, "Cannot get new phpcs output for file '{$svnFile}'" . PHP_EOL);
 		die(1);
 	}
+	debug($newFilePhpcsOutput);
 	printMessagesAndExit(getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput)));
 }
 
