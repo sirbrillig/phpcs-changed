@@ -137,3 +137,16 @@ Both will output:
 ```
 composer global require sirbrillig/phpcs-changed
 ```
+
+## Running Tests
+
+Run the following commands in this directory to run the built-in test suite:
+
+```
+composer install
+composer test
+```
+
+## Inspiration
+
+This was inspired by the amazing work in https://github.com/Automattic/phpcs-diff
