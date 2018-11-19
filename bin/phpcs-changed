@@ -10,6 +10,17 @@ require_once __DIR__ . '/../index.php';
 use function PhpcsDiff\getNewPhpcsMessages;
 use PhpcsDiff\PhpcsMessages;
 
+function getDebug($debugEnabled) {
+	return function(...$outputs) use ($debugEnabled) {
+		if (! $debugEnabled) {
+			return;
+		}
+		foreach ($outputs as $output) {
+			fwrite(STDERR, (is_string($output) ? $output : var_export($output, true)) . PHP_EOL);
+		}
+	};
+}
+
 function printHelp() {
 	echo <<<EOF
 Runs phpcs on changed sections of files!
@@ -29,6 +40,7 @@ Automatic mode will gather data itself if you specify the version control system
 All modes support the following options:
 
 --standard <STANDARD>  The phpcs standard to use.
+--debug  Enable debug output.
 EOF;
 	die(0);
 }
@@ -61,12 +73,16 @@ $options = getopt(
 		'phpcs-new:',
 		'svn:',
 		'standard:',
+		'debug',
 	]
 );
 
 if (isset($options['h']) || isset($options['help'])) {
 	printHelp();
 }
+
+$debug = getDebug(isset($options['debug']));
+$debug('Running...');
 
 $diffFile = $options['diff'] ?? null;
 $phpcsOldFile = $options['phpcs-orig'] ?? null;
@@ -86,17 +102,23 @@ if ($svnFile) {
 		fwrite(STDERR, "Cannot read file '{$svnFile}'" . PHP_EOL);
 		die(1);
 	}
-	$unifiedDiff = shell_exec( "{$svn} diff " . escapeshellarg($svnFile));
+	$unifiedDiffCommand = "{$svn} diff " . escapeshellarg($svnFile);
+	$debug($unifiedDiffCommand);
+	$unifiedDiff = shell_exec($unifiedDiffCommand);
 	if (! $unifiedDiff) {
 		fwrite(STDERR, "Cannot get svn diff for file '{$svnFile}'" . PHP_EOL);
 		die(1);
 	}
-	$oldFilePhpcsOutput = shell_exec("${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption);
+	$oldFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
+	$debug($oldFilePhpcsOutputCommand);
+	$oldFilePhpcsOutput = shell_exec($oldFilePhpcsOutputCommand);
 	if (! $oldFilePhpcsOutput) {
 		fwrite(STDERR, "Cannot get old phpcs output for file '{$svnFile}'" . PHP_EOL);
 		die(1);
 	}
-	$newFilePhpcsOutput = shell_exec("cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption);
+	$newFilePhpcsOutputCommand = "cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
+	$debug($newFilePhpcsOutputCommand);
+	$newFilePhpcsOutput = shell_exec($newFilePhpcsOutputCommand);
 	if (! $newFilePhpcsOutput) {
 		fwrite(STDERR, "Cannot get new phpcs output for file '{$svnFile}'" . PHP_EOL);
 		die(1);
