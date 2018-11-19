@@ -34,8 +34,8 @@ To use this, you'll need data from your version control system and from phpcs. H
 
 ```
 svn diff file.php > file.php.diff
-svn cat file.php | phpcs -s > file.php.orig.phpcs
-cat file.php | phpcs -s > file.php.phpcs
+svn cat file.php | phpcs --report=json > file.php.orig.phpcs
+cat file.php | phpcs --report=json > file.php.phpcs
 phpcs-changed --diff file.php.diff --phpcs-orig file.php.orig.phpcs --phpcs-new file.php.phpcs
 ```
 
