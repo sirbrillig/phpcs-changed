@@ -27,6 +27,21 @@ function printErrorAndExit($output) {
 	die(1);
 }
 
+function getLongestString(array $strings): int {
+	return array_reduce($strings, function(int $length, string $string): int {
+		return ($length > strlen($string)) ? $length : strlen($string);
+	}, 0);
+}
+
+function printTwoColumns(array $columns) {
+	$longestFirstCol = getLongestString(array_keys($columns));
+	echo PHP_EOL;
+	foreach ($columns as $firstCol => $secondCol) {
+		printf("%{$longestFirstCol}s\t%s" . PHP_EOL, $firstCol, $secondCol);
+	}
+	echo PHP_EOL;
+}
+
 function printHelp() {
 	echo <<<EOF
 Runs phpcs on changed sections of files!
@@ -35,19 +50,34 @@ This can be run in two modes: manual or automatic.
 
 Manual mode requires these three arguments:
 
---diff <FILE>  A file containing a unified diff of the changes.
---phpcs-orig <FILE>  A file containing the JSON output of phpcs on the unchanged file.
---phpcs-new <FILE>  A file containing the JSON output of phpcs on the changed file.
+EOF;
 
-Automatic mode will gather data itself if you specify the version control system:
+	printTwoColumns([
+		'--diff <FILE>' => 'A file containing a unified diff of the changes.',
+		'--phpcs-orig <FILE>' => 'A file containing the JSON output of phpcs on the unchanged file.',
+		'--phpcs-new <FILE>' => 'A file containing the JSON output of phpcs on the changed file.',
+	]);
 
---svn <FILE>  This is the file to check.
+	echo <<<EOF
+Automatic mode will try to gather data itself if you specify the version
+control system:
+
+EOF;
+
+	printTwoColumns([
+		'--svn <FILE>' => 'This is the file to check.',
+	]);
+
+	echo <<<EOF
 
 All modes support the following options:
 
---standard <STANDARD>  The phpcs standard to use.
---debug  Enable debug output.
 EOF;
+
+	printTwoColumns([
+		'--standard <STANDARD>' => 'The phpcs standard to use.',
+		'--debug' => 'Enable debug output.',
+	]);
 	die(0);
 }
 
