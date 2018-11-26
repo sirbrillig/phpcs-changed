@@ -11,6 +11,7 @@ require_once __DIR__ . '/PhpcsChanged/DiffLineType.php';
 require_once __DIR__ . '/PhpcsChanged/DiffLineMap.php';
 require_once __DIR__ . '/PhpcsChanged/PhpcsMessage.php';
 require_once __DIR__ . '/PhpcsChanged/PhpcsMessages.php';
+require_once __DIR__ . '/PhpcsChanged/Cli.php';
 
 function getNewPhpcsMessages(string $unifiedDiff, PhpcsMessages $oldPhpcsMessages, PhpcsMessages $newPhpcsMessages): PhpcsMessages {
 	$map = DiffLineMap::fromUnifiedDiff($unifiedDiff);
