@@ -32,7 +32,7 @@ if (isset($options['h']) || isset($options['help'])) {
 $debug = getDebug(isset($options['debug']));
 $debug('Running...');
 
-$reportType = $options['report'] ?? 'json';
+$reportType = $options['report'] ?? 'full';
 $diffFile = $options['diff'] ?? null;
 $phpcsOldFile = $options['phpcs-orig'] ?? null;
 $phpcsNewFile = $options['phpcs-new'] ?? null;
