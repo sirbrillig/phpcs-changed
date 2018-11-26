@@ -9,7 +9,7 @@ require_once __DIR__ . '/../index.php';
 
 use function PhpcsChanged\getNewPhpcsMessages;
 use PhpcsChanged\PhpcsMessages;
-use function PhpcsChanged\Cli\{printHelp, printErrorAndExit, getDebug, runManualMode};
+use function PhpcsChanged\Cli\{printHelp, printErrorAndExit, getDebug, getChangedMessagesFromDiff, getReporter};
 
 $options = getopt(
 	'h',
@@ -32,13 +32,16 @@ if (isset($options['h']) || isset($options['help'])) {
 $debug = getDebug(isset($options['debug']));
 $debug('Running...');
 
-$reportType = $options['report'] ?? 'full';
+$reportType = $options['report'] ?? 'json';
 $diffFile = $options['diff'] ?? null;
 $phpcsOldFile = $options['phpcs-orig'] ?? null;
 $phpcsNewFile = $options['phpcs-new'] ?? null;
 
 if ($diffFile && $phpcsOldFile && $phpcsNewFile) {
-	runManualMode($diffFile, $phpcsOldFile, $phpcsNewFile);
+	$messages = getChangedMessagesFromDiff($diffFile, $phpcsOldFile, $phpcsNewFile);
+	$reporter = getReporter($reportType);
+	echo $reporter->getFormattedMessages($messages);
+	exit($reporter->getExitCode($messages));
 }
 
 $svnFile = $options['svn'] ?? null;
@@ -72,7 +75,10 @@ if ($svnFile) {
 	}
 	$debug('new phpcs command output:', $newFilePhpcsOutput);
 	$debug('processing data...');
-	printMessagesAndExit(getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput)));
+	$messages = getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput));
+	$reporter = getReporter($reportType);
+	echo $reporter->getFormattedMessages($messages);
+	exit($reporter->getExitCode($messages));
 }
 
 printHelp();

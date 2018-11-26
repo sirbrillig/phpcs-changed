@@ -5,6 +5,8 @@ namespace PhpcsChanged\Cli;
 
 use function PhpcsChanged\getNewPhpcsMessages;
 use PhpcsChanged\PhpcsMessages;
+use PhpcsChanged\Reporter;
+use PhpcsChanged\JsonReporter;
 
 function getDebug($debugEnabled) {
 	return function(...$outputs) use ($debugEnabled) {
@@ -78,20 +80,20 @@ EOF;
 	die(0);
 }
 
-function runManualMode($diffFile, $phpcsOldFile, $phpcsNewFile) {
+function getChangedMessagesFromDiff($diffFile, $phpcsOldFile, $phpcsNewFile) {
 	$unifiedDiff = file_get_contents($diffFile);
 	$oldFilePhpcsOutput = file_get_contents($phpcsOldFile);
 	$newFilePhpcsOutput = file_get_contents($phpcsNewFile);
 	if (! $unifiedDiff || ! $oldFilePhpcsOutput || ! $newFilePhpcsOutput) {
 		printErrorAndExit('Cannot read input files.');
 	}
-	printMessagesAndExit(getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput)));
+	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput));
 }
 
-function printMessagesAndExit(PhpcsMessages $messages) {
-	if (count($messages->getMessages()) < 1) {
-		die(0);
+function getReporter(string $reportType): Reporter {
+	switch ($reportType) {
+		case 'json':
+			return new JsonReporter();
 	}
-	echo $messages->toPhpcsJson() . PHP_EOL;
-	die(1);
+	printErrorAndExit("Unknown Reporter '{$reportType}'");
 }
