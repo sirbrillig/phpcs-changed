@@ -7,6 +7,7 @@ use function PhpcsChanged\getNewPhpcsMessages;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\Reporter;
 use PhpcsChanged\JsonReporter;
+use PhpcsChanged\FullReporter;
 
 function getDebug($debugEnabled) {
 	return function(...$outputs) use ($debugEnabled) {
@@ -92,6 +93,8 @@ function getChangedMessagesFromDiff($diffFile, $phpcsOldFile, $phpcsNewFile) {
 
 function getReporter(string $reportType): Reporter {
 	switch ($reportType) {
+		case 'full':
+			return new FullReporter();
 		case 'json':
 			return new JsonReporter();
 	}

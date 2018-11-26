@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace PhpcsChanged;
 
 use PhpcsChanged\PhpcsMessage;
+use function PhpcsChanged\Cli\getLongestString;
 
 class PhpcsMessages {
 	private $messages = [];
@@ -86,5 +87,35 @@ class PhpcsMessages {
 			],
 		];
 		return json_encode($dataForJson, JSON_UNESCAPED_SLASHES);
+	}
+
+	public function toFullOutput(): string {
+		$file = isset($this->messages[0]) ? $this->messages[0]->getFile() : 'STDIN';
+		$errorsCount = count(array_values(array_filter($this->messages, function($message) {
+			return $message->getType() === 'ERROR';
+		})));
+		$warningsCount = count(array_values(array_filter($this->messages, function($message) {
+			return $message->getType() === 'WARNING';
+		})));
+		$lineCount = count($this->messages);
+		$linePlural = ($lineCount === 1) ? '' : 'S';
+		$errorPlural = ($errorsCount === 1) ? '' : 'S';
+		$warningPlural = ($warningsCount === 1) ? '' : 'S';
+		$longestNumber = getLongestString(array_map(function(PhpcsMessage $message): int {
+			return $message->getLineNumber();
+		}, $this->messages));
+		$formattedLines = implode("\n", array_map(function(PhpcsMessage $message) use ($longestNumber): string {
+			return sprintf(" %{$longestNumber}d | %s | %s", $message->getLineNumber(), $message->getType(), $message->getMessage());
+		}, $this->messages));
+		return <<<EOF
+
+FILE: {$file}
+-----------------------------------------------------------------------------------------------
+FOUND {$errorsCount} ERROR{$errorPlural} AND {$warningsCount} WARNING{$warningPlural} AFFECTING {$lineCount} LINE{$linePlural}
+-----------------------------------------------------------------------------------------------
+{$formattedLines}
+-----------------------------------------------------------------------------------------------
+
+EOF;
 	}
 }

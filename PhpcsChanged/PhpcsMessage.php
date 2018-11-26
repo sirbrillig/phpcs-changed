@@ -28,6 +28,10 @@ class PhpcsMessage {
 		return $this->type;
 	}
 
+	public function getMessage(): string {
+		return $this->otherProperties['message'] ?? '';
+	}
+
 	public function toPhpcsArray(): array {
 		return array_merge([
 			'line' => $this->line,
