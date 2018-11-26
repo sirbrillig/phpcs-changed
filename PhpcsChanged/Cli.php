@@ -72,6 +72,7 @@ EOF;
 
 	printTwoColumns([
 		'--standard <STANDARD>' => 'The phpcs standard to use.',
+		'--report <REPORTER>' => 'The phpcs reporter to use. One of "full" (default) or "json".',
 		'--debug' => 'Enable debug output.',
 	]);
 	die(0);
