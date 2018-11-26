@@ -57,7 +57,8 @@ if ($svnFile) {
 	$debug('running diff command:', $unifiedDiffCommand);
 	$unifiedDiff = shell_exec($unifiedDiffCommand);
 	if (! $unifiedDiff) {
-		printErrorAndExit("Cannot get svn diff for file '{$svnFile}'");
+		$debug("Cannot get svn diff for file '{$svnFile}'; skipping");
+		exit(0);
 	}
 	$debug('diff command output:', $unifiedDiff);
 	$oldFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
