@@ -8,6 +8,7 @@ use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\Reporter;
 use PhpcsChanged\JsonReporter;
 use PhpcsChanged\FullReporter;
+use PhpcsChanged\DiffLineMap;
 
 function getDebug($debugEnabled) {
 	return function(...$outputs) use ($debugEnabled) {
@@ -81,14 +82,19 @@ EOF;
 	die(0);
 }
 
-function getChangedMessagesFromDiff($diffFile, $phpcsOldFile, $phpcsNewFile) {
+function getChangedMessagesFromDiff(string $diffFile, string $phpcsOldFile, string $phpcsNewFile): PhpcsMessages {
 	$unifiedDiff = file_get_contents($diffFile);
 	$oldFilePhpcsOutput = file_get_contents($phpcsOldFile);
 	$newFilePhpcsOutput = file_get_contents($phpcsNewFile);
 	if (! $unifiedDiff || ! $oldFilePhpcsOutput || ! $newFilePhpcsOutput) {
 		printErrorAndExit('Cannot read input files.');
 	}
-	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput));
+	return getNewPhpcsMessages(
+		$unifiedDiff,
+		PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput),
+		PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput),
+		DiffLineMap::getFileNameFromDiff($unifiedDiff)
+	);
 }
 
 function getReporter(string $reportType): Reporter {

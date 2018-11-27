@@ -21,7 +21,7 @@ class PhpcsMessages {
 	public static function fromArrays(array $messages, string $file = null): self {
 		return new self(array_map(function($messageArray) use ($file) {
 			if (is_array($messageArray)) {
-				return new PhpcsMessage($messageArray['line'] ?? null, $file ?? 'STDIN', $messageArray['type'] ?? 'ERROR', $messageArray);
+				return new PhpcsMessage($messageArray['line'] ?? null, $file ?? 'STDIN', $messageArray['type'] ?? 'ERROR', $messageArray, $file);
 			}
 			return $messageArray;
 		}, $messages));
