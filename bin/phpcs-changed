@@ -7,9 +7,9 @@ if ('cli' !== php_sapi_name()) {
 
 require_once __DIR__ . '/../index.php';
 
-use function PhpcsChanged\getNewPhpcsMessages;
+use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles};
 use PhpcsChanged\PhpcsMessages;
-use function PhpcsChanged\Cli\{printHelp, printErrorAndExit, getDebug, getChangedMessagesFromDiff, getReporter};
+use function PhpcsChanged\Cli\{printHelp, printErrorAndExit, getDebug, getReporter};
 
 $options = getopt(
 	'h',
@@ -38,7 +38,15 @@ $phpcsOldFile = $options['phpcs-orig'] ?? null;
 $phpcsNewFile = $options['phpcs-new'] ?? null;
 
 if ($diffFile && $phpcsOldFile && $phpcsNewFile) {
-	$messages = getChangedMessagesFromDiff($diffFile, $phpcsOldFile, $phpcsNewFile);
+	try {
+		$messages = getNewPhpcsMessagesFromFiles(
+			$diffFile,
+			$phpcsOldFile,
+			$phpcsNewFile
+		);
+	} catch (\Exception $err) {
+		printErrorAndExit($err->getMessage());
+	}
 	$reporter = getReporter($reportType);
 	echo $reporter->getFormattedMessages($messages);
 	exit($reporter->getExitCode($messages));
