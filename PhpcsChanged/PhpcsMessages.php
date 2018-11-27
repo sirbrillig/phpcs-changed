@@ -27,7 +27,7 @@ class PhpcsMessages {
 		}, $messages));
 	}
 
-	public static function fromPhpcsJson(string $messages): self {
+	public static function fromPhpcsJson(string $messages, string $forcedFileName = null): self {
 		$parsed = json_decode($messages, true);
 		if (! $parsed) {
 			throw new \Exception('Failed to decode phpcs JSON');
@@ -48,7 +48,7 @@ class PhpcsMessages {
 		if (! is_array($parsed['files'][$fileName]['messages'])) {
 			throw new \Exception('Failed to find messages array in phpcs JSON');
 		}
-		return self::fromArrays($parsed['files'][$fileName]['messages'], $fileName);
+		return self::fromArrays($parsed['files'][$fileName]['messages'], $forcedFileName ?? $fileName);
 	}
 
 	public function getMessages(): array {

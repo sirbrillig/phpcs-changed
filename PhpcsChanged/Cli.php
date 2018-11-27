@@ -7,6 +7,7 @@ use PhpcsChanged\Reporter;
 use PhpcsChanged\JsonReporter;
 use PhpcsChanged\FullReporter;
 use PhpcsChanged\PhpcsMessages;
+use PhpcsChanged\DiffLineMap;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles};
 
 function getDebug($debugEnabled) {
@@ -137,7 +138,8 @@ function runSvnWorkflow($svnFile, $reportType, $options, $debug): void {
 	}
 	$debug('new phpcs command output:', $newFilePhpcsOutput);
 	$debug('processing data...');
-	$messages = getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput));
+	$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
+	$messages = getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput, $fileName), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput, $fileName));
 	$reporter = getReporter($reportType);
 	echo $reporter->getFormattedMessages($messages);
 	exit($reporter->getExitCode($messages));
