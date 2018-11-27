@@ -6,6 +6,8 @@ namespace PhpcsChanged\Cli;
 use PhpcsChanged\Reporter;
 use PhpcsChanged\JsonReporter;
 use PhpcsChanged\FullReporter;
+use PhpcsChanged\PhpcsMessages;
+use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles};
 
 function getDebug($debugEnabled) {
 	return function(...$outputs) use ($debugEnabled) {
@@ -87,4 +89,56 @@ function getReporter(string $reportType): Reporter {
 			return new JsonReporter();
 	}
 	printErrorAndExit("Unknown Reporter '{$reportType}'");
+}
+
+function runManualWorkflow($reportType, $diffFile, $phpcsOldFile, $phpcsNewFile): void {
+	try {
+		$messages = getNewPhpcsMessagesFromFiles(
+			$diffFile,
+			$phpcsOldFile,
+			$phpcsNewFile
+		);
+	} catch (\Exception $err) {
+		printErrorAndExit($err->getMessage());
+	}
+	$reporter = getReporter($reportType);
+	echo $reporter->getFormattedMessages($messages);
+	exit($reporter->getExitCode($messages));
+}
+
+function runSvnWorkflow($svnFile, $reportType, $options, $debug): void {
+	$svn = 'svn';
+	$phpcs = 'phpcs';
+	$phpcsStandard = $options['standard'] ?? null;
+	$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
+	if (! is_readable($svnFile)) {
+		printErrorAndExit("Cannot read file '{$svnFile}'");
+	}
+	$unifiedDiffCommand = "{$svn} diff " . escapeshellarg($svnFile);
+	$debug('running diff command:', $unifiedDiffCommand);
+	$unifiedDiff = shell_exec($unifiedDiffCommand);
+	if (! $unifiedDiff) {
+		$debug("Cannot get svn diff for file '{$svnFile}'; skipping");
+		exit(0);
+	}
+	$debug('diff command output:', $unifiedDiff);
+	$oldFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
+	$debug('running orig phpcs command:', $oldFilePhpcsOutputCommand);
+	$oldFilePhpcsOutput = shell_exec($oldFilePhpcsOutputCommand);
+	if (! $oldFilePhpcsOutput) {
+		printErrorAndExit("Cannot get old phpcs output for file '{$svnFile}'");
+	}
+	$debug('orig phpcs command output:', $oldFilePhpcsOutput);
+	$newFilePhpcsOutputCommand = "cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
+	$debug('running new phpcs command:', $newFilePhpcsOutputCommand);
+	$newFilePhpcsOutput = shell_exec($newFilePhpcsOutputCommand);
+	if (! $newFilePhpcsOutput) {
+		printErrorAndExit("Cannot get new phpcs output for file '{$svnFile}'");
+	}
+	$debug('new phpcs command output:', $newFilePhpcsOutput);
+	$debug('processing data...');
+	$messages = getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput));
+	$reporter = getReporter($reportType);
+	echo $reporter->getFormattedMessages($messages);
+	exit($reporter->getExitCode($messages));
 }
