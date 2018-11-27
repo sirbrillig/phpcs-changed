@@ -77,6 +77,17 @@ class DiffLineMap {
 		return new DiffLineMap($lines);
 	}
 
+	public static function getFileNameFromDiff(string $unifiedDiff): ?string {
+		$diffStringLines = preg_split("/\r\n|\n|\r/", $unifiedDiff);
+		foreach ($diffStringLines as $diffStringLine) {
+			$matches = [];
+			if (1 === preg_match('/^\-\-\- (\S+)/', $diffStringLine, $matches)) {
+				return $matches[1] ?? null;
+			}
+		}
+		return null;
+	}
+
 	private static function getDiffLineTypeForLine(string $line): DiffLineType {
 		if (self::isLineDiffRemoval($line)) {
 			return DiffLineType::makeRemove();

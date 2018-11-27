@@ -7,6 +7,25 @@ use PHPUnit\Framework\TestCase;
 use PhpcsChanged\DiffLineMap;
 
 final class DiffLineMapTest extends TestCase {
+	public function testGetFileNameFromDiff() {
+		$diff = <<<EOF
+Index: review-stuck-orders.php
+===================================================================
+--- bin/review-stuck-orders.php	(revision 183265)
++++ bin/review-stuck-orders.php	(working copy)
+@@ -17,6 +17,7 @@
+ use Billing\Purchases\Order;
+ use Billing\Services;
+ use Billing\Ebanx;
++use Foobar;
+ use Billing\Emergent;
+ use Billing\Monetary_Amount;
+ use Stripe\Error;
+EOF;
+		$name = DiffLineMap::getFileNameFromDiff($diff);
+		$this->assertEquals('bin/review-stuck-orders.php', $name);
+	}
+
 	public function testGetLineNumberForSimpleAdd() {
 		$diff = <<<EOF
 Index: review-stuck-orders.php
