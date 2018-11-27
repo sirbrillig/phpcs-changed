@@ -27,6 +27,9 @@ class FullReporter implements Reporter {
 		$formattedLines = implode("\n", array_map(function(PhpcsMessage $message) use ($longestNumber): string {
 			return sprintf(" %{$longestNumber}d | %s | %s", $message->getLineNumber(), $message->getType(), $message->getMessage());
 		}, $messages->getMessages()));
+		if ($lineCount < 1) {
+			return '';
+		}
 		return <<<EOF
 
 FILE: {$file}
