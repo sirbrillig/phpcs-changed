@@ -10,34 +10,33 @@ Using this script you can get phpcs output which applies only to the changes you
 
 ## 🐘 PHP Library
 
-This library exposes a function `getNewPhpcsMessages()` which takes three arguments:
+This library exposes a function `getNewPhpcsMessagesFromFiles()` which takes three arguments:
 
-- (string) The full unified diff of a single file.
-- (PhpcsMessages) The messages resulting from running phpcs on the file before your recent changes.
-- (PhpcsMessages) The messages resulting from running phpcs on the file after your recent changes.
+- A file path containing the full unified diff of a single file.
+- A file path containing the messages resulting from running phpcs on the file before your recent changes.
+- A file path containing the messages resulting from running phpcs on the file after your recent changes.
 
-It will return an instance of PhpcsMessages which is a filtered list of the third argument above where every line that was present in the second argument has been removed.
+It will return an instance of `PhpcsMessages` which is a filtered list of the third argument above where every line that was present in the second argument has been removed.
 
 ### PhpcsMessages
 
-This represents the output of running phpcs. You can create one from real phpcs JSON output by using `PhpcsMessages::fromPhpcsJson()`.
+This represents the output of running phpcs.
 
-To read the phpcs JSON output from an instance of PhpcsMessages, you can run `$instance->toPhpcsJson()`.
+To read the phpcs JSON output from an instance of `PhpcsMessages`, you can run `$messages->toPhpcsJson()`.
 
 ### PHP Usage
 
 ```php
-use function PhpcsChanged\getNewPhpcsMessages;
-use PhpcsChanged\PhpcsMessages;
-$changedMessages = getNewPhpcsMessages(
-	$unifiedDiff,
-	PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput),
-	PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput)
+use function PhpcsChanged\getNewPhpcsMessagesFromFiles;
+$changedMessages = getNewPhpcsMessagesFromFiles(
+	$unifiedDiffFileName,
+	$oldFilePhpcsOutputFileName,
+	$newFilePhpcsOutputFileName
 );
 echo $changedMessages->toPhpcsJson();
 ```
 
-This will output:
+This will output something like:
 
 ```json
 {
@@ -85,16 +84,16 @@ Here's an example using svn:
 svn diff file.php > file.php.diff
 svn cat file.php | phpcs --report=json > file.php.orig.phpcs
 cat file.php | phpcs --report=json > file.php.phpcs
-phpcs-changed --diff file.php.diff --phpcs-orig file.php.orig.phpcs --phpcs-new file.php.phpcs
+phpcs-changed --report json --diff file.php.diff --phpcs-orig file.php.orig.phpcs --phpcs-new file.php.phpcs
 ```
 
 Alernatively, we can have the script use svn and phpcs itself:
 
 ```
-phpcs-changed --svn file.php
+phpcs-changed --svn file.php --report json
 ```
 
-Both will output:
+Both will output something like:
 
 ```json
 {
