@@ -44,7 +44,11 @@ function printTwoColumns(array $columns) {
 
 function printHelp() {
 	echo <<<EOF
-Runs phpcs on changed sections of files!
+A tool to run phpcs on changed sections of files.
+
+Usage: phpcs-changed <OPTIONS> <file.php>
+
+Currently you can only run the tool on one file at a time.
 
 This can be run in two modes: manual or automatic.
 
@@ -60,7 +64,7 @@ EOF;
 
 	echo <<<EOF
 Automatic mode will try to gather data itself if you specify the version
-control system:
+control system (only svn supported right now):
 
 EOF;
 
