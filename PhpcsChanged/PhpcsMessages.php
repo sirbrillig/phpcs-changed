@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace PhpcsChanged;
 
 use PhpcsChanged\PhpcsMessage;
-use function PhpcsChanged\Cli\getLongestString;
+use PhpcsChanged\JsonReporter;
 
 class PhpcsMessages {
 	private $messages = [];
@@ -62,30 +62,7 @@ class PhpcsMessages {
 	}
 
 	public function toPhpcsJson(): string {
-		$file = isset($this->messages[0]) ? $this->messages[0]->getFile() : 'STDIN';
-		$errors = array_values(array_filter($this->messages, function($message) {
-			return $message->getType() === 'ERROR';
-		}));
-		$warnings = array_values(array_filter($this->messages, function($message) {
-			return $message->getType() === 'WARNING';
-		}));
-		$messages = array_map(function($message) {
-			return $message->toPhpcsArray();
-		}, $this->messages);
-		$dataForJson = [
-			'totals' => [
-				'errors' => count($errors),
-				'warnings' => count($warnings),
-				'fixable' => 0,
-			],
-			'files' => [
-				$file => [
-					'errors' => count($errors),
-					'warnings' => count($warnings),
-					'messages' => $messages,
-				],
-			],
-		];
-		return json_encode($dataForJson, JSON_UNESCAPED_SLASHES);
+		$reporter = new JsonReporter();
+		return $reporter->getFormattedMessages($this);
 	}
 }
