@@ -43,7 +43,7 @@ EOF;
 		$expected = PhpcsMessages::fromArrays([
 			[ 'line' => 20 ],
 		]);
-		$this->assertEquals($expected, $actual);
+		$this->assertEquals($expected->getLineNumbers(), $actual->getLineNumbers());
 	}
 
 	public function testGetNewPhpcsMessagesHasFileName() {
@@ -76,12 +76,10 @@ EOF;
 			[ 'line' => 112 ],
 			[ 'line' => 115 ],
 		];
-		$fileName = DiffLineMap::getFileNameFromDiff($diff);
 		$actual = getNewPhpcsMessages(
 			$diff,
-			PhpcsMessages::fromArrays($oldFilePhpcs, $fileName),
-			PhpcsMessages::fromArrays($newFilePhpcs, $fileName),
-			$fileName
+			PhpcsMessages::fromArrays($oldFilePhpcs),
+			PhpcsMessages::fromArrays($newFilePhpcs)
 		);
 		$this->assertEquals('bin/review-stuck-orders.php', $actual->getMessages()[0]->getFile());
 	}
@@ -126,7 +124,7 @@ EOF;
 		$oldFilePhpcs = '{"totals":{"errors":0,"warnings":2,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":2,"messages":[{"line":20,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 		$newFilePhpcs = '{"totals":{"errors":0,"warnings":2,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":2,"messages":[{"line":20,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 		$actual = getNewPhpcsMessages($diff, PhpcsMessages::fromPhpcsJson($oldFilePhpcs), PhpcsMessages::fromPhpcsJson($newFilePhpcs))->toPhpcsJson();
-		$expected = '{"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":1,"messages":[{"line":20,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
+		$expected = '{"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"bin/review-stuck-orders.php":{"errors":0,"warnings":1,"messages":[{"line":20,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 		$this->assertEquals($expected, $actual);
 	}
 
@@ -193,7 +191,7 @@ EOF;
 		$oldFilePhpcs = '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 		$newFilePhpcs = '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 		$actual = getNewPhpcsMessages($diff, PhpcsMessages::fromPhpcsJson($oldFilePhpcs), PhpcsMessages::fromPhpcsJson($newFilePhpcs))->toPhpcsJson();
-		$expected = '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
+		$expected = '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"bin/review-stuck-orders.php":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 		$this->assertEquals($expected, $actual);
 	}
 }

@@ -16,9 +16,10 @@ require_once __DIR__ . '/PhpcsChanged/Reporter.php';
 require_once __DIR__ . '/PhpcsChanged/JsonReporter.php';
 require_once __DIR__ . '/PhpcsChanged/FullReporter.php';
 
-function getNewPhpcsMessages(string $unifiedDiff, PhpcsMessages $oldPhpcsMessages, PhpcsMessages $newPhpcsMessages, string $fileName = null): PhpcsMessages {
+function getNewPhpcsMessages(string $unifiedDiff, PhpcsMessages $oldPhpcsMessages, PhpcsMessages $newPhpcsMessages): PhpcsMessages {
 	$map = DiffLineMap::fromUnifiedDiff($unifiedDiff);
-	return PhpcsMessages::fromArrays(array_values(array_filter($newPhpcsMessages->getMessages(), function($newMessage) use ($oldPhpcsMessages, $map) {
+	$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
+	return PhpcsMessages::fromPhpcsMessages(array_values(array_filter($newPhpcsMessages->getMessages(), function($newMessage) use ($oldPhpcsMessages, $map) {
 		$lineNumber = $newMessage->getLineNumber();
 		if (! $lineNumber) {
 			return true;
@@ -41,7 +42,6 @@ function getNewPhpcsMessagesFromFiles(string $diffFile, string $phpcsOldFile, st
 	return getNewPhpcsMessages(
 		$unifiedDiff,
 		PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput),
-		PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput),
-		DiffLineMap::getFileNameFromDiff($unifiedDiff)
+		PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput)
 	);
 }

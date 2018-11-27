@@ -9,7 +9,7 @@ class PhpcsMessage {
 	private $type;
 	private $otherProperties;
 
-	public function __construct(int $line, string $file, string $type, array $otherProperties) {
+	public function __construct(int $line, string $file = null, string $type, array $otherProperties) {
 		$this->line = $line;
 		$this->file = $file;
 		$this->type = $type;
@@ -20,8 +20,12 @@ class PhpcsMessage {
 		return $this->line;
 	}
 
-	public function getFile(): string {
+	public function getFile(): ?string {
 		return $this->file;
+	}
+
+	public function setFile(string $file): void {
+		$this->file = $file;
 	}
 
 	public function getType(): string {

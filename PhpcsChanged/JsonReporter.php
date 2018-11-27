@@ -8,7 +8,7 @@ use PhpcsChanged\PhpcsMessages;
 
 class JsonReporter implements Reporter {
 	public function getFormattedMessages(PhpcsMessages $messages): string {
-		$file = isset($messages->getMessages()[0]) ? $messages->getMessages()[0]->getFile() : 'STDIN';
+		$file = isset($messages->getMessages()[0]) ? $messages->getMessages()[0]->getFile() ?? 'STDIN' : 'STDIN';
 		$errors = array_values(array_filter($messages->getMessages(), function($message) {
 			return $message->getType() === 'ERROR';
 		}));

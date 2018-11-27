@@ -18,12 +18,16 @@ class PhpcsMessages {
 		$this->messages = $messages;
 	}
 
+	public static function fromPhpcsMessages(array $messages, string $fileName = null): self {
+		return new self(array_map(function(PhpcsMessage $message) use ($fileName) {
+			$message->setFile($fileName);
+			return $message;
+		}, $messages));
+	}
+
 	public static function fromArrays(array $messages, string $fileName = null): self {
-		return new self(array_map(function($messageArray) use ($fileName) {
-			if (is_array($messageArray)) {
-				return new PhpcsMessage($messageArray['line'] ?? null, $fileName ?? 'STDIN', $messageArray['type'] ?? 'ERROR', $messageArray);
-			}
-			return $messageArray;
+		return new self(array_map(function(array $messageArray) use ($fileName) {
+			return new PhpcsMessage($messageArray['line'] ?? null, $fileName, $messageArray['type'] ?? 'ERROR', $messageArray);
 		}, $messages));
 	}
 
