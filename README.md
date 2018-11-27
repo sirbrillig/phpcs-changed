@@ -46,7 +46,7 @@ This will output something like:
     "fixable": 0
   },
   "files": {
-    "STDIN": {
+    "file.php": {
       "errors": 0,
       "warnings": 1,
       "messages": [
@@ -103,7 +103,7 @@ Both will output something like:
     "fixable": 0
   },
   "files": {
-    "STDIN": {
+    "file.php": {
       "errors": 0,
       "warnings": 1,
       "messages": [
