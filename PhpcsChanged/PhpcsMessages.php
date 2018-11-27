@@ -18,10 +18,10 @@ class PhpcsMessages {
 		$this->messages = $messages;
 	}
 
-	public static function fromArrays(array $messages, string $file = null): self {
-		return new self(array_map(function($messageArray) use ($file) {
+	public static function fromArrays(array $messages, string $fileName = null): self {
+		return new self(array_map(function($messageArray) use ($fileName) {
 			if (is_array($messageArray)) {
-				return new PhpcsMessage($messageArray['line'] ?? null, $file ?? 'STDIN', $messageArray['type'] ?? 'ERROR', $messageArray, $file);
+				return new PhpcsMessage($messageArray['line'] ?? null, $fileName ?? 'STDIN', $messageArray['type'] ?? 'ERROR', $messageArray);
 			}
 			return $messageArray;
 		}, $messages));
@@ -41,14 +41,14 @@ class PhpcsMessages {
 		if (count($fileNames) < 1) {
 			throw new \Exception('Failed to find files in phpcs JSON');
 		}
-		$file = $fileNames[0];
-		if (! isset($parsed['files'][$file]['messages'])) {
+		$fileName = $fileNames[0];
+		if (! isset($parsed['files'][$fileName]['messages'])) {
 			throw new \Exception('Failed to find messages in phpcs JSON');
 		}
-		if (! is_array($parsed['files'][$file]['messages'])) {
+		if (! is_array($parsed['files'][$fileName]['messages'])) {
 			throw new \Exception('Failed to find messages array in phpcs JSON');
 		}
-		return self::fromArrays($parsed['files'][$file]['messages'], $file);
+		return self::fromArrays($parsed['files'][$fileName]['messages'], $fileName);
 	}
 
 	public function getMessages(): array {

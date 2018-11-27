@@ -6,7 +6,7 @@ require_once dirname(__DIR__) . '/index.php';
 use PHPUnit\Framework\TestCase;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\DiffLineMap;
-use function PhpcsChanged\getNewPhpcsMessages;
+use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles};
 
 final class PhpcsChangedTest extends TestCase {
 	public function testGetNewPhpcsMessages() {
@@ -76,14 +76,37 @@ EOF;
 			[ 'line' => 112 ],
 			[ 'line' => 115 ],
 		];
+		$fileName = DiffLineMap::getFileNameFromDiff($diff);
 		$actual = getNewPhpcsMessages(
 			$diff,
-			PhpcsMessages::fromArrays($oldFilePhpcs),
-			PhpcsMessages::fromArrays($newFilePhpcs),
-			DiffLineMap::getFileNameFromDiff($diff)
+			PhpcsMessages::fromArrays($oldFilePhpcs, $fileName),
+			PhpcsMessages::fromArrays($newFilePhpcs, $fileName),
+			$fileName
 		);
 		$this->assertEquals('bin/review-stuck-orders.php', $actual->getMessages()[0]->getFile());
 	}
+
+	public function testGetNewPhpcsMessagesFromFiles() {
+		$actual = getNewPhpcsMessagesFromFiles(
+			'tests/fixtures/review-stuck-orders.diff',
+			'tests/fixtures/old-phpcs-output.json',
+			'tests/fixtures/new-phpcs-output.json'
+		);
+		$expected = PhpcsMessages::fromArrays([
+			[ 'line' => 20 ],
+		]);
+		$this->assertEquals($expected->getLineNumbers(), $actual->getLineNumbers());
+	}
+
+	public function testGetNewPhpcsMessagesFromFilesHasFileName() {
+		$actual = getNewPhpcsMessagesFromFiles(
+			'tests/fixtures/review-stuck-orders.diff',
+			'tests/fixtures/old-phpcs-output.json',
+			'tests/fixtures/new-phpcs-output.json'
+		);
+		$this->assertEquals('bin/review-stuck-orders.php', $actual->getMessages()[0]->getFile());
+	}
+
 
 	public function testGetNewPhpcsMessagesWithPhpcsJson() {
 		$diff = <<<EOF
