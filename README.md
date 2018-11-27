@@ -10,7 +10,9 @@ Using this script you can get phpcs output which applies only to the changes you
 
 ## 🐘 PHP Library
 
-This library exposes a function `getNewPhpcsMessagesFromFiles()` which takes three arguments:
+### getNewPhpcsMessagesFromFiles
+
+This library exposes a function `PhpcsMessages\getNewPhpcsMessagesFromFiles()` which takes three arguments:
 
 - A file path containing the full unified diff of a single file.
 - A file path containing the messages resulting from running phpcs on the file before your recent changes.
@@ -18,13 +20,9 @@ This library exposes a function `getNewPhpcsMessagesFromFiles()` which takes thr
 
 It will return an instance of `PhpcsMessages` which is a filtered list of the third argument above where every line that was present in the second argument has been removed.
 
-### PhpcsMessages
-
-This represents the output of running phpcs.
+`PhpcsMessages` represents the output of running phpcs.
 
 To read the phpcs JSON output from an instance of `PhpcsMessages`, you can run `$messages->toPhpcsJson()`.
-
-### PHP Usage
 
 ```php
 use function PhpcsChanged\getNewPhpcsMessagesFromFiles;
@@ -58,20 +56,40 @@ This will output something like:
           "column": 5,
           "source": "ImportDetection.Imports.RequireImports.Import",
           "message": "Found unused symbol Foobar."
-        },
-        {
-          "line": 21,
-          "type": "WARNING",
-          "severity": 5,
-          "fixable": false,
-          "column": 5,
-          "source": "ImportDetection.Imports.RequireImports.Import",
-          "message": "Found unused symbol Foobar."
         }
       ]
     }
   }
 }
+```
+
+
+### getNewPhpcsMessages
+
+If the previous function is not sufficient, this library exposes a lower-level function `PhpcsMessages\getNewPhpcsMessages()` which takes three arguments:
+
+- (string) The full unified diff of a single file.
+- (PhpcsMessages) The messages resulting from running phpcs on the file before your recent changes.
+- (PhpcsMessages) The messages resulting from running phpcs on the file after your recent changes.
+
+It will return an instance of `PhpcsMessages` which is a filtered list of the third argument above where every line that was present in the second argument has been removed.
+
+You can create an instance of `PhpcsMessages` from real phpcs JSON output by using `PhpcsMessages::fromPhpcsJson()`.
+
+```php
+use function PhpcsChanged\getNewPhpcsMessages;
+use PhpcsChanged\PhpcsMessages;
+$changedMessages = getNewPhpcsMessages(
+     $unifiedDiff,
+     PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput),
+     PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput)
+use function PhpcsChanged\getNewPhpcsMessagesFromFiles;
+$changedMessages = getNewPhpcsMessagesFromFiles(
+     $unifiedDiffFileName,
+     $oldFilePhpcsOutputFileName,
+     $newFilePhpcsOutputFileName
+);
+echo $changedMessages->toPhpcsJson();
 ```
 
 ## 👩‍💻 CLI Usage
@@ -109,15 +127,6 @@ Both will output something like:
       "messages": [
         {
           "line": 20,
-          "type": "WARNING",
-          "severity": 5,
-          "fixable": false,
-          "column": 5,
-          "source": "ImportDetection.Imports.RequireImports.Import",
-          "message": "Found unused symbol Foobar."
-        },
-        {
-          "line": 21,
           "type": "WARNING",
           "severity": 5,
           "fixable": false,
