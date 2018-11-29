@@ -122,6 +122,26 @@ EOF;
 		$this->assertNull($map->getOldLineNumberForLine(13));
 	}
 
+	public function testGetLineNumberForDiffWithOriginalAndNewErrorsOnSameLines() {
+		$diff = <<<EOF
+Index: review-stuck-orders.php
+===================================================================
+--- bin/review-stuck-orders.php	(revision 183265)
++++ bin/review-stuck-orders.php	(working copy)
+@@ -17,7 +17,7 @@
+ use Billing\Purchases\Order;
+ use Billing\Services;
+ use Billing\Ebanx;
+-use Barfoo;
++use Foobar;
+ use Billing\Emergent;
+ use Billing\Monetary_Amount;
+ use Stripe\Error;
+EOF;
+		$map = DiffLineMap::fromUnifiedDiff($diff);
+		$this->assertNull($map->getOldLineNumberForLine(20));
+	}
+
 	public function testGetLineNumberOutsideOfHunks() {
 		$diff = <<<EOF
 --- lao	2002-02-21 23:30:39.942229878 -0800

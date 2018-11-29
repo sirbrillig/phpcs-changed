@@ -5,7 +5,6 @@ require_once dirname(__DIR__) . '/index.php';
 
 use PHPUnit\Framework\TestCase;
 use PhpcsChanged\PhpcsMessages;
-use PhpcsChanged\DiffLineMap;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles};
 
 final class PhpcsChangedTest extends TestCase {
@@ -38,6 +37,35 @@ EOF;
 			[ 'line' => 109 ],
 			[ 'line' => 112 ],
 			[ 'line' => 115 ],
+		];
+		$actual = getNewPhpcsMessages($diff, PhpcsMessages::fromArrays($oldFilePhpcs), PhpcsMessages::fromArrays($newFilePhpcs));
+		$expected = PhpcsMessages::fromArrays([
+			[ 'line' => 20 ],
+		]);
+		$this->assertEquals($expected->getLineNumbers(), $actual->getLineNumbers());
+	}
+
+	public function testGetNewPhpcsMessagesWithChangedLine() {
+		$diff = <<<EOF
+Index: review-stuck-orders.php
+===================================================================
+--- bin/review-stuck-orders.php	(revision 183265)
++++ bin/review-stuck-orders.php	(working copy)
+@@ -17,7 +17,7 @@
+ use Billing\Purchases\Order;
+ use Billing\Services;
+ use Billing\Ebanx;
+-use Barfoo;
++use Foobar;
+ use Billing\Emergent;
+ use Billing\Monetary_Amount;
+ use Stripe\Error;
+EOF;
+		$oldFilePhpcs = [
+			[ 'line' => 20 ],
+		];
+		$newFilePhpcs = [
+			[ 'line' => 20 ],
 		];
 		$actual = getNewPhpcsMessages($diff, PhpcsMessages::fromArrays($oldFilePhpcs), PhpcsMessages::fromArrays($newFilePhpcs));
 		$expected = PhpcsMessages::fromArrays([
