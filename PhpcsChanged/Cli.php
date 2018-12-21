@@ -22,7 +22,7 @@ function getDebug($debugEnabled) {
 }
 
 function printErrorAndExit($output) {
-	fwrite(STDERR, 'Fatal error!' . PHP_EOL);
+	fwrite(STDERR, 'phpcs-changed: Fatal error!' . PHP_EOL);
 	fwrite(STDERR, $output . PHP_EOL);
 	die(1);
 }
@@ -120,8 +120,8 @@ function runManualWorkflow($reportType, $diffFile, $phpcsOldFile, $phpcsNewFile)
 }
 
 function validateExecutableExists($name, $command) {
-	$path = shell_exec(sprintf("type %s > /dev/null 2>&1", escapeshellarg($command)));
-	if (! $path) {
+	$path = shell_exec(sprintf("type %s", escapeshellarg($command)));
+	if (empty($path)) {
 		throw new \Exception("phpcs-changed cannot find executable for {$name}, currently set to '{$command}'.");
 	}
 }
