@@ -112,8 +112,9 @@ function runManualWorkflow($reportType, $diffFile, $phpcsOldFile, $phpcsNewFile)
 }
 
 function runSvnWorkflow($svnFile, $reportType, $options, $debug): void {
-	$svn = 'svn';
-	$phpcs = 'phpcs';
+	$svn = getenv('SVN') ?: 'svn';
+	$phpcs = getenv('PHPCS') ?: 'phpcs';
+	$cat = getenv('CAT') ?: 'cat';
 	$phpcsStandard = $options['standard'] ?? null;
 	$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
 	if (! is_readable($svnFile)) {
@@ -134,7 +135,7 @@ function runSvnWorkflow($svnFile, $reportType, $options, $debug): void {
 		printErrorAndExit("Cannot get old phpcs output for file '{$svnFile}'");
 	}
 	$debug('orig phpcs command output:', $oldFilePhpcsOutput);
-	$newFilePhpcsOutputCommand = "cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
+	$newFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
 	$debug('running new phpcs command:', $newFilePhpcsOutputCommand);
 	$newFilePhpcsOutput = shell_exec($newFilePhpcsOutputCommand);
 	if (! $newFilePhpcsOutput) {
