@@ -111,10 +111,26 @@ function runManualWorkflow($reportType, $diffFile, $phpcsOldFile, $phpcsNewFile)
 	exit($reporter->getExitCode($messages));
 }
 
+function validateExecutableExists($name, $command) {
+	$path = shell_exec(sprintf("type %s > /dev/null 2>&1", escapeshellarg($command)));
+	if (! $path) {
+		throw new \Exception("phpcs-changed cannot find executable for {$name}, currently set to '{$command}'.");
+	}
+}
+
 function runSvnWorkflow($svnFile, $reportType, $options, $debug): void {
 	$svn = getenv('SVN') ?: 'svn';
 	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$cat = getenv('CAT') ?: 'cat';
+	try {
+		$debug('validating executables');
+		validateExecutableExists('svn', $svn);
+		validateExecutableExists('phpcs', $phpcs);
+		validateExecutableExists('cat', $cat);
+	} catch (\Exception $err) {
+		printErrorAndExit($err->getMessage());
+	}
+	$debug('executables are valid');
 	$phpcsStandard = $options['standard'] ?? null;
 	$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
 	if (! is_readable($svnFile)) {
