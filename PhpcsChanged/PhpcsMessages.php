@@ -34,23 +34,23 @@ class PhpcsMessages {
 	public static function fromPhpcsJson(string $messages, string $forcedFileName = null): self {
 		$parsed = json_decode($messages, true);
 		if (! $parsed) {
-			throw new \Exception('Failed to decode phpcs JSON');
+			throw new \Exception('Failed to decode phpcs JSON: ' . var_export($messages, true));
 		}
 		if (! isset($parsed['files']) || ! is_array($parsed['files'])) {
-			throw new \Exception('Failed to find files in phpcs JSON');
+			throw new \Exception('Failed to find files in phpcs JSON: ' . var_export($messages, true));
 		}
 		$fileNames = array_map(function($fileName) {
 			return $fileName;
 		}, array_keys($parsed['files']));
 		if (count($fileNames) < 1) {
-			throw new \Exception('Failed to find files in phpcs JSON');
+			throw new \Exception('Failed to find file names in phpcs JSON: ' . var_export($messages, true));
 		}
 		$fileName = $fileNames[0];
 		if (! isset($parsed['files'][$fileName]['messages'])) {
-			throw new \Exception('Failed to find messages in phpcs JSON');
+			throw new \Exception('Failed to find messages in phpcs JSON: ' . var_export($messages, true));
 		}
 		if (! is_array($parsed['files'][$fileName]['messages'])) {
-			throw new \Exception('Failed to find messages array in phpcs JSON');
+			throw new \Exception('Failed to find messages array in phpcs JSON: ' . var_export($messages, true));
 		}
 		return self::fromArrays($parsed['files'][$fileName]['messages'], $forcedFileName ?? $fileName);
 	}
