@@ -120,9 +120,9 @@ function runManualWorkflow($reportType, $diffFile, $phpcsOldFile, $phpcsNewFile)
 }
 
 function validateExecutableExists($name, $command) {
-	$path = shell_exec(sprintf("type %s", escapeshellarg($command)));
-	if (empty($path)) {
-		throw new \Exception("phpcs-changed cannot find executable for {$name}, currently set to '{$command}'.");
+	exec(sprintf("type %s > /dev/null 2>&1", escapeshellarg($command)), $ignore, $returnVal);
+	if ($returnVal != 0) {
+		throw new \Exception("Cannot find executable for {$name}, currently set to '{$command}'.");
 	}
 }
 
