@@ -83,6 +83,14 @@ EOF;
 		'--report <REPORTER>' => 'The phpcs reporter to use. One of "full" (default) or "json".',
 		'--debug' => 'Enable debug output.',
 	]);
+	echo <<<EOF
+
+If using automatic mode, this requires three shell commands: 'svn', 'cat', and
+'phpcs'. If those commands are not in your PATH or you would like to override
+them, you can use the environment variables 'SVN', 'CAT', and 'PHPCS',
+respectively, to specify the full path for each one.
+
+EOF;
 	die(0);
 }
 
