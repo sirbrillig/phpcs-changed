@@ -14,6 +14,13 @@ final class PhpcsMessagesTest extends TestCase {
 		$this->assertEquals($expected, $messages->getLineNumbers());
 	}
 
+	public function testFromPhpcsJsonWithEmptyJson() {
+		$expected = [];
+		$json = '';
+		$messages = PhpcsMessages::fromPhpcsJson($json);
+		$this->assertEquals($expected, $messages->getLineNumbers());
+	}
+
 	public function testGetPhpcsJson() {
 		$expected = '{"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":1,"messages":[{"line":20,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 		$messages = PhpcsMessages::fromArrays([

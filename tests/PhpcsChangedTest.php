@@ -45,6 +45,28 @@ EOF;
 		$this->assertEquals($expected->getLineNumbers(), $actual->getLineNumbers());
 	}
 
+	public function testGetNewPhpcsMessagesWithNewFile() {
+		$diff = <<<EOF
+Index: foo.php
+===================================================================
+--- foo.php     (revision 0)
++++ foo.php     (working copy)
+@@ -0,0 +1,3 @@
++<?php
++
++echo "hello world";
+EOF;
+		$oldFilePhpcs = [];
+		$newFilePhpcs = [
+			[ 'line' => 3 ],
+		];
+		$actual = getNewPhpcsMessages($diff, PhpcsMessages::fromArrays($oldFilePhpcs), PhpcsMessages::fromArrays($newFilePhpcs));
+		$expected = PhpcsMessages::fromArrays([
+			[ 'line' => 3 ],
+		]);
+		$this->assertEquals($expected->getLineNumbers(), $actual->getLineNumbers());
+	}
+
 	public function testGetNewPhpcsMessagesWithChangedLine() {
 		$diff = <<<EOF
 Index: review-stuck-orders.php
@@ -153,6 +175,24 @@ EOF;
 		$newFilePhpcs = '{"totals":{"errors":0,"warnings":2,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":2,"messages":[{"line":20,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 		$actual = getNewPhpcsMessages($diff, PhpcsMessages::fromPhpcsJson($oldFilePhpcs), PhpcsMessages::fromPhpcsJson($newFilePhpcs))->toPhpcsJson();
 		$expected = '{"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"bin/review-stuck-orders.php":{"errors":0,"warnings":1,"messages":[{"line":20,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
+		$this->assertEquals($expected, $actual);
+	}
+
+	public function testGetNewPhpcsMessagesWithPhpcsJsonAndNewFile() {
+		$diff = <<<EOF
+Index: foo.php
+===================================================================
+--- foo.php     (revision 0)
++++ foo.php     (working copy)
+@@ -0,0 +1,3 @@
++<?php
++
++echo "hello world";
+EOF;
+		$oldFilePhpcs = '';
+		$newFilePhpcs = '{"totals":{"errors":0,"warnings":2,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":2,"messages":[{"line":20,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
+		$actual = getNewPhpcsMessages($diff, PhpcsMessages::fromPhpcsJson($oldFilePhpcs), PhpcsMessages::fromPhpcsJson($newFilePhpcs))->toPhpcsJson();
+		$expected = '{"totals":{"errors":0,"warnings":2,"fixable":0},"files":{"foo.php":{"errors":0,"warnings":2,"messages":[{"line":20,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 		$this->assertEquals($expected, $actual);
 	}
 
