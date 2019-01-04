@@ -144,6 +144,7 @@ function runSvnWorkflow($svnFile, $reportType, $options, $debug): void {
 	if (! is_readable($svnFile)) {
 		printErrorAndExit("Cannot read file '{$svnFile}'");
 	}
+
 	$unifiedDiffCommand = "{$svn} diff " . escapeshellarg($svnFile);
 	$debug('running diff command:', $unifiedDiffCommand);
 	$unifiedDiff = shell_exec($unifiedDiffCommand);
@@ -152,13 +153,27 @@ function runSvnWorkflow($svnFile, $reportType, $options, $debug): void {
 		exit(0);
 	}
 	$debug('diff command output:', $unifiedDiff);
-	$oldFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
-	$debug('running orig phpcs command:', $oldFilePhpcsOutputCommand);
-	$oldFilePhpcsOutput = shell_exec($oldFilePhpcsOutputCommand);
-	if (! $oldFilePhpcsOutput) {
-		printErrorAndExit("Cannot get old phpcs output for file '{$svnFile}'");
+
+	$svnStatusCommand = "${svn} info " . escapeshellarg($svnFile);
+	$debug('checking svn status of file with command:', $svnStatusCommand);
+	$svnStatusOutput = shell_exec($svnStatusCommand);
+	$debug('svn status output:', $svnStatusOutput);
+	if (! $svnStatusOutput || false === strpos($svnStatusOutput, 'Schedule:')) {
+		printErrorAndExit("Cannot get svn info for file '{$svnFile}'");
 	}
-	$debug('orig phpcs command output:', $oldFilePhpcsOutput);
+	$isNewFile = (false !== strpos($svnStatusOutput, 'Schedule: add'));
+
+	$oldFilePhpcsOutput = '';
+	if (! $isNewFile) {
+		$oldFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
+		$debug('running orig phpcs command:', $oldFilePhpcsOutputCommand);
+		$oldFilePhpcsOutput = shell_exec($oldFilePhpcsOutputCommand);
+		if (! $oldFilePhpcsOutput) {
+			printErrorAndExit("Cannot get old phpcs output for file '{$svnFile}'");
+		}
+		$debug('orig phpcs command output:', $oldFilePhpcsOutput);
+	}
+
 	$newFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
 	$debug('running new phpcs command:', $newFilePhpcsOutputCommand);
 	$newFilePhpcsOutput = shell_exec($newFilePhpcsOutputCommand);
@@ -166,6 +181,7 @@ function runSvnWorkflow($svnFile, $reportType, $options, $debug): void {
 		printErrorAndExit("Cannot get new phpcs output for file '{$svnFile}'");
 	}
 	$debug('new phpcs command output:', $newFilePhpcsOutput);
+
 	$debug('processing data...');
 	$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
 	$messages = getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput, $fileName), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput, $fileName));

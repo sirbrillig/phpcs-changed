@@ -32,6 +32,9 @@ class PhpcsMessages {
 	}
 
 	public static function fromPhpcsJson(string $messages, string $forcedFileName = null): self {
+		if (empty($messages)) {
+			return self::fromArrays([], $forcedFileName ?? 'STDIN');
+		}
 		$parsed = json_decode($messages, true);
 		if (! $parsed) {
 			throw new \Exception('Failed to decode phpcs JSON: ' . var_export($messages, true));
