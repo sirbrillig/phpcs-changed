@@ -20,7 +20,9 @@ class PhpcsMessages {
 
 	public static function fromPhpcsMessages(array $messages, string $fileName = null): self {
 		return new self(array_map(function(PhpcsMessage $message) use ($fileName) {
-			$message->setFile($fileName);
+			if ($fileName) {
+				$message->setFile($fileName);
+			}
 			return $message;
 		}, $messages));
 	}

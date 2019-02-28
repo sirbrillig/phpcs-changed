@@ -9,17 +9,19 @@ require_once __DIR__ . '/../index.php';
 
 use function PhpcsChanged\Cli\{
 	printHelp,
-	printErrorAndExit,
+	printVersion,
 	getDebug,
-	getReporter,
 	runManualWorkflow,
-	runSvnWorkflow
+	runSvnWorkflow,
+	reportMessagesAndExit
 };
+use PhpcsChanged\UnixShell;
 
 $options = getopt(
 	'h',
 	[
 		'help',
+		'version',
 		'diff:',
 		'phpcs-orig:',
 		'phpcs-new:',
@@ -34,6 +36,10 @@ if (isset($options['h']) || isset($options['help'])) {
 	printHelp();
 }
 
+if (isset($options['version'])) {
+	printVersion();
+}
+
 $debug = getDebug(isset($options['debug']));
 $debug('Running...');
 
@@ -43,12 +49,13 @@ $phpcsOldFile = $options['phpcs-orig'] ?? null;
 $phpcsNewFile = $options['phpcs-new'] ?? null;
 
 if ($diffFile && $phpcsOldFile && $phpcsNewFile) {
-	runManualWorkflow($reportType, $diffFile, $phpcsOldFile, $phpcsNewFile);
+	reportMessagesAndExit(runManualWorkflow($diffFile, $phpcsOldFile, $phpcsNewFile), $reportType);
 }
 
 $svnFile = $options['svn'] ?? null;
 if ($svnFile) {
-	runSvnWorkflow($svnFile, $reportType, $options, $debug);
+	$shell = new UnixShell();
+	reportMessagesAndExit(runSvnWorkflow($svnFile, $options, $shell, $debug), $reportType);
 }
 
 printHelp();

@@ -3,12 +3,15 @@ declare(strict_types=1);
 
 namespace PhpcsChanged\Cli;
 
+use PhpcsChanged\NonFatalException;
 use PhpcsChanged\Reporter;
 use PhpcsChanged\JsonReporter;
 use PhpcsChanged\FullReporter;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\DiffLineMap;
-use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles};
+use PhpcsChanged\ShellOperator;
+use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
+use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, validateSvnFileExists};
 
 function getDebug($debugEnabled) {
 	return function(...$outputs) use ($debugEnabled) {
@@ -40,6 +43,15 @@ function printTwoColumns(array $columns) {
 		printf("%{$longestFirstCol}s\t%s" . PHP_EOL, $firstCol, $secondCol);
 	}
 	echo PHP_EOL;
+}
+
+function printVersion() {
+	$version = getVersion();
+	echo <<<EOF
+phpcs-changed version {$version}
+
+EOF;
+	die(0);
 }
 
 function printHelp() {
@@ -82,6 +94,8 @@ EOF;
 		'--standard <STANDARD>' => 'The phpcs standard to use.',
 		'--report <REPORTER>' => 'The phpcs reporter to use. One of "full" (default) or "json".',
 		'--debug' => 'Enable debug output.',
+		'--help' => 'Print this help.',
+		'--version' => 'Print the current version.',
 	]);
 	echo <<<EOF
 
@@ -104,7 +118,7 @@ function getReporter(string $reportType): Reporter {
 	printErrorAndExit("Unknown Reporter '{$reportType}'");
 }
 
-function runManualWorkflow($reportType, $diffFile, $phpcsOldFile, $phpcsNewFile): void {
+function runManualWorkflow($diffFile, $phpcsOldFile, $phpcsNewFile): PhpcsMessages {
 	try {
 		$messages = getNewPhpcsMessagesFromFiles(
 			$diffFile,
@@ -114,77 +128,41 @@ function runManualWorkflow($reportType, $diffFile, $phpcsOldFile, $phpcsNewFile)
 	} catch (\Exception $err) {
 		printErrorAndExit($err->getMessage());
 	}
-	$reporter = getReporter($reportType);
-	echo $reporter->getFormattedMessages($messages);
-	exit($reporter->getExitCode($messages));
+	return $messages;
 }
 
-function validateExecutableExists($name, $command) {
-	exec(sprintf("type %s > /dev/null 2>&1", escapeshellarg($command)), $ignore, $returnVal);
-	if ($returnVal != 0) {
-		throw new \Exception("Cannot find executable for {$name}, currently set to '{$command}'.");
-	}
-}
-
-function runSvnWorkflow($svnFile, $reportType, $options, $debug): void {
+function runSvnWorkflow($svnFile, $options, ShellOperator $shell, callable $debug): PhpcsMessages {
 	$svn = getenv('SVN') ?: 'svn';
 	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$cat = getenv('CAT') ?: 'cat';
+
 	try {
 		$debug('validating executables');
-		validateExecutableExists('svn', $svn);
-		validateExecutableExists('phpcs', $phpcs);
-		validateExecutableExists('cat', $cat);
-	} catch (\Exception $err) {
+		$shell->validateExecutableExists('svn', $svn);
+		$shell->validateExecutableExists('phpcs', $phpcs);
+		$shell->validateExecutableExists('cat', $cat);
+		$debug('executables are valid');
+
+		$phpcsStandard = $options['standard'] ?? null;
+		$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
+		validateSvnFileExists($svnFile, [$shell, 'isReadable']);
+		$unifiedDiff = getSvnUnifiedDiff($svnFile, $svn, [$shell, 'executeCommand'], $debug);
+		$isNewFile = isNewSvnFile($svnFile, $svn, [$shell, 'executeCommand'], $debug);
+		$oldFilePhpcsOutput = $isNewFile ? '' : getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+		$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+	} catch( NonFatalException $err ) {
+		$debug($err->getMessage());
+		exit(0);
+	} catch( \Exception $err ) {
 		printErrorAndExit($err->getMessage());
 	}
-	$debug('executables are valid');
-	$phpcsStandard = $options['standard'] ?? null;
-	$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
-	if (! is_readable($svnFile)) {
-		printErrorAndExit("Cannot read file '{$svnFile}'");
-	}
-
-	$unifiedDiffCommand = "{$svn} diff " . escapeshellarg($svnFile);
-	$debug('running diff command:', $unifiedDiffCommand);
-	$unifiedDiff = shell_exec($unifiedDiffCommand);
-	if (! $unifiedDiff) {
-		$debug("Cannot get svn diff for file '{$svnFile}'; skipping");
-		exit(0);
-	}
-	$debug('diff command output:', $unifiedDiff);
-
-	$svnStatusCommand = "${svn} info " . escapeshellarg($svnFile);
-	$debug('checking svn status of file with command:', $svnStatusCommand);
-	$svnStatusOutput = shell_exec($svnStatusCommand);
-	$debug('svn status output:', $svnStatusOutput);
-	if (! $svnStatusOutput || false === strpos($svnStatusOutput, 'Schedule:')) {
-		printErrorAndExit("Cannot get svn info for file '{$svnFile}'");
-	}
-	$isNewFile = (false !== strpos($svnStatusOutput, 'Schedule: add'));
-
-	$oldFilePhpcsOutput = '';
-	if (! $isNewFile) {
-		$oldFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
-		$debug('running orig phpcs command:', $oldFilePhpcsOutputCommand);
-		$oldFilePhpcsOutput = shell_exec($oldFilePhpcsOutputCommand);
-		if (! $oldFilePhpcsOutput) {
-			printErrorAndExit("Cannot get old phpcs output for file '{$svnFile}'");
-		}
-		$debug('orig phpcs command output:', $oldFilePhpcsOutput);
-	}
-
-	$newFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
-	$debug('running new phpcs command:', $newFilePhpcsOutputCommand);
-	$newFilePhpcsOutput = shell_exec($newFilePhpcsOutputCommand);
-	if (! $newFilePhpcsOutput) {
-		printErrorAndExit("Cannot get new phpcs output for file '{$svnFile}'");
-	}
-	$debug('new phpcs command output:', $newFilePhpcsOutput);
 
 	$debug('processing data...');
 	$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
-	$messages = getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput, $fileName), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput, $fileName));
+	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput, $fileName), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput, $fileName));
+}
+
+function reportMessagesAndExit(PhpcsMessages $messages, string $reportType): void {
 	$reporter = getReporter($reportType);
 	echo $reporter->getFormattedMessages($messages);
 	exit($reporter->getExitCode($messages));
