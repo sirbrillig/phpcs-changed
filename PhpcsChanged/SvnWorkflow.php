@@ -16,10 +16,10 @@ function getSvnUnifiedDiff(string $svnFile, string $svn, callable $debug): strin
 	return $unifiedDiff;
 }
 
-function isNewSvnFile(string $svnFile, string $svn, callable $debug): bool {
+function isNewSvnFile(string $svnFile, string $svn, callable $executeCommand, callable $debug): bool {
 	$svnStatusCommand = "${svn} info " . escapeshellarg($svnFile);
 	$debug('checking svn status of file with command:', $svnStatusCommand);
-	$svnStatusOutput = shell_exec($svnStatusCommand);
+	$svnStatusOutput = $executeCommand($svnStatusCommand);
 	$debug('svn status output:', $svnStatusOutput);
 	if (! $svnStatusOutput || false === strpos($svnStatusOutput, 'Schedule:')) {
 		throw new \Exception("Cannot get svn info for file '{$svnFile}'");

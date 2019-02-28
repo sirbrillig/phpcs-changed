@@ -128,7 +128,13 @@ function validateExecutableExists($name, $command) {
 	}
 }
 
-function runSvnWorkflow($svnFile, $reportType, $options, $debug): void {
+function getCommandExecuter(): callable {
+	return function($command) {
+		return shell_exec($command);
+	};
+}
+
+function runSvnWorkflow($svnFile, $reportType, $options, callable $executeCommand, callable $debug): void {
 	$svn = getenv('SVN') ?: 'svn';
 	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$cat = getenv('CAT') ?: 'cat';
@@ -147,7 +153,7 @@ function runSvnWorkflow($svnFile, $reportType, $options, $debug): void {
 		}
 
 		$unifiedDiff = getSvnUnifiedDiff($svnFile, $svn, $debug);
-		$isNewFile = isNewSvnFile($svnFile, $svn, $debug);
+		$isNewFile = isNewSvnFile($svnFile, $svn, $executeCommand, $debug);
 		$oldFilePhpcsOutput = $isNewFile ? '' : getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, $debug);
 		$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, $debug);
 	} catch( NonFatalException $err ) {
