@@ -10,7 +10,7 @@ use PhpcsChanged\FullReporter;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\DiffLineMap;
 use PhpcsChanged\ShellOperator;
-use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles};
+use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
 use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, validateSvnFileExists};
 
 function getDebug($debugEnabled) {
@@ -43,6 +43,15 @@ function printTwoColumns(array $columns) {
 		printf("%{$longestFirstCol}s\t%s" . PHP_EOL, $firstCol, $secondCol);
 	}
 	echo PHP_EOL;
+}
+
+function printVersion() {
+	$version = getVersion();
+	echo <<<EOF
+phpcs-changed version {$version}
+
+EOF;
+	die(0);
 }
 
 function printHelp() {
@@ -85,6 +94,8 @@ EOF;
 		'--standard <STANDARD>' => 'The phpcs standard to use.',
 		'--report <REPORTER>' => 'The phpcs reporter to use. One of "full" (default) or "json".',
 		'--debug' => 'Enable debug output.',
+		'--help' => 'Print this help.',
+		'--version' => 'Print the current version.',
 	]);
 	echo <<<EOF
 

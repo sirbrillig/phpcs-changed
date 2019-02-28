@@ -6,6 +6,7 @@ namespace PhpcsChanged;
 use PhpcsChanged\DiffLineMap;
 use PhpcsChanged\PhpcsMessages;
 
+require_once __DIR__ . '/PhpcsChanged/Version.php';
 require_once __DIR__ . '/PhpcsChanged/DiffLine.php';
 require_once __DIR__ . '/PhpcsChanged/DiffLineType.php';
 require_once __DIR__ . '/PhpcsChanged/DiffLineMap.php';

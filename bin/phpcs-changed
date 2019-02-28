@@ -9,6 +9,7 @@ require_once __DIR__ . '/../index.php';
 
 use function PhpcsChanged\Cli\{
 	printHelp,
+	printVersion,
 	getDebug,
 	runManualWorkflow,
 	runSvnWorkflow,
@@ -20,6 +21,7 @@ $options = getopt(
 	'h',
 	[
 		'help',
+		'version',
 		'diff:',
 		'phpcs-orig:',
 		'phpcs-new:',
@@ -32,6 +34,10 @@ $options = getopt(
 
 if (isset($options['h']) || isset($options['help'])) {
 	printHelp();
+}
+
+if (isset($options['version'])) {
+	printVersion();
 }
 
 $debug = getDebug(isset($options['debug']));
