@@ -152,10 +152,10 @@ function runSvnWorkflow($svnFile, $reportType, $options, callable $executeComman
 			throw new \Exception("Cannot read file '{$svnFile}'");
 		}
 
-		$unifiedDiff = getSvnUnifiedDiff($svnFile, $svn, $debug);
+		$unifiedDiff = getSvnUnifiedDiff($svnFile, $svn, $executeCommand, $debug);
 		$isNewFile = isNewSvnFile($svnFile, $svn, $executeCommand, $debug);
-		$oldFilePhpcsOutput = $isNewFile ? '' : getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, $debug);
-		$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, $debug);
+		$oldFilePhpcsOutput = $isNewFile ? '' : getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, $executeCommand, $debug);
+		$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, $executeCommand, $debug);
 	} catch( NonFatalException $err ) {
 		$debug($err->getMessage());
 		exit(0);

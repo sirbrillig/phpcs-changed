@@ -5,10 +5,10 @@ namespace PhpcsChanged\SvnWorkflow;
 
 use PhpcsChanged\NonFatalException;
 
-function getSvnUnifiedDiff(string $svnFile, string $svn, callable $debug): string {
+function getSvnUnifiedDiff(string $svnFile, string $svn, callable $executeCommand, callable $debug): string {
 	$unifiedDiffCommand = "{$svn} diff " . escapeshellarg($svnFile);
 	$debug('running diff command:', $unifiedDiffCommand);
-	$unifiedDiff = shell_exec($unifiedDiffCommand);
+	$unifiedDiff = $executeCommand($unifiedDiffCommand);
 	if (! $unifiedDiff) {
 		throw new NonFatalException("Cannot get svn diff for file '{$svnFile}'; skipping");
 	}
@@ -27,10 +27,10 @@ function isNewSvnFile(string $svnFile, string $svn, callable $executeCommand, ca
 	return (false !== strpos($svnStatusOutput, 'Schedule: add'));
 }
 
-function getSvnBasePhpcsOutput(string $svnFile, string $svn, string $phpcs, string $phpcsStandardOption, callable $debug): string {
+function getSvnBasePhpcsOutput(string $svnFile, string $svn, string $phpcs, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
 	$oldFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
 	$debug('running orig phpcs command:', $oldFilePhpcsOutputCommand);
-	$oldFilePhpcsOutput = shell_exec($oldFilePhpcsOutputCommand);
+	$oldFilePhpcsOutput = $executeCommand($oldFilePhpcsOutputCommand);
 	if (! $oldFilePhpcsOutput) {
 		throw new \Exception("Cannot get old phpcs output for file '{$svnFile}'");
 	}
@@ -38,10 +38,10 @@ function getSvnBasePhpcsOutput(string $svnFile, string $svn, string $phpcs, stri
 	return $oldFilePhpcsOutput;
 }
 
-function getSvnNewPhpcsOutput(string $svnFile, string $phpcs, string $cat, string $phpcsStandardOption, callable $debug): string {
+function getSvnNewPhpcsOutput(string $svnFile, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
 	$newFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
 	$debug('running new phpcs command:', $newFilePhpcsOutputCommand);
-	$newFilePhpcsOutput = shell_exec($newFilePhpcsOutputCommand);
+	$newFilePhpcsOutput = $executeCommand($newFilePhpcsOutputCommand);
 	if (! $newFilePhpcsOutput) {
 		throw new \Exception("Cannot get new phpcs output for file '{$svnFile}'");
 	}
