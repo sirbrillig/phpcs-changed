@@ -6,6 +6,7 @@ require_once dirname(__DIR__) . '/index.php';
 use PHPUnit\Framework\TestCase;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\NonFatalException;
+use PhpcsChanged\ShellOperator;
 use function PhpcsChanged\Cli\runSvnWorkflow;
 use function PhpcsChanged\SvnWorkflow\{isNewSvnFile, getSvnUnifiedDiff};
 
@@ -137,27 +138,36 @@ EOF;
 
 		$basePhpcs = '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 		$newPhpcs = '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
-		$executeCommand = function($command) use ($diff, $info, $basePhpcs, $newPhpcs): string {
-			if (false !== strpos($command, "svn diff 'foobar.php'")) {
-				return $diff;
-			}
-			if (false !== strpos($command, "svn info 'foobar.php'")) {
-				return $info;
-			}
-			if (false !== strpos($command, "svn cat 'foobar.php'")) {
-				return $basePhpcs;
-			}
-			if (false !== strpos($command, "cat 'foobar.php'")) {
-				return $newPhpcs;
-			}
-			return '';
-		};
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
-		$isReadable = function($fileName) {
-			return ($fileName === 'foobar.php');
-		};
-		$validateExecutableExists = function($name, $command) { // phpcs:ignore VariableAnalysis
-			return true;
+		$shell = new class($diff, $info, $basePhpcs, $newPhpcs) implements ShellOperator {
+			public function __construct($diff, $info, $basePhpcs, $newPhpcs) {
+				$this->diff = $diff;
+				$this->info = $info;
+				$this->basePhpcs = $basePhpcs;
+				$this->newPhpcs = $newPhpcs;
+			}
+
+			public function isReadable(string $fileName): bool {
+				return ($fileName === 'foobar.php');
+			}
+
+			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
+
+			function executeCommand(string $command): string {
+				if (false !== strpos($command, "svn diff 'foobar.php'")) {
+					return $this->diff;
+				}
+				if (false !== strpos($command, "svn info 'foobar.php'")) {
+					return $this->info;
+				}
+				if (false !== strpos($command, "svn cat 'foobar.php'")) {
+					return $this->basePhpcs;
+				}
+				if (false !== strpos($command, "cat 'foobar.php'")) {
+					return $this->newPhpcs;
+				}
+				return '';
+			}
 		};
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([
@@ -171,7 +181,7 @@ EOF;
 				'message' => 'Found unused symbol Emergent.',
 			],
 		], 'bin/foobar.php');
-		$messages = runSvnWorkflow($svnFile, $options, $executeCommand, $isReadable, $validateExecutableExists, $debug);
+		$messages = runSvnWorkflow($svnFile, $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
@@ -201,25 +211,33 @@ Schedule: add
 EOF;
 
 		$newPhpcs = '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
-		$executeCommand = function($command) use ($diff, $info, $newPhpcs): string {
-			if (false !== strpos($command, "svn diff 'foobar.php'")) {
-				return $diff;
+		$shell = new class($diff, $info, $newPhpcs) implements ShellOperator {
+			public function __construct($diff, $info, $newPhpcs) {
+				$this->diff = $diff;
+				$this->info = $info;
+				$this->newPhpcs = $newPhpcs;
 			}
-			if (false !== strpos($command, "svn info 'foobar.php'")) {
-				return $info;
+
+			public function isReadable(string $fileName): bool {
+				return ($fileName === 'foobar.php');
 			}
-			if (false !== strpos($command, "cat 'foobar.php'")) {
-				return $newPhpcs;
+
+			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
+
+			function executeCommand(string $command): string {
+				if (false !== strpos($command, "svn diff 'foobar.php'")) {
+					return $this->diff;
+				}
+				if (false !== strpos($command, "svn info 'foobar.php'")) {
+					return $this->info;
+				}
+				if (false !== strpos($command, "cat 'foobar.php'")) {
+					return $this->newPhpcs;
+				}
+				return '';
 			}
-			return '';
 		};
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		$isReadable = function($fileName) {
-			return ($fileName === 'foobar.php');
-		};
-		$validateExecutableExists = function($name, $command) { // phpcs:ignore VariableAnalysis
-			return true;
-		};
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([
 			[
@@ -241,7 +259,7 @@ EOF;
 				'message' => 'Found unused symbol Emergent.',
 			],
 		], 'STDIN');
-		$messages = runSvnWorkflow($svnFile, $options, $executeCommand, $isReadable, $validateExecutableExists, $debug);
+		$messages = runSvnWorkflow($svnFile, $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 }

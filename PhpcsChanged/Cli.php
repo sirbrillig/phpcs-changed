@@ -9,6 +9,7 @@ use PhpcsChanged\JsonReporter;
 use PhpcsChanged\FullReporter;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\DiffLineMap;
+use PhpcsChanged\ShellOperator;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles};
 use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, validateSvnFileExists};
 
@@ -119,46 +120,25 @@ function runManualWorkflow($diffFile, $phpcsOldFile, $phpcsNewFile): PhpcsMessag
 	return $messages;
 }
 
-function getValidateExecutableExists(): callable {
-	return function ($name, $command) {
-		exec(sprintf("type %s > /dev/null 2>&1", escapeshellarg($command)), $ignore, $returnVal);
-		if ($returnVal != 0) {
-			throw new \Exception("Cannot find executable for {$name}, currently set to '{$command}'.");
-		}
-	};
-}
-
-function getCommandExecuter(): callable {
-	return function($command) {
-		return shell_exec($command);
-	};
-}
-
-function getIsReadable(): callable {
-	return function($fileName) {
-		return is_readable($fileName);
-	};
-}
-
-function runSvnWorkflow($svnFile, $options, callable $executeCommand, callable $isReadable, callable $validateExecutableExists, callable $debug): PhpcsMessages {
+function runSvnWorkflow($svnFile, $options, ShellOperator $shell, callable $debug): PhpcsMessages {
 	$svn = getenv('SVN') ?: 'svn';
 	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$cat = getenv('CAT') ?: 'cat';
 
 	try {
 		$debug('validating executables');
-		$validateExecutableExists('svn', $svn);
-		$validateExecutableExists('phpcs', $phpcs);
-		$validateExecutableExists('cat', $cat);
+		$shell->validateExecutableExists('svn', $svn);
+		$shell->validateExecutableExists('phpcs', $phpcs);
+		$shell->validateExecutableExists('cat', $cat);
 		$debug('executables are valid');
 
 		$phpcsStandard = $options['standard'] ?? null;
 		$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
-		validateSvnFileExists($svnFile, $isReadable);
-		$unifiedDiff = getSvnUnifiedDiff($svnFile, $svn, $executeCommand, $debug);
-		$isNewFile = isNewSvnFile($svnFile, $svn, $executeCommand, $debug);
-		$oldFilePhpcsOutput = $isNewFile ? '' : getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, $executeCommand, $debug);
-		$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, $executeCommand, $debug);
+		validateSvnFileExists($svnFile, [$shell, 'isReadable']);
+		$unifiedDiff = getSvnUnifiedDiff($svnFile, $svn, [$shell, 'executeCommand'], $debug);
+		$isNewFile = isNewSvnFile($svnFile, $svn, [$shell, 'executeCommand'], $debug);
+		$oldFilePhpcsOutput = $isNewFile ? '' : getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+		$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
 	} catch( NonFatalException $err ) {
 		$debug($err->getMessage());
 		exit(0);

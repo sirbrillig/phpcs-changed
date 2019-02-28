@@ -17,6 +17,8 @@ require_once __DIR__ . '/PhpcsChanged/JsonReporter.php';
 require_once __DIR__ . '/PhpcsChanged/FullReporter.php';
 require_once __DIR__ . '/PhpcsChanged/NonFatalException.php';
 require_once __DIR__ . '/PhpcsChanged/SvnWorkflow.php';
+require_once __DIR__ . '/PhpcsChanged/ShellOperator.php';
+require_once __DIR__ . '/PhpcsChanged/UnixShell.php';
 
 function getNewPhpcsMessages(string $unifiedDiff, PhpcsMessages $oldPhpcsMessages, PhpcsMessages $newPhpcsMessages): PhpcsMessages {
 	$map = DiffLineMap::fromUnifiedDiff($unifiedDiff);
