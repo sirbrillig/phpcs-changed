@@ -104,7 +104,17 @@ EOF;
 
 	public function testFullSvnWorkflow() {
 		$svnFile = 'foobar.php';
-		$diff = <<<EOF
+		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
+		$shell = new class() implements ShellOperator {
+			public function isReadable(string $fileName): bool {
+				return ($fileName === 'foobar.php');
+			}
+
+			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
+
+			public function executeCommand(string $command): string {
+				if (false !== strpos($command, "svn diff 'foobar.php'")) {
+					return <<<EOF
 Index: foobar.php
 ===================================================================
 --- bin/foobar.php	(revision 183265)
@@ -118,7 +128,9 @@ Index: foobar.php
  use Billing\Monetary_Amount;
  use Stripe\Error;
 EOF;
-		$info = <<<EOF
+				}
+				if (false !== strpos($command, "svn info 'foobar.php'")) {
+					return <<<EOF
 Path: foobar.php
 Name: foobar.php
 Working Copy Root Path: /home/public_html
@@ -135,36 +147,12 @@ Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
 Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
 Checksum: abcdefg
 EOF;
-
-		$basePhpcs = '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
-		$newPhpcs = '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
-		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
-		$shell = new class($diff, $info, $basePhpcs, $newPhpcs) implements ShellOperator {
-			public function __construct($diff, $info, $basePhpcs, $newPhpcs) {
-				$this->diff = $diff;
-				$this->info = $info;
-				$this->basePhpcs = $basePhpcs;
-				$this->newPhpcs = $newPhpcs;
-			}
-
-			public function isReadable(string $fileName): bool {
-				return ($fileName === 'foobar.php');
-			}
-
-			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
-
-			function executeCommand(string $command): string {
-				if (false !== strpos($command, "svn diff 'foobar.php'")) {
-					return $this->diff;
-				}
-				if (false !== strpos($command, "svn info 'foobar.php'")) {
-					return $this->info;
 				}
 				if (false !== strpos($command, "svn cat 'foobar.php'")) {
-					return $this->basePhpcs;
+					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 				}
 				if (false !== strpos($command, "cat 'foobar.php'")) {
-					return $this->newPhpcs;
+					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 				}
 				return '';
 			}
@@ -187,7 +175,16 @@ EOF;
 
 	public function testFullSvnWorkflowForNewFile() {
 		$svnFile = 'foobar.php';
-		$diff = <<<EOF
+		$shell = new class() implements ShellOperator {
+			public function isReadable(string $fileName): bool {
+				return ($fileName === 'foobar.php');
+			}
+
+			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
+
+			public function executeCommand(string $command): string {
+				if (false !== strpos($command, "svn diff 'foobar.php'")) {
+					return <<<EOF
 Index: foobar.php
 ===================================================================
 
@@ -198,7 +195,9 @@ Added: svn:eol-style
 +native
 \ No newline at end of property
 EOF;
-		$info = <<<EOF
+				}
+				if (false !== strpos($command, "svn info 'foobar.php'")) {
+					return <<<EOF
 Path: foobar.php
 Name: foobar.php
 Working Copy Root Path: /home/public_html
@@ -209,30 +208,9 @@ Repository UUID: 1111-1111-1111-1111
 Node Kind: file
 Schedule: add
 EOF;
-
-		$newPhpcs = '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
-		$shell = new class($diff, $info, $newPhpcs) implements ShellOperator {
-			public function __construct($diff, $info, $newPhpcs) {
-				$this->diff = $diff;
-				$this->info = $info;
-				$this->newPhpcs = $newPhpcs;
-			}
-
-			public function isReadable(string $fileName): bool {
-				return ($fileName === 'foobar.php');
-			}
-
-			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
-
-			function executeCommand(string $command): string {
-				if (false !== strpos($command, "svn diff 'foobar.php'")) {
-					return $this->diff;
-				}
-				if (false !== strpos($command, "svn info 'foobar.php'")) {
-					return $this->info;
 				}
 				if (false !== strpos($command, "cat 'foobar.php'")) {
-					return $this->newPhpcs;
+					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 				}
 				return '';
 			}
