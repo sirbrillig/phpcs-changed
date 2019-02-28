@@ -3,12 +3,14 @@ declare(strict_types=1);
 
 namespace PhpcsChanged\Cli;
 
+use PhpcsChanged\NonFatalException;
 use PhpcsChanged\Reporter;
 use PhpcsChanged\JsonReporter;
 use PhpcsChanged\FullReporter;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\DiffLineMap;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles};
+use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput};
 
 function getDebug($debugEnabled) {
 	return function(...$outputs) use ($debugEnabled) {
@@ -130,57 +132,30 @@ function runSvnWorkflow($svnFile, $reportType, $options, $debug): void {
 	$svn = getenv('SVN') ?: 'svn';
 	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$cat = getenv('CAT') ?: 'cat';
+
 	try {
 		$debug('validating executables');
 		validateExecutableExists('svn', $svn);
 		validateExecutableExists('phpcs', $phpcs);
 		validateExecutableExists('cat', $cat);
-	} catch (\Exception $err) {
+		$debug('executables are valid');
+
+		$phpcsStandard = $options['standard'] ?? null;
+		$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
+		if (! is_readable($svnFile)) {
+			throw new \Exception("Cannot read file '{$svnFile}'");
+		}
+
+		$unifiedDiff = getSvnUnifiedDiff($svnFile, $svn, $debug);
+		$isNewFile = isNewSvnFile($svnFile, $svn, $debug);
+		$oldFilePhpcsOutput = $isNewFile ? '' : getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, $debug);
+		$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, $debug);
+	} catch( NonFatalException $err ) {
+		$debug($err->getMessage());
+		exit(0);
+	} catch( \Exception $err ) {
 		printErrorAndExit($err->getMessage());
 	}
-	$debug('executables are valid');
-	$phpcsStandard = $options['standard'] ?? null;
-	$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
-	if (! is_readable($svnFile)) {
-		printErrorAndExit("Cannot read file '{$svnFile}'");
-	}
-
-	$unifiedDiffCommand = "{$svn} diff " . escapeshellarg($svnFile);
-	$debug('running diff command:', $unifiedDiffCommand);
-	$unifiedDiff = shell_exec($unifiedDiffCommand);
-	if (! $unifiedDiff) {
-		$debug("Cannot get svn diff for file '{$svnFile}'; skipping");
-		exit(0);
-	}
-	$debug('diff command output:', $unifiedDiff);
-
-	$svnStatusCommand = "${svn} info " . escapeshellarg($svnFile);
-	$debug('checking svn status of file with command:', $svnStatusCommand);
-	$svnStatusOutput = shell_exec($svnStatusCommand);
-	$debug('svn status output:', $svnStatusOutput);
-	if (! $svnStatusOutput || false === strpos($svnStatusOutput, 'Schedule:')) {
-		printErrorAndExit("Cannot get svn info for file '{$svnFile}'");
-	}
-	$isNewFile = (false !== strpos($svnStatusOutput, 'Schedule: add'));
-
-	$oldFilePhpcsOutput = '';
-	if (! $isNewFile) {
-		$oldFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
-		$debug('running orig phpcs command:', $oldFilePhpcsOutputCommand);
-		$oldFilePhpcsOutput = shell_exec($oldFilePhpcsOutputCommand);
-		if (! $oldFilePhpcsOutput) {
-			printErrorAndExit("Cannot get old phpcs output for file '{$svnFile}'");
-		}
-		$debug('orig phpcs command output:', $oldFilePhpcsOutput);
-	}
-
-	$newFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($svnFile) . " | {$phpcs} --report=json" . $phpcsStandardOption;
-	$debug('running new phpcs command:', $newFilePhpcsOutputCommand);
-	$newFilePhpcsOutput = shell_exec($newFilePhpcsOutputCommand);
-	if (! $newFilePhpcsOutput) {
-		printErrorAndExit("Cannot get new phpcs output for file '{$svnFile}'");
-	}
-	$debug('new phpcs command output:', $newFilePhpcsOutput);
 
 	$debug('processing data...');
 	$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
