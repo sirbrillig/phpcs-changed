@@ -18,14 +18,14 @@ final class SvnWorkflowTest extends TestCase {
 				return '';
 			}
 			return "Path: foobar.php
-				Name: foobar.php
-				Working Copy Root Path: /home/public_html
-				URL: https://svn.localhost/trunk/foobar.php
-				Relative URL: ^/trunk/foobar.php
-				Repository Root: https://svn.localhost
-				Repository UUID: 1111-1111-1111-1111
-				Node Kind: file
-				Schedule: add
+Name: foobar.php
+Working Copy Root Path: /home/public_html
+URL: https://svn.localhost/trunk/foobar.php
+Relative URL: ^/trunk/foobar.php
+Repository Root: https://svn.localhost
+Repository UUID: 1111-1111-1111-1111
+Node Kind: file
+Schedule: add
 ";
 		};
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
@@ -40,20 +40,20 @@ final class SvnWorkflowTest extends TestCase {
 				return '';
 			}
 			return "Path: foobar.php
-				Name: foobar.php
-				Working Copy Root Path: /home/public_html
-				URL: https://svn.localhost/trunk/wp-content/mu-plugins/gdpr.php
-				Relative URL: ^/trunk/foobar.php
-				Repository Root: https://svn.localhost
-				Repository UUID: 1111-1111-1111-1111
-				Revision: 188280
-				Node Kind: file
-				Schedule: normal
-				Last Changed Author: me
-				Last Changed Rev: 175729
-				Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-				Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-				Checksum: abcdefg
+Name: foobar.php
+Working Copy Root Path: /home/public_html
+URL: https://svn.localhost/trunk/wp-content/mu-plugins/gdpr.php
+Relative URL: ^/trunk/foobar.php
+Repository Root: https://svn.localhost
+Repository UUID: 1111-1111-1111-1111
+Revision: 188280
+Node Kind: file
+Schedule: normal
+Last Changed Author: me
+Last Changed Rev: 175729
+Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
+Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
+Checksum: abcdefg
 ";
 		};
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
@@ -168,6 +168,73 @@ EOF;
 				'message' => 'Found unused symbol Emergent.',
 			],
 		], 'bin/foobar.php');
+		$messages = runSvnWorkflow($svnFile, $options, $executeCommand, $isReadable, $debug);
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	public function testFullSvnWorkflowForNewFile() {
+		$svnFile = 'foobar.php';
+		$diff = <<<EOF
+Index: foobar.php
+===================================================================
+
+Property changes on: foobar.php
+___________________________________________________________________
+Added: svn:eol-style
+## -0,0 +1 ##
++native
+\ No newline at end of property
+EOF;
+		$info = <<<EOF
+Path: foobar.php
+Name: foobar.php
+Working Copy Root Path: /home/public_html
+URL: https://svn.localhost/trunk/foobar.php
+Relative URL: ^/trunk/foobar.php
+Repository Root: https://svn.localhost
+Repository UUID: 1111-1111-1111-1111
+Node Kind: file
+Schedule: add
+EOF;
+
+		$newPhpcs = '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
+		$executeCommand = function($command) use ($diff, $info, $newPhpcs): string {
+			if (false !== strpos($command, "svn diff 'foobar.php'")) {
+				return $diff;
+			}
+			if (false !== strpos($command, "svn info 'foobar.php'")) {
+				return $info;
+			}
+			if (false !== strpos($command, "cat 'foobar.php'")) {
+				return $newPhpcs;
+			}
+			return '';
+		};
+		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
+		$isReadable = function($fileName) {
+			return ($fileName === 'foobar.php');
+		};
+		$options = [];
+		$expected = PhpcsMessages::fromArrays([
+			[
+				'type' => 'ERROR',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 20,
+				'message' => 'Found unused symbol Emergent.',
+			],
+			[
+				'type' => 'ERROR',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 21,
+				'message' => 'Found unused symbol Emergent.',
+			],
+		], 'STDIN');
 		$messages = runSvnWorkflow($svnFile, $options, $executeCommand, $isReadable, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
