@@ -15,6 +15,7 @@ use function PhpcsChanged\Cli\{
 	runManualWorkflow,
 	runSvnWorkflow,
 	getIsReadable,
+	getValidateExecutableExists,
 	reportMessagesAndExit,
 	getCommandExecuter
 };
@@ -51,7 +52,7 @@ if ($diffFile && $phpcsOldFile && $phpcsNewFile) {
 
 $svnFile = $options['svn'] ?? null;
 if ($svnFile) {
-	reportMessagesAndExit(runSvnWorkflow($svnFile, $options, getCommandExecuter(), getIsReadable(), $debug), $reportType);
+	reportMessagesAndExit(runSvnWorkflow($svnFile, $options, getCommandExecuter(), getIsReadable(), getValidateExecutableExists(), $debug), $reportType);
 }
 
 printHelp();

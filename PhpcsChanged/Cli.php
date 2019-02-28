@@ -119,11 +119,13 @@ function runManualWorkflow($diffFile, $phpcsOldFile, $phpcsNewFile): PhpcsMessag
 	return $messages;
 }
 
-function validateExecutableExists($name, $command) {
-	exec(sprintf("type %s > /dev/null 2>&1", escapeshellarg($command)), $ignore, $returnVal);
-	if ($returnVal != 0) {
-		throw new \Exception("Cannot find executable for {$name}, currently set to '{$command}'.");
-	}
+function getValidateExecutableExists(): callable {
+	return function ($name, $command) {
+		exec(sprintf("type %s > /dev/null 2>&1", escapeshellarg($command)), $ignore, $returnVal);
+		if ($returnVal != 0) {
+			throw new \Exception("Cannot find executable for {$name}, currently set to '{$command}'.");
+		}
+	};
 }
 
 function getCommandExecuter(): callable {
@@ -138,16 +140,16 @@ function getIsReadable(): callable {
 	};
 }
 
-function runSvnWorkflow($svnFile, $options, callable $executeCommand, callable $isReadable, callable $debug): PhpcsMessages {
+function runSvnWorkflow($svnFile, $options, callable $executeCommand, callable $isReadable, callable $validateExecutableExists, callable $debug): PhpcsMessages {
 	$svn = getenv('SVN') ?: 'svn';
 	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$cat = getenv('CAT') ?: 'cat';
 
 	try {
 		$debug('validating executables');
-		validateExecutableExists('svn', $svn);
-		validateExecutableExists('phpcs', $phpcs);
-		validateExecutableExists('cat', $cat);
+		$validateExecutableExists('svn', $svn);
+		$validateExecutableExists('phpcs', $phpcs);
+		$validateExecutableExists('cat', $cat);
 		$debug('executables are valid');
 
 		$phpcsStandard = $options['standard'] ?? null;

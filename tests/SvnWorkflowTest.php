@@ -152,9 +152,12 @@ EOF;
 			}
 			return '';
 		};
-		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
+		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
 		$isReadable = function($fileName) {
 			return ($fileName === 'foobar.php');
+		};
+		$validateExecutableExists = function($name, $command) { // phpcs:ignore VariableAnalysis
+			return true;
 		};
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([
@@ -168,7 +171,7 @@ EOF;
 				'message' => 'Found unused symbol Emergent.',
 			],
 		], 'bin/foobar.php');
-		$messages = runSvnWorkflow($svnFile, $options, $executeCommand, $isReadable, $debug);
+		$messages = runSvnWorkflow($svnFile, $options, $executeCommand, $isReadable, $validateExecutableExists, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
@@ -214,6 +217,9 @@ EOF;
 		$isReadable = function($fileName) {
 			return ($fileName === 'foobar.php');
 		};
+		$validateExecutableExists = function($name, $command) { // phpcs:ignore VariableAnalysis
+			return true;
+		};
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([
 			[
@@ -235,7 +241,7 @@ EOF;
 				'message' => 'Found unused symbol Emergent.',
 			],
 		], 'STDIN');
-		$messages = runSvnWorkflow($svnFile, $options, $executeCommand, $isReadable, $debug);
+		$messages = runSvnWorkflow($svnFile, $options, $executeCommand, $isReadable, $validateExecutableExists, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 }
