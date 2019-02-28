@@ -10,7 +10,7 @@ use PhpcsChanged\FullReporter;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\DiffLineMap;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles};
-use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput};
+use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, validateSvnFileExists};
 
 function getDebug($debugEnabled) {
 	return function(...$outputs) use ($debugEnabled) {
@@ -106,7 +106,7 @@ function getReporter(string $reportType): Reporter {
 	printErrorAndExit("Unknown Reporter '{$reportType}'");
 }
 
-function runManualWorkflow($reportType, $diffFile, $phpcsOldFile, $phpcsNewFile): void {
+function runManualWorkflow($diffFile, $phpcsOldFile, $phpcsNewFile): PhpcsMessages {
 	try {
 		$messages = getNewPhpcsMessagesFromFiles(
 			$diffFile,
@@ -116,9 +116,7 @@ function runManualWorkflow($reportType, $diffFile, $phpcsOldFile, $phpcsNewFile)
 	} catch (\Exception $err) {
 		printErrorAndExit($err->getMessage());
 	}
-	$reporter = getReporter($reportType);
-	echo $reporter->getFormattedMessages($messages);
-	exit($reporter->getExitCode($messages));
+	return $messages;
 }
 
 function validateExecutableExists($name, $command) {
@@ -134,7 +132,13 @@ function getCommandExecuter(): callable {
 	};
 }
 
-function runSvnWorkflow($svnFile, $reportType, $options, callable $executeCommand, callable $debug): void {
+function getIsReadable(): callable {
+	return function($fileName) {
+		return is_readable($fileName);
+	};
+}
+
+function runSvnWorkflow($svnFile, $options, callable $executeCommand, callable $isReadable, callable $debug): PhpcsMessages {
 	$svn = getenv('SVN') ?: 'svn';
 	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$cat = getenv('CAT') ?: 'cat';
@@ -148,10 +152,7 @@ function runSvnWorkflow($svnFile, $reportType, $options, callable $executeComman
 
 		$phpcsStandard = $options['standard'] ?? null;
 		$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
-		if (! is_readable($svnFile)) {
-			throw new \Exception("Cannot read file '{$svnFile}'");
-		}
-
+		validateSvnFileExists($svnFile, $isReadable);
 		$unifiedDiff = getSvnUnifiedDiff($svnFile, $svn, $executeCommand, $debug);
 		$isNewFile = isNewSvnFile($svnFile, $svn, $executeCommand, $debug);
 		$oldFilePhpcsOutput = $isNewFile ? '' : getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, $executeCommand, $debug);
@@ -165,7 +166,10 @@ function runSvnWorkflow($svnFile, $reportType, $options, callable $executeComman
 
 	$debug('processing data...');
 	$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
-	$messages = getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput, $fileName), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput, $fileName));
+	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput, $fileName), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput, $fileName));
+}
+
+function reportMessagesAndExit(PhpcsMessages $messages, string $reportType): void {
 	$reporter = getReporter($reportType);
 	echo $reporter->getFormattedMessages($messages);
 	exit($reporter->getExitCode($messages));

@@ -5,6 +5,12 @@ namespace PhpcsChanged\SvnWorkflow;
 
 use PhpcsChanged\NonFatalException;
 
+function validateSvnFileExists(string $svnFile, callable $isReadable): void {
+	if (! $isReadable($svnFile)) {
+		throw new \Exception("Cannot read file '{$svnFile}'");
+	}
+}
+
 function getSvnUnifiedDiff(string $svnFile, string $svn, callable $executeCommand, callable $debug): string {
 	$unifiedDiffCommand = "{$svn} diff " . escapeshellarg($svnFile);
 	$debug('running diff command:', $unifiedDiffCommand);
