@@ -20,6 +20,7 @@ require_once __DIR__ . '/PhpcsChanged/FullReporter.php';
 require_once __DIR__ . '/PhpcsChanged/NonFatalException.php';
 require_once __DIR__ . '/PhpcsChanged/ShellException.php';
 require_once __DIR__ . '/PhpcsChanged/SvnWorkflow.php';
+require_once __DIR__ . '/PhpcsChanged/GitWorkflow.php';
 require_once __DIR__ . '/PhpcsChanged/ShellOperator.php';
 require_once __DIR__ . '/PhpcsChanged/UnixShell.php';
 
