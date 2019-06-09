@@ -80,12 +80,13 @@ EOF;
 
 	echo <<<EOF
 Automatic mode will try to gather data itself if you specify the version
-control system (only svn supported right now):
+control system:
 
 EOF;
 
 	printTwoColumns([
-		'--svn <FILE>' => 'This is the file to check.',
+		'--svn <FILE>' => 'This is the svn-versioned file to check.',
+		'--git <FILE>' => 'This is the git-versioned file to check.',
 	]);
 
 	echo <<<EOF
@@ -103,10 +104,10 @@ EOF;
 	]);
 	echo <<<EOF
 
-If using automatic mode, this requires three shell commands: 'svn', 'cat', and
-'phpcs'. If those commands are not in your PATH or you would like to override
-them, you can use the environment variables 'SVN', 'CAT', and 'PHPCS',
-respectively, to specify the full path for each one.
+If using automatic mode, this requires three shell commands: 'svn' or 'git',
+'cat', and 'phpcs'. If those commands are not in your PATH or you would like to
+override them, you can use the environment variables 'SVN', 'GIT', 'CAT', and
+'PHPCS', respectively, to specify the full path for each one.
 
 EOF;
 	exit(0);
