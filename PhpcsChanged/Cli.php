@@ -12,6 +12,7 @@ use PhpcsChanged\DiffLineMap;
 use PhpcsChanged\ShellOperator;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
 use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, validateSvnFileExists};
+use function PhpcsChanged\GitWorkflow\{getGitUnifiedDiff, isNewGitFile, getGitBasePhpcsOutput, getGitNewPhpcsOutput, validateGitFileExists};
 
 function getDebug($debugEnabled) {
 	return function(...$outputs) use ($debugEnabled) {
@@ -160,6 +161,40 @@ function runSvnWorkflow($svnFile, $options, ShellOperator $shell, callable $debu
 		$shell->exitWithCode(0);
 		throw $err; // Just in case we do not actually exit
 	} catch( \Exception $err ) {
+		$shell->printError($err->getMessage());
+		$shell->exitWithCode(1);
+		throw $err; // Just in case we do not actually exit
+	}
+
+	$debug('processing data...');
+	$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
+	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput, $fileName), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput, $fileName));
+}
+
+function runGitWorkflow($gitFile, $options, ShellOperator $shell, callable $debug): PhpcsMessages {
+	$git = getenv('GIT') ?: 'git';
+	$phpcs = getenv('PHPCS') ?: 'phpcs';
+	$cat = getenv('CAT') ?: 'cat';
+
+	try {
+		$debug('validating executables');
+		$shell->validateExecutableExists('git', $git);
+		$shell->validateExecutableExists('phpcs', $phpcs);
+		$shell->validateExecutableExists('cat', $cat);
+		$debug('executables are valid');
+
+		$phpcsStandard = $options['standard'] ?? null;
+		$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
+		validateGitFileExists($gitFile, $git, [$shell, 'isReadable'], [$shell, 'executeCommand'], $debug);
+		$unifiedDiff = getGitUnifiedDiff($gitFile, $git, [$shell, 'executeCommand'], $debug);
+		$isNewFile = isNewGitFile($gitFile, $git, [$shell, 'executeCommand'], $debug);
+		$oldFilePhpcsOutput = $isNewFile ? '' : getGitBasePhpcsOutput($gitFile, $git, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+		$newFilePhpcsOutput = getGitNewPhpcsOutput($gitFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+	} catch(NonFatalException $err) {
+		$debug($err->getMessage());
+		$shell->exitWithCode(0);
+		throw $err; // Just in case we do not actually exit
+	} catch(\Exception $err) {
 		$shell->printError($err->getMessage());
 		$shell->exitWithCode(1);
 		throw $err; // Just in case we do not actually exit
