@@ -13,6 +13,7 @@ use function PhpcsChanged\Cli\{
 	getDebug,
 	runManualWorkflow,
 	runSvnWorkflow,
+	runGitWorkflow,
 	reportMessagesAndExit
 };
 use PhpcsChanged\UnixShell;
@@ -26,6 +27,7 @@ $options = getopt(
 		'phpcs-orig:',
 		'phpcs-new:',
 		'svn:',
+		'git:',
 		'standard:',
 		'report:',
 		'debug',
@@ -56,6 +58,12 @@ $svnFile = $options['svn'] ?? null;
 if ($svnFile) {
 	$shell = new UnixShell();
 	reportMessagesAndExit(runSvnWorkflow($svnFile, $options, $shell, $debug), $reportType);
+}
+
+$gitFile = $options['git'] ?? null;
+if ($gitFile) {
+	$shell = new UnixShell();
+	reportMessagesAndExit(runGitWorkflow($gitFile, $options, $shell, $debug), $reportType);
 }
 
 printHelp();
