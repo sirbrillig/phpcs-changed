@@ -24,10 +24,14 @@ function getDebug($debugEnabled) {
 	};
 }
 
-function printErrorAndExit($output) {
+function printError($output) {
 	fwrite(STDERR, 'phpcs-changed: Fatal error!' . PHP_EOL);
 	fwrite(STDERR, $output . PHP_EOL);
-	die(1);
+}
+
+function printErrorAndExit($output) {
+	printError($output);
+	exit(1);
 }
 
 function getLongestString(array $strings): int {
@@ -51,7 +55,7 @@ function printVersion() {
 phpcs-changed version {$version}
 
 EOF;
-	die(0);
+	exit(0);
 }
 
 function printHelp() {
@@ -105,7 +109,7 @@ them, you can use the environment variables 'SVN', 'CAT', and 'PHPCS',
 respectively, to specify the full path for each one.
 
 EOF;
-	die(0);
+	exit(0);
 }
 
 function getReporter(string $reportType): Reporter {
@@ -152,9 +156,12 @@ function runSvnWorkflow($svnFile, $options, ShellOperator $shell, callable $debu
 		$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
 	} catch( NonFatalException $err ) {
 		$debug($err->getMessage());
-		exit(0);
+		$shell->exitWithCode(0);
+		throw $err; // Just in case we do not actually exit
 	} catch( \Exception $err ) {
-		printErrorAndExit($err->getMessage());
+		$shell->printError($err->getMessage());
+		$shell->exitWithCode(1);
+		throw $err; // Just in case we do not actually exit
 	}
 
 	$debug('processing data...');
