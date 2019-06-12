@@ -8,68 +8,42 @@ use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\NonFatalException;
 use PhpcsChanged\ShellOperator;
 use PhpcsChanged\ShellException;
-use function PhpcsChanged\Cli\runSvnWorkflow;
-use function PhpcsChanged\SvnWorkflow\{isNewSvnFile, getSvnUnifiedDiff};
+use function PhpcsChanged\Cli\runGitWorkflow;
+use function PhpcsChanged\GitWorkflow\{isNewGitFile, getGitUnifiedDiff};
 
-final class SvnWorkflowTest extends TestCase {
-	public function testIsNewSvnFileReturnsTrueForNewFile() {
-		$svnFile = 'foobar.php';
-		$svn = 'svn';
+final class GitWorkflowTest extends TestCase {
+	public function testIsNewGitFileReturnsTrueForNewFile() {
+		$gitFile = 'foobar.php';
+		$git = 'git';
 		$executeCommand = function($command) {
-			if (! $command || false === strpos($command, "svn info 'foobar.php'")) {
-				return '';
+			if (false !== strpos($command, "git status --short 'foobar.php'")) {
+				return 'A foobar.php';
 			}
-			return "Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Node Kind: file
-Schedule: add
-";
 		};
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		$this->assertTrue(isNewSvnFile($svnFile, $svn, $executeCommand, $debug));
+		$this->assertTrue(isNewGitFile($gitFile, $git, $executeCommand, $debug));
 	}
 
-	public function testIsNewSvnFileReturnsFalseForOldFile() {
-		$svnFile = 'foobar.php';
-		$svn = 'svn';
+	public function testIsNewGitFileReturnsFalseForOldFile() {
+		$gitFile = 'foobar.php';
+		$git = 'git';
 		$executeCommand = function($command) {
-			if (! $command || false === strpos($command, "svn info 'foobar.php'")) {
-				return '';
+			if (false !== strpos($command, "git status --short 'foobar.php'")) {
+				return ' M foobar.php'; // note the leading space
 			}
-			return "Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/gdpr.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-";
 		};
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		$this->assertFalse(isNewSvnFile($svnFile, $svn, $executeCommand, $debug));
+		$this->assertFalse(isNewGitFile($gitFile, $git, $executeCommand, $debug));
 	}
 
-	public function testGetSvnUnifiedDiff() {
-		$svnFile = 'foobar.php';
-		$svn = 'svn';
+	public function testGetGitUnifiedDiff() {
+		$gitFile = 'foobar.php';
+		$git = 'git';
 		$diff = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
+diff --git bin/foobar.php bin/foobar.php
+index 038d718..d6c3357 100644
+--- bin/foobar.php
++++ bin/foobar.php
 @@ -17,6 +17,7 @@
  use Billing\Purchases\Order;
  use Billing\Services;
@@ -80,50 +54,50 @@ Index: foobar.php
  use Stripe\Error;
 EOF;
 		$executeCommand = function($command) use ($diff) {
-			if (! $command || false === strpos($command, "svn diff 'foobar.php'")) {
+			if (! $command || false === strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 				return '';
 			}
 			return $diff;
 		};
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		$this->assertEquals($diff, getSvnUnifiedDiff($svnFile, $svn, $executeCommand, $debug));
+		$this->assertEquals($diff, getGitUnifiedDiff($gitFile, $git, $executeCommand, $debug));
 	}
 
-	public function testGetSvnUnifiedDiffThrowsNonFatalIfDiffFails() {
+	public function testGetGitUnifiedDiffThrowsNonFatalIfDiffFails() {
 		$this->expectException(NonFatalException::class);
-		$svnFile = 'foobar.php';
-		$svn = 'svn';
+		$gitFile = 'foobar.php';
+		$git = 'git';
 		$executeCommand = function($command) {
-			if (! $command || false === strpos($command, "svn diff 'foobar.php'")) {
+			if (! $command || false === strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 				return 'foobar';
 			}
 			return '';
 		};
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		getSvnUnifiedDiff($svnFile, $svn, $executeCommand, $debug);
+		getGitUnifiedDiff($gitFile, $git, $executeCommand, $debug);
 	}
 
-	public function testFullSvnWorkflow() {
-		$svnFile = 'foobar.php';
+	public function testFullGitWorkflow() {
+		$gitFile = 'foobar.php';
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
 		$shell = new class() implements ShellOperator {
 			public function isReadable(string $fileName): bool {
 				return ($fileName === 'foobar.php');
 			}
 
-			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
+			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
 
 			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
-			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
+			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
 
 			public function executeCommand(string $command): string {
-				if (false !== strpos($command, "svn diff 'foobar.php'")) {
+				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 					return <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
+diff --git bin/foobar.php bin/foobar.php
+index 038d718..d6c3357 100644
+--- bin/foobar.php
++++ bin/foobar.php
 @@ -17,6 +17,7 @@
  use Billing\Purchases\Order;
  use Billing\Services;
@@ -134,26 +108,10 @@ Index: foobar.php
  use Stripe\Error;
 EOF;
 				}
-				if (false !== strpos($command, "svn info 'foobar.php'")) {
-					return <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/gdpr.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
+				if (false !== strpos($command, "git status --short 'foobar.php'")) {
+					return ' M foobar.php'; // note the leading space
 				}
-				if (false !== strpos($command, "svn cat 'foobar.php'")) {
+				if (false !== strpos($command, "git show HEAD:'foobar.php'")) {
 					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 				}
 				if (false !== strpos($command, "cat 'foobar.php'")) {
@@ -174,13 +132,13 @@ EOF;
 				'message' => 'Found unused symbol Emergent.',
 			],
 		], 'bin/foobar.php');
-		$messages = runSvnWorkflow($svnFile, $options, $shell, $debug);
+		$messages = runGitWorkflow($gitFile, $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
-	public function testFullSvnWorkflowForUnchangedFile() {
+	public function testFullGitWorkflowForUnchangedFile() {
 		$this->expectException(NonFatalException::class);
-		$svnFile = 'foobar.php';
+		$gitFile = 'foobar.php';
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
 		$shell = new class() implements ShellOperator {
 			public function isReadable(string $fileName): bool {
@@ -194,30 +152,14 @@ EOF;
 			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
 			public function executeCommand(string $command): string {
-				if (false !== strpos($command, "svn diff 'foobar.php'")) {
+				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 					return <<<EOF
 EOF;
 				}
-				if (false !== strpos($command, "svn info 'foobar.php'")) {
-					return <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/gdpr.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
+				if (false !== strpos($command, "git status --short 'foobar.php'")) {
+					return '';
 				}
-				if (false !== strpos($command, "svn cat 'foobar.php'")) {
+				if (false !== strpos($command, "git show HEAD:'foobar.php'")) {
 					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 				}
 				if (false !== strpos($command, "cat 'foobar.php'")) {
@@ -227,12 +169,12 @@ EOF;
 			}
 		};
 		$options = [];
-		runSvnWorkflow($svnFile, $options, $shell, $debug);
+		runGitWorkflow($gitFile, $options, $shell, $debug);
 	}
 
-	public function testFullSvnWorkflowForNonSvnFile() {
+	public function testFullGitWorkflowForNonGitFile() {
 		$this->expectException(ShellException::class);
-		$svnFile = 'foobar.php';
+		$gitFile = 'foobar.php';
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
 		$shell = new class() implements ShellOperator {
 			public function isReadable(string $fileName): bool {
@@ -246,34 +188,29 @@ EOF;
 			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
 			public function executeCommand(string $command): string {
-				if (false !== strpos($command, "svn diff 'foobar.php'")) {
+				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 					return <<<EOF
-svn: E155010: The node 'foobar.php' was not found.
 EOF;
 				}
-				if (false !== strpos($command, "svn info 'foobar.php'")) {
-					return <<<EOF
-svn: warning: W155010: The node 'foobar.php' was not found.
-
-svn: E200009: Could not display info for all targets because some targets don't exist
-EOF;
+				if (false !== strpos($command, "git status --short 'foobar.php'")) {
+					return "?? foobar.php";
 				}
-				if (false !== strpos($command, "svn cat 'foobar.php'")) {
-					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
+				if (false !== strpos($command, "git show HEAD:'foobar.php'")) {
+					return "fatal: Path 'foobar.php' exists on disk, but not in 'HEAD'.";
 				}
 				if (false !== strpos($command, "cat 'foobar.php'")) {
 					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 				}
-				return '';
+				throw new \Exception("Unknown command: {$command}");
 			}
 		};
 		$options = [];
-		runSvnWorkflow($svnFile, $options, $shell, $debug);
+		runGitWorkflow($gitFile, $options, $shell, $debug);
 	}
 
-
-	public function testFullSvnWorkflowForNewFile() {
-		$svnFile = 'foobar.php';
+	public function testFullGitWorkflowForNewFile() {
+		$gitFile = 'foobar.php';
+		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
 		$shell = new class() implements ShellOperator {
 			public function isReadable(string $fileName): bool {
 				return ($fileName === 'foobar.php');
@@ -281,44 +218,38 @@ EOF;
 
 			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
 
-			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
-
 			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command): string {
-				if (false !== strpos($command, "svn diff 'foobar.php'")) {
-					return <<<EOF
-Index: foobar.php
-===================================================================
+			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
-Property changes on: foobar.php
-___________________________________________________________________
-Added: svn:eol-style
-## -0,0 +1 ##
-+native
-\ No newline at end of property
+			public function executeCommand(string $command): string {
+				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
+					return <<<EOF
+diff --git bin/foobar.php bin/foobar.php
+new file mode 100644
+index 0000000..efa970f
+--- /dev/null
++++ bin/foobar.php
+@@ -0,0 +1,8 @@
++<?php
++use Billing\Purchases\Order;
++use Billing\Services;
++use Billing\Ebanx;
++use Foobar;
++use Billing\Emergent;
++use Billing\Monetary_Amount;
++use Stripe\Error;
 EOF;
 				}
-				if (false !== strpos($command, "svn info 'foobar.php'")) {
-					return <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Node Kind: file
-Schedule: add
-EOF;
+				if (false !== strpos($command, "git status --short 'foobar.php'")) {
+					return 'A foobar.php';
 				}
 				if (false !== strpos($command, "cat 'foobar.php'")) {
-					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
+					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":4,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":5,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 				}
-				return '';
+				throw new \Exception("Unknown command: {$command}");
 			}
 		};
-		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([
 			[
@@ -327,7 +258,7 @@ EOF;
 				'fixable' => false,
 				'column' => 5,
 				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 20,
+				'line' => 4,
 				'message' => 'Found unused symbol Emergent.',
 			],
 			[
@@ -336,11 +267,11 @@ EOF;
 				'fixable' => false,
 				'column' => 5,
 				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 21,
+				'line' => 5,
 				'message' => 'Found unused symbol Emergent.',
 			],
-		], 'STDIN');
-		$messages = runSvnWorkflow($svnFile, $options, $shell, $debug);
+		], '/dev/null');
+		$messages = runGitWorkflow($gitFile, $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 }

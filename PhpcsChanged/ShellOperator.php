@@ -12,4 +12,8 @@ interface ShellOperator {
 	public function executeCommand(string $command): string;
 
 	public function isReadable(string $fileName): bool;
+
+	public function exitWithCode(int $code): void;
+
+	public function printError(string $message): void;
 }

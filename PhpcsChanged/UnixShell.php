@@ -17,10 +17,19 @@ class UnixShell implements ShellOperator {
 	}
 
 	public function executeCommand(string $command): string {
-		return shell_exec($command);
+		return shell_exec($command) ?? '';
 	}
 
 	public function isReadable(string $fileName): bool {
 		return is_readable($fileName);
+	}
+
+	public function exitWithCode(int $code): void {
+		exit($code);
+	}
+
+	public function printError(string $output): void {
+		fwrite(STDERR, 'phpcs-changed: Fatal error!' . PHP_EOL);
+		fwrite(STDERR, $output . PHP_EOL);
 	}
 }

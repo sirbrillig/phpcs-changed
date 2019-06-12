@@ -12,6 +12,7 @@ use PhpcsChanged\DiffLineMap;
 use PhpcsChanged\ShellOperator;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
 use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, validateSvnFileExists};
+use function PhpcsChanged\GitWorkflow\{getGitUnifiedDiff, isNewGitFile, getGitBasePhpcsOutput, getGitNewPhpcsOutput, validateGitFileExists};
 
 function getDebug($debugEnabled) {
 	return function(...$outputs) use ($debugEnabled) {
@@ -24,10 +25,14 @@ function getDebug($debugEnabled) {
 	};
 }
 
-function printErrorAndExit($output) {
+function printError($output) {
 	fwrite(STDERR, 'phpcs-changed: Fatal error!' . PHP_EOL);
 	fwrite(STDERR, $output . PHP_EOL);
-	die(1);
+}
+
+function printErrorAndExit($output) {
+	printError($output);
+	exit(1);
 }
 
 function getLongestString(array $strings): int {
@@ -51,7 +56,7 @@ function printVersion() {
 phpcs-changed version {$version}
 
 EOF;
-	die(0);
+	exit(0);
 }
 
 function printHelp() {
@@ -76,12 +81,13 @@ EOF;
 
 	echo <<<EOF
 Automatic mode will try to gather data itself if you specify the version
-control system (only svn supported right now):
+control system:
 
 EOF;
 
 	printTwoColumns([
-		'--svn <FILE>' => 'This is the file to check.',
+		'--svn <FILE>' => 'This is the svn-versioned file to check.',
+		'--git <FILE>' => 'This is the git-versioned file to check.',
 	]);
 
 	echo <<<EOF
@@ -99,13 +105,13 @@ EOF;
 	]);
 	echo <<<EOF
 
-If using automatic mode, this requires three shell commands: 'svn', 'cat', and
-'phpcs'. If those commands are not in your PATH or you would like to override
-them, you can use the environment variables 'SVN', 'CAT', and 'PHPCS',
-respectively, to specify the full path for each one.
+If using automatic mode, this requires three shell commands: 'svn' or 'git',
+'cat', and 'phpcs'. If those commands are not in your PATH or you would like to
+override them, you can use the environment variables 'SVN', 'GIT', 'CAT', and
+'PHPCS', respectively, to specify the full path for each one.
 
 EOF;
-	die(0);
+	exit(0);
 }
 
 function getReporter(string $reportType): Reporter {
@@ -145,16 +151,53 @@ function runSvnWorkflow($svnFile, $options, ShellOperator $shell, callable $debu
 
 		$phpcsStandard = $options['standard'] ?? null;
 		$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
-		validateSvnFileExists($svnFile, [$shell, 'isReadable']);
+		validateSvnFileExists($svnFile, $svn, [$shell, 'isReadable'], [$shell, 'executeCommand'], $debug);
 		$unifiedDiff = getSvnUnifiedDiff($svnFile, $svn, [$shell, 'executeCommand'], $debug);
 		$isNewFile = isNewSvnFile($svnFile, $svn, [$shell, 'executeCommand'], $debug);
 		$oldFilePhpcsOutput = $isNewFile ? '' : getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
 		$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
 	} catch( NonFatalException $err ) {
 		$debug($err->getMessage());
-		exit(0);
+		$shell->exitWithCode(0);
+		throw $err; // Just in case we do not actually exit
 	} catch( \Exception $err ) {
-		printErrorAndExit($err->getMessage());
+		$shell->printError($err->getMessage());
+		$shell->exitWithCode(1);
+		throw $err; // Just in case we do not actually exit
+	}
+
+	$debug('processing data...');
+	$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
+	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput, $fileName), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput, $fileName));
+}
+
+function runGitWorkflow($gitFile, $options, ShellOperator $shell, callable $debug): PhpcsMessages {
+	$git = getenv('GIT') ?: 'git';
+	$phpcs = getenv('PHPCS') ?: 'phpcs';
+	$cat = getenv('CAT') ?: 'cat';
+
+	try {
+		$debug('validating executables');
+		$shell->validateExecutableExists('git', $git);
+		$shell->validateExecutableExists('phpcs', $phpcs);
+		$shell->validateExecutableExists('cat', $cat);
+		$debug('executables are valid');
+
+		$phpcsStandard = $options['standard'] ?? null;
+		$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
+		validateGitFileExists($gitFile, $git, [$shell, 'isReadable'], [$shell, 'executeCommand'], $debug);
+		$unifiedDiff = getGitUnifiedDiff($gitFile, $git, [$shell, 'executeCommand'], $debug);
+		$isNewFile = isNewGitFile($gitFile, $git, [$shell, 'executeCommand'], $debug);
+		$oldFilePhpcsOutput = $isNewFile ? '' : getGitBasePhpcsOutput($gitFile, $git, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+		$newFilePhpcsOutput = getGitNewPhpcsOutput($gitFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+	} catch(NonFatalException $err) {
+		$debug($err->getMessage());
+		$shell->exitWithCode(0);
+		throw $err; // Just in case we do not actually exit
+	} catch(\Exception $err) {
+		$shell->printError($err->getMessage());
+		$shell->exitWithCode(1);
+		throw $err; // Just in case we do not actually exit
 	}
 
 	$debug('processing data...');

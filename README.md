@@ -105,7 +105,7 @@ cat file.php | phpcs --report=json > file.php.phpcs
 phpcs-changed --report json --diff file.php.diff --phpcs-orig file.php.orig.phpcs --phpcs-new file.php.phpcs
 ```
 
-Alernatively, we can have the script use svn and phpcs itself:
+Alernatively, we can have the script use svn and phpcs itself by using the `--svn` option:
 
 ```
 phpcs-changed --svn file.php --report json
@@ -139,6 +139,13 @@ Both will output something like:
   }
 }
 ```
+
+If the file was versioned by git, we can do the same with the `--git` option:
+
+```
+phpcs-changed --git file.php --report json
+```
+
 
 ### CLI Options
 

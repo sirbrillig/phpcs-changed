@@ -5,6 +5,7 @@ namespace PhpcsChanged;
 
 use PhpcsChanged\DiffLineMap;
 use PhpcsChanged\PhpcsMessages;
+use PhpcsChanged\ShellException;
 
 require_once __DIR__ . '/PhpcsChanged/Version.php';
 require_once __DIR__ . '/PhpcsChanged/DiffLine.php';
@@ -17,7 +18,9 @@ require_once __DIR__ . '/PhpcsChanged/Reporter.php';
 require_once __DIR__ . '/PhpcsChanged/JsonReporter.php';
 require_once __DIR__ . '/PhpcsChanged/FullReporter.php';
 require_once __DIR__ . '/PhpcsChanged/NonFatalException.php';
+require_once __DIR__ . '/PhpcsChanged/ShellException.php';
 require_once __DIR__ . '/PhpcsChanged/SvnWorkflow.php';
+require_once __DIR__ . '/PhpcsChanged/GitWorkflow.php';
 require_once __DIR__ . '/PhpcsChanged/ShellOperator.php';
 require_once __DIR__ . '/PhpcsChanged/UnixShell.php';
 
@@ -42,7 +45,7 @@ function getNewPhpcsMessagesFromFiles(string $diffFile, string $phpcsOldFile, st
 	$oldFilePhpcsOutput = file_get_contents($phpcsOldFile);
 	$newFilePhpcsOutput = file_get_contents($phpcsNewFile);
 	if (! $unifiedDiff || ! $oldFilePhpcsOutput || ! $newFilePhpcsOutput) {
-		throw new \Exception('Cannot read input files.'); // TODO: make custom Exception
+		throw new ShellException('Cannot read input files.');
 	}
 	return getNewPhpcsMessages(
 		$unifiedDiff,
