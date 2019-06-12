@@ -140,7 +140,7 @@ Both will output something like:
 }
 ```
 
-If the file was versioned by git, we can do the same with the `--git` option:
+If the file was versioned by git, we can do the same with the `--git` option (note that this operates only on _staged_ changes):
 
 ```
 phpcs-changed --git file.php --report json
