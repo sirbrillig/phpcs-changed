@@ -271,7 +271,6 @@ EOF;
 		runSvnWorkflow($svnFile, $options, $shell, $debug);
 	}
 
-
 	public function testFullSvnWorkflowForNewFile() {
 		$svnFile = 'foobar.php';
 		$shell = new class() implements ShellOperator {
@@ -340,6 +339,62 @@ EOF;
 				'message' => 'Found unused symbol Emergent.',
 			],
 		], 'STDIN');
+		$messages = runSvnWorkflow($svnFile, $options, $shell, $debug);
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	public function testFullSvnWorkflowForEmptyNewFile() {
+		$svnFile = 'foobar.php';
+		$shell = new class() implements ShellOperator {
+			public function isReadable(string $fileName): bool {
+				return ($fileName === 'foobar.php');
+			}
+
+			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
+
+			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
+
+			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
+
+			public function executeCommand(string $command): string {
+				if (false !== strpos($command, "svn diff 'foobar.php'")) {
+					return <<<EOF
+Index: foobar.php
+===================================================================
+
+Property changes on: foobar.php
+___________________________________________________________________
+Added: svn:eol-style
+## -0,0 +1 ##
++native
+\ No newline at end of property
+EOF;
+				}
+				if (false !== strpos($command, "svn info 'foobar.php'")) {
+					return <<<EOF
+Path: foobar.php
+Name: foobar.php
+Working Copy Root Path: /home/public_html
+URL: https://svn.localhost/trunk/foobar.php
+Relative URL: ^/trunk/foobar.php
+Repository Root: https://svn.localhost
+Repository UUID: 1111-1111-1111-1111
+Node Kind: file
+Schedule: add
+EOF;
+				}
+				if (false !== strpos($command, "cat 'foobar.php'")) {
+					return 'ERROR: You must supply at least one file or directory to process.
+
+Run "phpcs --help" for usage information
+';
+				}
+				return '';
+			}
+		};
+		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
+		$options = [];
+		$expected = PhpcsMessages::fromArrays([], 'STDIN');
 		$messages = runSvnWorkflow($svnFile, $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}

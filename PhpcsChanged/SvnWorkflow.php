@@ -60,5 +60,9 @@ function getSvnNewPhpcsOutput(string $svnFile, string $phpcs, string $cat, strin
 		throw new ShellException("Cannot get new phpcs output for file '{$svnFile}'");
 	}
 	$debug('new phpcs command output:', $newFilePhpcsOutput);
+	if (false !== strpos($newFilePhpcsOutput, 'You must supply at least one file or directory to process')) {
+		$debug('phpcs output implies file is empty');
+		return '';
+	}
 	return $newFilePhpcsOutput;
 }
