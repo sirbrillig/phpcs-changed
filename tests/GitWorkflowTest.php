@@ -274,4 +274,55 @@ EOF;
 		$messages = runGitWorkflow($gitFile, $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
+
+	public function testFullGitWorkflowForEmptyNewFile() {
+		$gitFile = 'foobar.php';
+		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
+		$shell = new class() implements ShellOperator {
+			public function isReadable(string $fileName): bool {
+				return ($fileName === 'foobar.php');
+			}
+
+			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
+
+			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
+
+			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
+
+			public function executeCommand(string $command): string {
+				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
+					return <<<EOF
+diff --git bin/foobar.php bin/foobar.php
+new file mode 100644
+index 0000000..efa970f
+--- /dev/null
++++ bin/foobar.php
+@@ -0,0 +1,8 @@
++<?php
++use Billing\Purchases\Order;
++use Billing\Services;
++use Billing\Ebanx;
++use Foobar;
++use Billing\Emergent;
++use Billing\Monetary_Amount;
++use Stripe\Error;
+EOF;
+				}
+				if (false !== strpos($command, "git status --short 'foobar.php'")) {
+					return 'A foobar.php';
+				}
+				if (false !== strpos($command, "cat 'foobar.php'")) {
+					return 'ERROR: You must supply at least one file or directory to process.
+
+Run "phpcs --help" for usage information
+';
+				}
+				throw new \Exception("Unknown command: {$command}");
+			}
+		};
+		$options = [];
+		$expected = PhpcsMessages::fromArrays([], '/dev/null');
+		$messages = runGitWorkflow($gitFile, $options, $shell, $debug);
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
 }
