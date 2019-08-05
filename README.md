@@ -100,8 +100,8 @@ Here's an example using svn:
 
 ```
 svn diff file.php > file.php.diff
-svn cat file.php | phpcs --report=json > file.php.orig.phpcs
-cat file.php | phpcs --report=json > file.php.phpcs
+svn cat file.php | phpcs --report=json -q > file.php.orig.phpcs
+cat file.php | phpcs --report=json -q > file.php.phpcs
 phpcs-changed --report json --diff file.php.diff --phpcs-orig file.php.orig.phpcs --phpcs-new file.php.phpcs
 ```
 
