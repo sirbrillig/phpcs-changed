@@ -17,7 +17,7 @@ require_once __DIR__ . '/PhpcsChanged/Cli.php';
 require_once __DIR__ . '/PhpcsChanged/Reporter.php';
 require_once __DIR__ . '/PhpcsChanged/JsonReporter.php';
 require_once __DIR__ . '/PhpcsChanged/FullReporter.php';
-require_once __DIR__ . '/PhpcsChanged/NonFatalException.php';
+require_once __DIR__ . '/PhpcsChanged/NoChangesException.php';
 require_once __DIR__ . '/PhpcsChanged/ShellException.php';
 require_once __DIR__ . '/PhpcsChanged/SvnWorkflow.php';
 require_once __DIR__ . '/PhpcsChanged/GitWorkflow.php';

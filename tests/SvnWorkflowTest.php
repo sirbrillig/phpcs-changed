@@ -5,7 +5,6 @@ require_once dirname(__DIR__) . '/index.php';
 
 use PHPUnit\Framework\TestCase;
 use PhpcsChanged\PhpcsMessages;
-use PhpcsChanged\NonFatalException;
 use PhpcsChanged\ShellOperator;
 use PhpcsChanged\ShellException;
 use function PhpcsChanged\Cli\runSvnWorkflow;
@@ -89,20 +88,6 @@ EOF;
 		$this->assertEquals($diff, getSvnUnifiedDiff($svnFile, $svn, $executeCommand, $debug));
 	}
 
-	public function testGetSvnUnifiedDiffThrowsNonFatalIfDiffFails() {
-		$this->expectException(NonFatalException::class);
-		$svnFile = 'foobar.php';
-		$svn = 'svn';
-		$executeCommand = function($command) {
-			if (! $command || false === strpos($command, "svn diff 'foobar.php'")) {
-				return 'foobar';
-			}
-			return '';
-		};
-		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		getSvnUnifiedDiff($svnFile, $svn, $executeCommand, $debug);
-	}
-
 	public function testFullSvnWorkflow() {
 		$svnFile = 'foobar.php';
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
@@ -178,8 +163,7 @@ EOF;
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
-	public function testFullSvnWorkflowForUnchangedFile() {
-		$this->expectException(NonFatalException::class);
+	public function testFullSvnWorkflowForUnchangedFileWithPhpCsMessages() {
 		$svnFile = 'foobar.php';
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
 		$shell = new class() implements ShellOperator {
@@ -217,17 +201,72 @@ Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
 Checksum: abcdefg
 EOF;
 				}
-				if (false !== strpos($command, "svn cat 'foobar.php'")) {
+				if (false !== strpos($command, "svn cat 'foobar.php'|phpcs")) {
 					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 				}
-				if (false !== strpos($command, "cat 'foobar.php'")) {
+				if (false !== strpos($command, "cat 'foobar.php'|phpcs")) {
 					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 				}
 				return '';
 			}
 		};
 		$options = [];
-		runSvnWorkflow($svnFile, $options, $shell, $debug);
+		$expected = PhpcsMessages::fromArrays([], 'STDIN');
+		$messages = runSvnWorkflow($svnFile, $options, $shell, $debug);
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	public function testFullSvnWorkflowForUnchangedFileWithoutPhpCsMessages() {
+		$svnFile = 'foobar.php';
+		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
+		$shell = new class() implements ShellOperator {
+			public function isReadable(string $fileName): bool {
+				return ($fileName === 'foobar.php');
+			}
+
+			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
+
+			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
+
+			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
+
+			public function executeCommand(string $command): string {
+				if (false !== strpos($command, "svn diff 'foobar.php'")) {
+					return <<<EOF
+EOF;
+				}
+				if (false !== strpos($command, "svn info 'foobar.php'")) {
+					return <<<EOF
+Path: foobar.php
+Name: foobar.php
+Working Copy Root Path: /home/public_html
+URL: https://svn.localhost/trunk/wp-content/mu-plugins/gdpr.php
+Relative URL: ^/trunk/foobar.php
+Repository Root: https://svn.localhost
+Repository UUID: 1111-1111-1111-1111
+Revision: 188280
+Node Kind: file
+Schedule: normal
+Last Changed Author: me
+Last Changed Rev: 175729
+Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
+Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
+Checksum: abcdefg
+EOF;
+				}
+				if (false !== strpos($command, "svn cat 'foobar.php'|phpcs")) {
+					return '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}';
+				}
+				if (false !== strpos($command, "cat 'foobar.php'|phpcs")) {
+					return '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}';
+				}
+				return '';
+			}
+		};
+		$options = [];
+		$expected = PhpcsMessages::fromArrays([], 'STDIN');
+		$messages = runSvnWorkflow($svnFile, $options, $shell, $debug);
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	public function testFullSvnWorkflowForNonSvnFile() {

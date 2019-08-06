@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace PhpcsChanged\SvnWorkflow;
 
-use PhpcsChanged\NonFatalException;
+use PhpcsChanged\NoChangesException;
 use PhpcsChanged\ShellException;
 
 function validateSvnFileExists(string $svnFile, string $svn, callable $isReadable, callable $executeCommand, callable $debug): void {
@@ -24,7 +24,7 @@ function getSvnUnifiedDiff(string $svnFile, string $svn, callable $executeComman
 	$debug('running diff command:', $unifiedDiffCommand);
 	$unifiedDiff = $executeCommand($unifiedDiffCommand);
 	if (! $unifiedDiff) {
-		throw new NonFatalException("Cannot get svn diff for file '{$svnFile}'; skipping");
+		throw new NoChangesException("Cannot get svn diff for file '{$svnFile}'; skipping");
 	}
 	$debug('diff command output:', $unifiedDiff);
 	return $unifiedDiff;
