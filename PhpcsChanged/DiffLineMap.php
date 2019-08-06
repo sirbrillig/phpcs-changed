@@ -32,7 +32,7 @@ class DiffLineMap {
 				continue;
 			}
 			if (($diffLine->getNewLineNumber() ?? 0) > $lineNumber) {
-				return $lineNumber + $lineNumberDelta;
+				return intval( $lineNumber + $lineNumberDelta );
 			}
 			$lineNumberDelta = ($diffLine->getOldLineNumber() ?? 0) - ($diffLine->getNewLineNumber() ?? 0);
 		}
@@ -40,7 +40,7 @@ class DiffLineMap {
 	}
 
 	public static function fromUnifiedDiff(string $unifiedDiff): DiffLineMap {
-		$diffStringLines = preg_split("/\r\n|\n|\r/", $unifiedDiff);
+		$diffStringLines = preg_split("/\r\n|\n|\r/", $unifiedDiff) ?: [];
 		$oldStartLine = $newStartLine = null;
 		$currentOldLine = $currentNewLine = null;
 		$lines = [];
@@ -78,7 +78,7 @@ class DiffLineMap {
 	}
 
 	public static function getFileNameFromDiff(string $unifiedDiff): ?string {
-		$diffStringLines = preg_split("/\r\n|\n|\r/", $unifiedDiff);
+		$diffStringLines = preg_split("/\r\n|\n|\r/", $unifiedDiff) ?: [];
 		foreach ($diffStringLines as $diffStringLine) {
 			$matches = [];
 			if (1 === preg_match('/^\-\-\- (\S+)/', $diffStringLine, $matches)) {

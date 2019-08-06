@@ -133,6 +133,7 @@ function runManualWorkflow($diffFile, $phpcsOldFile, $phpcsNewFile): PhpcsMessag
 		);
 	} catch (\Exception $err) {
 		printErrorAndExit($err->getMessage());
+		throw $err; // Just in case we don't exit
 	}
 	return $messages;
 }
