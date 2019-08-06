@@ -7,6 +7,10 @@ use PhpcsChanged\DiffLineMap;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\ShellException;
 
+function getVersion(): string {
+	return '2.2.3';
+}
+
 function getNewPhpcsMessages(string $unifiedDiff, PhpcsMessages $oldPhpcsMessages, PhpcsMessages $newPhpcsMessages): PhpcsMessages {
 	$map = DiffLineMap::fromUnifiedDiff($unifiedDiff);
 	$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
