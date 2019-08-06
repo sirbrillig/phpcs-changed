@@ -21,7 +21,13 @@
     "autoload": {
         "psr-4": {
             "PhpcsChanged\\": "PhpcsChanged/"
-        }
+        },
+        "files": [
+            "PhpcsChanged/Cli.php",
+            "PhpcsChanged/SvnWorkflow.php",
+            "PhpcsChanged/GitWorkflow.php",
+            "PhpcsChanged/functions.php"
+        ]
     },
     "require": {
         "php": "^7.2"
