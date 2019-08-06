@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace PhpcsChanged\GitWorkflow;
 
-use PhpcsChanged\NonFatalException;
+use PhpcsChanged\NoChangesException;
 use PhpcsChanged\ShellException;
 
 function validateGitFileExists(string $gitFile, string $git, callable $isReadable, callable $executeCommand, callable $debug): void {
@@ -24,7 +24,7 @@ function getGitUnifiedDiff(string $gitFile, string $git, callable $executeComman
 	$debug('running diff command:', $unifiedDiffCommand);
 	$unifiedDiff = $executeCommand($unifiedDiffCommand);
 	if (! $unifiedDiff) {
-		throw new NonFatalException("Cannot get git diff for file '{$gitFile}'; skipping");
+		throw new NoChangesException("Cannot get git diff for file '{$gitFile}'; skipping");
 	}
 	$debug('diff command output:', $unifiedDiff);
 	return $unifiedDiff;

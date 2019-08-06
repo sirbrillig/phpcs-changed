@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace PhpcsChanged\Cli;
 
-use PhpcsChanged\NonFatalException;
+use PhpcsChanged\NoChangesException;
 use PhpcsChanged\Reporter;
 use PhpcsChanged\JsonReporter;
 use PhpcsChanged\FullReporter;
@@ -156,14 +156,15 @@ function runSvnWorkflow($svnFile, $options, ShellOperator $shell, callable $debu
 		$isNewFile = isNewSvnFile($svnFile, $svn, [$shell, 'executeCommand'], $debug);
 		$oldFilePhpcsOutput = $isNewFile ? '' : getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
 		$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
-	} catch( NonFatalException $err ) {
+	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());
-		$shell->exitWithCode(0);
-		throw $err; // Just in case we do not actually exit
+		$unifiedDiff = '';
+		$oldFilePhpcsOutput = '';
+		$newFilePhpcsOutput = '';
 	} catch( \Exception $err ) {
 		$shell->printError($err->getMessage());
 		$shell->exitWithCode(1);
-		throw $err; // Just in case we do not actually exit
+		throw $err; // Just in case we do not actually exit, like in tests
 	}
 
 	$debug('processing data...');
@@ -190,10 +191,11 @@ function runGitWorkflow($gitFile, $options, ShellOperator $shell, callable $debu
 		$isNewFile = isNewGitFile($gitFile, $git, [$shell, 'executeCommand'], $debug);
 		$oldFilePhpcsOutput = $isNewFile ? '' : getGitBasePhpcsOutput($gitFile, $git, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
 		$newFilePhpcsOutput = getGitNewPhpcsOutput($gitFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
-	} catch(NonFatalException $err) {
+	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());
-		$shell->exitWithCode(0);
-		throw $err; // Just in case we do not actually exit
+		$unifiedDiff = '';
+		$oldFilePhpcsOutput = '';
+		$newFilePhpcsOutput = '';
 	} catch(\Exception $err) {
 		$shell->printError($err->getMessage());
 		$shell->exitWithCode(1);

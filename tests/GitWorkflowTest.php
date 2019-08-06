@@ -5,7 +5,6 @@ require_once dirname(__DIR__) . '/index.php';
 
 use PHPUnit\Framework\TestCase;
 use PhpcsChanged\PhpcsMessages;
-use PhpcsChanged\NonFatalException;
 use PhpcsChanged\ShellOperator;
 use PhpcsChanged\ShellException;
 use function PhpcsChanged\Cli\runGitWorkflow;
@@ -61,20 +60,6 @@ EOF;
 		};
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
 		$this->assertEquals($diff, getGitUnifiedDiff($gitFile, $git, $executeCommand, $debug));
-	}
-
-	public function testGetGitUnifiedDiffThrowsNonFatalIfDiffFails() {
-		$this->expectException(NonFatalException::class);
-		$gitFile = 'foobar.php';
-		$git = 'git';
-		$executeCommand = function($command) {
-			if (! $command || false === strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
-				return 'foobar';
-			}
-			return '';
-		};
-		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		getGitUnifiedDiff($gitFile, $git, $executeCommand, $debug);
 	}
 
 	public function testFullGitWorkflow() {
@@ -136,8 +121,7 @@ EOF;
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
-	public function testFullGitWorkflowForUnchangedFile() {
-		$this->expectException(NonFatalException::class);
+	public function testFullGitWorkflowForUnchangedFileWithPhpcsMessages() {
 		$gitFile = 'foobar.php';
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
 		$shell = new class() implements ShellOperator {
@@ -169,7 +153,46 @@ EOF;
 			}
 		};
 		$options = [];
-		runGitWorkflow($gitFile, $options, $shell, $debug);
+		$expected = PhpcsMessages::fromArrays([], '/dev/null');
+		$messages = runGitWorkflow($gitFile, $options, $shell, $debug);
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	public function testFullGitWorkflowForUnchangedFileWithoutPhpcsMessages() {
+		$gitFile = 'foobar.php';
+		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
+		$shell = new class() implements ShellOperator {
+			public function isReadable(string $fileName): bool {
+				return ($fileName === 'foobar.php');
+			}
+
+			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
+
+			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
+
+			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
+
+			public function executeCommand(string $command): string {
+				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
+					return <<<EOF
+EOF;
+				}
+				if (false !== strpos($command, "git status --short 'foobar.php'")) {
+					return '';
+				}
+				if (false !== strpos($command, "git show HEAD:'foobar.php'")) {
+					return '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}';
+				}
+				if (false !== strpos($command, "cat 'foobar.php'")) {
+					return '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}';
+				}
+				return '';
+			}
+		};
+		$options = [];
+		$expected = PhpcsMessages::fromArrays([], '/dev/null');
+		$messages = runGitWorkflow($gitFile, $options, $shell, $debug);
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	public function testFullGitWorkflowForNonGitFile() {
