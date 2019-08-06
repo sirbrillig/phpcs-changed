@@ -32,7 +32,11 @@ class JsonReporter implements Reporter {
 				],
 			],
 		];
-		return json_encode($dataForJson, JSON_UNESCAPED_SLASHES);
+		$output = json_encode($dataForJson, JSON_UNESCAPED_SLASHES);
+		if (! $output) {
+			throw new \Exception('Failed to JSON-encode result messages');
+		}
+		return $output;
 	}
 
 	public function getExitCode(PhpcsMessages $messages): int {
