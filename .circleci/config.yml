@@ -35,3 +35,4 @@ jobs:
         
       # run tests!
       - run: composer test
+      - run: composer phpstan
