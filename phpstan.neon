@@ -4,3 +4,4 @@ parameters:
 		- %rootDir%/../../../PhpcsChanged/Cli.php
 		- %rootDir%/../../../PhpcsChanged/GitWorkflow.php
 		- %rootDir%/../../../PhpcsChanged/SvnWorkflow.php
+	inferPrivatePropertyTypeFromConstructor: true
