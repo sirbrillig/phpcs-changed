@@ -45,7 +45,7 @@ function isNewGitFile(string $gitFile, string $git, callable $executeCommand, ca
 }
 
 function getGitBasePhpcsOutput(string $gitFile, string $git, string $phpcs, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
-	$oldFilePhpcsOutputCommand = "${git} show HEAD:" . escapeshellarg($gitFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' -';
+	$oldFilePhpcsOutputCommand = "${git} show HEAD:" . escapeshellarg($gitFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) . ' -';
 	$debug('running orig phpcs command:', $oldFilePhpcsOutputCommand);
 	$oldFilePhpcsOutput = $executeCommand($oldFilePhpcsOutputCommand);
 	if (! $oldFilePhpcsOutput) {
@@ -56,7 +56,7 @@ function getGitBasePhpcsOutput(string $gitFile, string $git, string $phpcs, stri
 }
 
 function getGitNewPhpcsOutput(string $gitFile, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
-	$newFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($gitFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' -';
+	$newFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($gitFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) .' -';
 	$debug('running new phpcs command:', $newFilePhpcsOutputCommand);
 	$newFilePhpcsOutput = $executeCommand($newFilePhpcsOutputCommand);
 	if (! $newFilePhpcsOutput) {
