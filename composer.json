@@ -13,7 +13,7 @@
     "prefer-stable": true,
     "scripts": {
         "test": "./vendor/bin/phpunit --color=always --verbose",
-        "phpstan": "./vendor/bin/phpstan analyze -l 7 PhpcsChanged"
+        "phpstan": "./vendor/bin/phpstan analyze PhpcsChanged/"
     },
     "bin": [
         "bin/phpcs-changed"
