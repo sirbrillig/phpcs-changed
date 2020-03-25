@@ -1,4 +1,4 @@
-Run [phpcs](https://github.com/squizlabs/PHP_CodeSniffer) on files, but only report warnings/errors from lines which were changed.
+Run [phpcs](https://github.com/squizlabs/PHP_CodeSniffer) on files and only report new warnings/errors compared to the previous version.
 
 This is both a PHP library that can be used manually as well as a CLI script that you can just run on your files.
 
