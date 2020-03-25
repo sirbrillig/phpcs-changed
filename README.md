@@ -8,6 +8,12 @@ Let's say that you need to add a feature to a large legacy file which has many p
 
 Using this script you can get phpcs output which applies only to the changes you have made and ignores the unchanged errors.
 
+## Installation
+
+```
+composer global require sirbrillig/phpcs-changed
+```
+
 ## PHP Library
 
 🐘🐘🐘
@@ -156,12 +162,6 @@ phpcs-changed --git file.php --report json
 You can use `--report` to customize the output type. `full` (the default) is human-readable and `json` prints a JSON object as shown above. These match the phpcs reporters of the same names.
 
 You can use `--standard` to specify a specific phpcs standard to run. This matches the phpcs option of the same name.
-
-## Installation
-
-```
-composer global require sirbrillig/phpcs-changed
-```
 
 ## Running Tests
 
