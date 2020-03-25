@@ -23,7 +23,7 @@ To make this work, you need to be able to provide data about the previous versio
 Here's an example using `phpcs-changed` with the `--svn` option:
 
 ```
-phpcs-changed --svn file.php --report json
+phpcs-changed --svn file.php
 ```
 
 If you wanted to use svn and phpcs manually, this produces the same output:
@@ -32,10 +32,21 @@ If you wanted to use svn and phpcs manually, this produces the same output:
 svn diff file.php > file.php.diff
 svn cat file.php | phpcs --report=json -q > file.php.orig.phpcs
 cat file.php | phpcs --report=json -q > file.php.phpcs
-phpcs-changed --report json --diff file.php.diff --phpcs-orig file.php.orig.phpcs --phpcs-new file.php.phpcs
+phpcs-changed --diff file.php.diff --phpcs-orig file.php.orig.phpcs --phpcs-new file.php.phpcs
 ```
 
 Both will output something like:
+
+```
+FILE: file.php
+-----------------------------------------------------------------------------------------------
+FOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE
+-----------------------------------------------------------------------------------------------
+ 76 | WARNING | Variable $foobar is undefined.
+-----------------------------------------------------------------------------------------------
+```
+
+Or, with `--report json`:
 
 ```json
 {
@@ -50,13 +61,13 @@ Both will output something like:
       "warnings": 1,
       "messages": [
         {
-          "line": 20,
-          "type": "WARNING",
+          "line": 76,
+          "message": "Variable $foobar is undefined.",
+          "source": "VariableAnalysis.CodeAnalysis.VariableAnalysis.UndefinedVariable",
           "severity": 5,
           "fixable": false,
-          "column": 5,
-          "source": "ImportDetection.Imports.RequireImports.Import",
-          "message": "Found unused symbol Foobar."
+          "type": "WARNING",
+          "column": 8
         }
       ]
     }
@@ -67,7 +78,7 @@ Both will output something like:
 If the file was versioned by git, we can do the same with the `--git` option (note that this operates only on _staged_ changes):
 
 ```
-phpcs-changed --git file.php --report json
+phpcs-changed --git file.php
 ```
 
 ### CLI Options
