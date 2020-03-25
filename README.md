@@ -18,21 +18,21 @@ composer global require sirbrillig/phpcs-changed
 
 👩‍💻👩‍💻👩‍💻
 
-To use this, you'll need data from your version control system and from phpcs.
+To make this work, you need to be able to provide data about the previous version of your code. `phpcs-changed` can get this data itself if you use svn or git, or you can provide it manually.
 
-Here's an example using svn:
+Here's an example using `phpcs-changed` with the `--svn` option:
+
+```
+phpcs-changed --svn file.php --report json
+```
+
+If you wanted to use svn and phpcs manually, this produces the same output:
 
 ```
 svn diff file.php > file.php.diff
 svn cat file.php | phpcs --report=json -q > file.php.orig.phpcs
 cat file.php | phpcs --report=json -q > file.php.phpcs
 phpcs-changed --report json --diff file.php.diff --phpcs-orig file.php.orig.phpcs --phpcs-new file.php.phpcs
-```
-
-Alernatively, we can have the script use svn and phpcs itself by using the `--svn` option:
-
-```
-phpcs-changed --svn file.php --report json
 ```
 
 Both will output something like:
