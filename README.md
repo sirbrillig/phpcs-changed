@@ -8,7 +8,88 @@ Let's say that you need to add a feature to a large legacy file which has many p
 
 Using this script you can get phpcs output which applies only to the changes you have made and ignores the unchanged errors.
 
-## 🐘 PHP Library
+## Installation
+
+```
+composer global require sirbrillig/phpcs-changed
+```
+
+## CLI Usage
+
+👩‍💻👩‍💻👩‍💻
+
+To make this work, you need to be able to provide data about the previous version of your code. `phpcs-changed` can get this data itself if you use svn or git, or you can provide it manually.
+
+Here's an example using `phpcs-changed` with the `--svn` option:
+
+```
+phpcs-changed --svn file.php
+```
+
+If you wanted to use svn and phpcs manually, this produces the same output:
+
+```
+svn diff file.php > file.php.diff
+svn cat file.php | phpcs --report=json -q > file.php.orig.phpcs
+cat file.php | phpcs --report=json -q > file.php.phpcs
+phpcs-changed --diff file.php.diff --phpcs-orig file.php.orig.phpcs --phpcs-new file.php.phpcs
+```
+
+Both will output something like:
+
+```
+FILE: file.php
+-----------------------------------------------------------------------------------------------
+FOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE
+-----------------------------------------------------------------------------------------------
+ 76 | WARNING | Variable $foobar is undefined.
+-----------------------------------------------------------------------------------------------
+```
+
+Or, with `--report json`:
+
+```json
+{
+  "totals": {
+    "errors": 0,
+    "warnings": 1,
+    "fixable": 0
+  },
+  "files": {
+    "file.php": {
+      "errors": 0,
+      "warnings": 1,
+      "messages": [
+        {
+          "line": 76,
+          "message": "Variable $foobar is undefined.",
+          "source": "VariableAnalysis.CodeAnalysis.VariableAnalysis.UndefinedVariable",
+          "severity": 5,
+          "fixable": false,
+          "type": "WARNING",
+          "column": 8
+        }
+      ]
+    }
+  }
+}
+```
+
+If the file was versioned by git, we can do the same with the `--git` option (note that this operates only on _staged_ changes):
+
+```
+phpcs-changed --git file.php
+```
+
+### CLI Options
+
+You can use `--report` to customize the output type. `full` (the default) is human-readable and `json` prints a JSON object as shown above. These match the phpcs reporters of the same names.
+
+You can use `--standard` to specify a specific phpcs standard to run. This matches the phpcs option of the same name.
+
+## PHP Library
+
+🐘🐘🐘
 
 ### getNewPhpcsMessagesFromFiles
 
@@ -63,7 +144,6 @@ This will output something like:
 }
 ```
 
-
 ### getNewPhpcsMessages
 
 If the previous function is not sufficient, this library exposes a lower-level function `PhpcsMessages\getNewPhpcsMessages()` which takes three arguments:
@@ -90,73 +170,6 @@ $changedMessages = getNewPhpcsMessagesFromFiles(
      $newFilePhpcsOutputFileName
 );
 echo $changedMessages->toPhpcsJson();
-```
-
-## 👩‍💻 CLI Usage
-
-To use this, you'll need data from your version control system and from phpcs.
-
-Here's an example using svn:
-
-```
-svn diff file.php > file.php.diff
-svn cat file.php | phpcs --report=json -q > file.php.orig.phpcs
-cat file.php | phpcs --report=json -q > file.php.phpcs
-phpcs-changed --report json --diff file.php.diff --phpcs-orig file.php.orig.phpcs --phpcs-new file.php.phpcs
-```
-
-Alernatively, we can have the script use svn and phpcs itself by using the `--svn` option:
-
-```
-phpcs-changed --svn file.php --report json
-```
-
-Both will output something like:
-
-```json
-{
-  "totals": {
-    "errors": 0,
-    "warnings": 1,
-    "fixable": 0
-  },
-  "files": {
-    "file.php": {
-      "errors": 0,
-      "warnings": 1,
-      "messages": [
-        {
-          "line": 20,
-          "type": "WARNING",
-          "severity": 5,
-          "fixable": false,
-          "column": 5,
-          "source": "ImportDetection.Imports.RequireImports.Import",
-          "message": "Found unused symbol Foobar."
-        }
-      ]
-    }
-  }
-}
-```
-
-If the file was versioned by git, we can do the same with the `--git` option (note that this operates only on _staged_ changes):
-
-```
-phpcs-changed --git file.php --report json
-```
-
-
-### CLI Options
-
-You can use `--report` to customize the output type. `full` (the default) is human-readable and `json` prints a JSON object as shown above. These match the phpcs reporters of the same names.
-
-You can use `--standard` to specify a specific phpcs standard to run. This matches the phpcs option of the same name.
-
-## Installation
-
-```
-composer global require sirbrillig/phpcs-changed
 ```
 
 ## Running Tests
