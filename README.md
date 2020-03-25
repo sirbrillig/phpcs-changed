@@ -16,7 +16,7 @@ composer global require sirbrillig/phpcs-changed
 
 ## CLI Usage
 
-👩‍💻
+👩‍💻👩‍💻👩‍💻
 
 To use this, you'll need data from your version control system and from phpcs.
 
