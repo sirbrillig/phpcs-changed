@@ -8,7 +8,9 @@ Let's say that you need to add a feature to a large legacy file which has many p
 
 Using this script you can get phpcs output which applies only to the changes you have made and ignores the unchanged errors.
 
-## 🐘 PHP Library
+## PHP Library
+
+🐘🐘🐘
 
 ### getNewPhpcsMessagesFromFiles
 
@@ -92,7 +94,9 @@ $changedMessages = getNewPhpcsMessagesFromFiles(
 echo $changedMessages->toPhpcsJson();
 ```
 
-## 👩‍💻 CLI Usage
+## CLI Usage
+
+👩‍💻
 
 To use this, you'll need data from your version control system and from phpcs.
 
