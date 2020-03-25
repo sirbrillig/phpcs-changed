@@ -14,6 +14,68 @@ Using this script you can get phpcs output which applies only to the changes you
 composer global require sirbrillig/phpcs-changed
 ```
 
+## CLI Usage
+
+👩‍💻
+
+To use this, you'll need data from your version control system and from phpcs.
+
+Here's an example using svn:
+
+```
+svn diff file.php > file.php.diff
+svn cat file.php | phpcs --report=json -q > file.php.orig.phpcs
+cat file.php | phpcs --report=json -q > file.php.phpcs
+phpcs-changed --report json --diff file.php.diff --phpcs-orig file.php.orig.phpcs --phpcs-new file.php.phpcs
+```
+
+Alernatively, we can have the script use svn and phpcs itself by using the `--svn` option:
+
+```
+phpcs-changed --svn file.php --report json
+```
+
+Both will output something like:
+
+```json
+{
+  "totals": {
+    "errors": 0,
+    "warnings": 1,
+    "fixable": 0
+  },
+  "files": {
+    "file.php": {
+      "errors": 0,
+      "warnings": 1,
+      "messages": [
+        {
+          "line": 20,
+          "type": "WARNING",
+          "severity": 5,
+          "fixable": false,
+          "column": 5,
+          "source": "ImportDetection.Imports.RequireImports.Import",
+          "message": "Found unused symbol Foobar."
+        }
+      ]
+    }
+  }
+}
+```
+
+If the file was versioned by git, we can do the same with the `--git` option (note that this operates only on _staged_ changes):
+
+```
+phpcs-changed --git file.php --report json
+```
+
+### CLI Options
+
+You can use `--report` to customize the output type. `full` (the default) is human-readable and `json` prints a JSON object as shown above. These match the phpcs reporters of the same names.
+
+You can use `--standard` to specify a specific phpcs standard to run. This matches the phpcs option of the same name.
+
 ## PHP Library
 
 🐘🐘🐘
@@ -71,7 +133,6 @@ This will output something like:
 }
 ```
 
-
 ### getNewPhpcsMessages
 
 If the previous function is not sufficient, this library exposes a lower-level function `PhpcsMessages\getNewPhpcsMessages()` which takes three arguments:
@@ -99,69 +160,6 @@ $changedMessages = getNewPhpcsMessagesFromFiles(
 );
 echo $changedMessages->toPhpcsJson();
 ```
-
-## CLI Usage
-
-👩‍💻
-
-To use this, you'll need data from your version control system and from phpcs.
-
-Here's an example using svn:
-
-```
-svn diff file.php > file.php.diff
-svn cat file.php | phpcs --report=json -q > file.php.orig.phpcs
-cat file.php | phpcs --report=json -q > file.php.phpcs
-phpcs-changed --report json --diff file.php.diff --phpcs-orig file.php.orig.phpcs --phpcs-new file.php.phpcs
-```
-
-Alernatively, we can have the script use svn and phpcs itself by using the `--svn` option:
-
-```
-phpcs-changed --svn file.php --report json
-```
-
-Both will output something like:
-
-```json
-{
-  "totals": {
-    "errors": 0,
-    "warnings": 1,
-    "fixable": 0
-  },
-  "files": {
-    "file.php": {
-      "errors": 0,
-      "warnings": 1,
-      "messages": [
-        {
-          "line": 20,
-          "type": "WARNING",
-          "severity": 5,
-          "fixable": false,
-          "column": 5,
-          "source": "ImportDetection.Imports.RequireImports.Import",
-          "message": "Found unused symbol Foobar."
-        }
-      ]
-    }
-  }
-}
-```
-
-If the file was versioned by git, we can do the same with the `--git` option (note that this operates only on _staged_ changes):
-
-```
-phpcs-changed --git file.php --report json
-```
-
-
-### CLI Options
-
-You can use `--report` to customize the output type. `full` (the default) is human-readable and `json` prints a JSON object as shown above. These match the phpcs reporters of the same names.
-
-You can use `--standard` to specify a specific phpcs standard to run. This matches the phpcs option of the same name.
 
 ## Running Tests
 
