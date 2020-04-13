@@ -70,11 +70,10 @@ function run(array $options, array $fileNames, callable $debug): void {
 		return;
 	}
 
-	$svnFile = isset($options['svn']) ? $fileNames[0] : null;
-	if ($svnFile) {
+	if ($options['svn']) {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
-			runSvnWorkflow($svnFile, $options, $shell, $debug),
+			runSvnWorkflow($fileNames, $options, $shell, $debug),
 			$reportType
 		);
 		return;
