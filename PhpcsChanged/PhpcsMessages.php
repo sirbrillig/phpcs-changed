@@ -18,6 +18,12 @@ class PhpcsMessages {
 		$this->messages = $messages;
 	}
 
+	public static function merge(array $messages): self {
+		return self::fromPhpcsMessages(array_merge(...array_map(function(PhpcsMessages $message) {
+			return $message->getMessages();
+		}, $messages)));
+	}
+
 	public static function fromPhpcsMessages(array $messages, string $fileName = null): self {
 		return new self(array_map(function(PhpcsMessage $message) use ($fileName) {
 			if ($fileName) {
