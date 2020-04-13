@@ -159,7 +159,7 @@ EOF;
 				'message' => 'Found unused symbol Emergent.',
 			],
 		], 'bin/foobar.php');
-		$messages = runSvnWorkflow($svnFile, $options, $shell, $debug);
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
@@ -212,7 +212,7 @@ EOF;
 		};
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([], 'STDIN');
-		$messages = runSvnWorkflow($svnFile, $options, $shell, $debug);
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
@@ -265,7 +265,7 @@ EOF;
 		};
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([], 'STDIN');
-		$messages = runSvnWorkflow($svnFile, $options, $shell, $debug);
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
@@ -307,7 +307,7 @@ EOF;
 			}
 		};
 		$options = [];
-		runSvnWorkflow($svnFile, $options, $shell, $debug);
+		runSvnWorkflow([$svnFile], $options, $shell, $debug);
 	}
 
 	public function testFullSvnWorkflowForNewFile() {
@@ -378,7 +378,7 @@ EOF;
 				'message' => 'Found unused symbol Emergent.',
 			],
 		], 'STDIN');
-		$messages = runSvnWorkflow($svnFile, $options, $shell, $debug);
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
@@ -434,7 +434,7 @@ Run "phpcs --help" for usage information
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([], 'STDIN');
-		$messages = runSvnWorkflow($svnFile, $options, $shell, $debug);
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 }
