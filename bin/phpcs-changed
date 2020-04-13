@@ -32,7 +32,7 @@ $options = getopt(
 		'git',
 		'standard:',
 		'report:',
-		'debug',
+		'debug'
 	],
 	$optind
 );
@@ -48,31 +48,48 @@ if (isset($options['version'])) {
 }
 
 $debug = getDebug(isset($options['debug']));
-$debug('Running...');
+run($options, $fileNames, $debug);
 
-$reportType = $options['report'] ?? 'full';
-$diffFile = $options['diff'] ?? null;
-$phpcsOldFile = $options['phpcs-orig'] ?? null;
-$phpcsNewFile = $options['phpcs-new'] ?? null;
+function run(array $options, array $fileNames, callable $debug): void {
+	$debug('Running...');
+	$reportType = $options['report'] ?? 'full';
+	$diffFile = $options['diff'] ?? null;
+	$phpcsOldFile = $options['phpcs-orig'] ?? null;
+	$phpcsNewFile = $options['phpcs-new'] ?? null;
 
-if ($diffFile && $phpcsOldFile && $phpcsNewFile) {
-	reportMessagesAndExit(runManualWorkflow($diffFile, $phpcsOldFile, $phpcsNewFile), $reportType);
+	if ($diffFile && $phpcsOldFile && $phpcsNewFile) {
+		reportMessagesAndExit(
+			runManualWorkflow($diffFile, $phpcsOldFile, $phpcsNewFile),
+			$reportType
+		);
+		return;
+	}
+
+	if (empty($fileNames)) {
+		printErrorAndExit('No files specified.');
+		return;
+	}
+
+	$svnFile = isset($options['svn']) ? $fileNames[0] : null;
+	if ($svnFile) {
+		$shell = new UnixShell();
+		reportMessagesAndExit(
+			runSvnWorkflow($svnFile, $options, $shell, $debug),
+			$reportType
+		);
+		return;
+	}
+
+	$gitFile = isset($options['git']) ? $fileNames[0] : null;
+	if ($gitFile) {
+		$shell = new UnixShell();
+		reportMessagesAndExit(
+			runGitWorkflow($gitFile, $options, $shell, $debug),
+			$reportType
+		);
+		return;
+	}
+
+	printHelp();
 }
 
-if (empty($fileNames)) {
-	printErrorAndExit('No files specified.');
-}
-
-$svnFile = isset($options['svn']) ? $fileNames[0] : null;
-if ($svnFile) {
-	$shell = new UnixShell();
-	reportMessagesAndExit(runSvnWorkflow($svnFile, $options, $shell, $debug), $reportType);
-}
-
-$gitFile = isset($options['git']) ? $fileNames[0] : null;
-if ($gitFile) {
-	$shell = new UnixShell();
-	reportMessagesAndExit(runGitWorkflow($gitFile, $options, $shell, $debug), $reportType);
-}
-
-printHelp();
