@@ -5,10 +5,24 @@ namespace PhpcsChanged;
 
 use PhpcsChanged\Reporter;
 use PhpcsChanged\PhpcsMessages;
+use PhpcsChanged\PhpcsMessage;
 
 class JsonReporter implements Reporter {
 	public function getFormattedMessages(PhpcsMessages $messages): string {
-		$file = isset($messages->getMessages()[0]) ? $messages->getMessages()[0]->getFile() ?? 'STDIN' : 'STDIN';
+		$files = array_map(function(PhpcsMessage $message): string {
+			return $message->getFile() ?? 'STDIN';
+		}, $messages->getMessages());
+		if (empty($files)) {
+			$files = ['STDIN'];
+		}
+
+		$outputByFile = array_map(function(string $file) use ($messages): array {
+			$messagesForFile = array_values(array_filter($messages->getMessages(), function(PhpcsMessage $message) use ($file): bool {
+				return ($message->getFile() ?? 'STDIN') === $file;
+			}));
+			return $this->getFormattedMessagesForFile($messagesForFile, $file);
+		}, $files);
+
 		$errors = array_values(array_filter($messages->getMessages(), function($message) {
 			return $message->getType() === 'ERROR';
 		}));
@@ -24,19 +38,33 @@ class JsonReporter implements Reporter {
 				'warnings' => count($warnings),
 				'fixable' => 0,
 			],
-			'files' => [
-				$file => [
-					'errors' => count($errors),
-					'warnings' => count($warnings),
-					'messages' => $messages,
-				],
-			],
+			'files' => array_merge(...$outputByFile),
 		];
 		$output = json_encode($dataForJson, JSON_UNESCAPED_SLASHES);
 		if (! $output) {
 			throw new \Exception('Failed to JSON-encode result messages');
 		}
 		return $output;
+	}
+
+	private function getFormattedMessagesForFile(array $messages, string $file): array {
+		$errors = array_values(array_filter($messages, function($message) {
+			return $message->getType() === 'ERROR';
+		}));
+		$warnings = array_values(array_filter($messages, function($message) {
+			return $message->getType() === 'WARNING';
+		}));
+		$messageArrays = array_map(function(PhpcsMessage $message): array {
+			return $message->toPhpcsArray();
+		}, $messages);
+		$dataForJson = [
+				$file => [
+					'errors' => count($errors),
+					'warnings' => count($warnings),
+					'messages' => $messageArrays,
+				],
+		];
+		return $dataForJson;
 	}
 
 	public function getExitCode(PhpcsMessages $messages): int {
