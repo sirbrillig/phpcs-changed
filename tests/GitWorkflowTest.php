@@ -96,7 +96,7 @@ EOF;
 				if (false !== strpos($command, "git status --short 'foobar.php'")) {
 					return ' M foobar.php'; // note the leading space
 				}
-				if (false !== strpos($command, "git show HEAD:'foobar.php'")) {
+				if (false !== strpos($command, "git show HEAD:$(git ls-files --full-name 'foobar.php')")) {
 					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 				}
 				if (false !== strpos($command, "cat 'foobar.php'")) {
@@ -174,10 +174,10 @@ EOF;
 				if (false !== strpos($command, "git status --short 'baz.php'")) {
 					return ' M baz.php'; // note the leading space
 				}
-				if (false !== strpos($command, "git show HEAD:'foobar.php'")) {
+				if (false !== strpos($command, "git show HEAD:$(git ls-files --full-name 'foobar.php')")) {
 					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 				}
-				if (false !== strpos($command, "git show HEAD:'baz.php'")) {
+				if (false !== strpos($command, "git show HEAD:$(git ls-files --full-name 'baz.php')")) {
 					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."}]}}}';
 				}
 				if (false !== strpos($command, "cat 'foobar.php'")) {
@@ -240,7 +240,7 @@ EOF;
 				if (false !== strpos($command, "git status --short 'foobar.php'")) {
 					return '';
 				}
-				if (false !== strpos($command, "git show HEAD:'foobar.php'")) {
+				if (false !== strpos($command, "git show HEAD:$(git ls-files --full-name 'foobar.php')")) {
 					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 				}
 				if (false !== strpos($command, "cat 'foobar.php'")) {
@@ -277,7 +277,7 @@ EOF;
 				if (false !== strpos($command, "git status --short 'foobar.php'")) {
 					return '';
 				}
-				if (false !== strpos($command, "git show HEAD:'foobar.php'")) {
+				if (false !== strpos($command, "git show HEAD:$(git ls-files --full-name 'foobar.php')")) {
 					return '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}';
 				}
 				if (false !== strpos($command, "cat 'foobar.php'")) {
@@ -315,7 +315,7 @@ EOF;
 				if (false !== strpos($command, "git status --short 'foobar.php'")) {
 					return "?? foobar.php";
 				}
-				if (false !== strpos($command, "git show HEAD:'foobar.php'")) {
+				if (false !== strpos($command, "git show HEAD:$(git ls-files --full-name 'foobar.php')")) {
 					return "fatal: Path 'foobar.php' exists on disk, but not in 'HEAD'.";
 				}
 				if (false !== strpos($command, "cat 'foobar.php'")) {
