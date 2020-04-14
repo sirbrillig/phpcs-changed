@@ -75,11 +75,13 @@ Or, with `--report json`:
 }
 ```
 
-If the file was versioned by git, we can do the same with the `--git` option (note that this operates only on _staged_ changes):
+If the file was versioned by git, we can do the same with the `--git` option:
 
 ```
-phpcs-changed --git file.php
+phpcs-changed --git --git-unstaged file.php
 ```
+
+You should specify `--git-staged` or `--git-unstaged` to tell `phpcs-changed` if you want to compare the current staged changes or the current working copy changes, respectively. The default is `--git-staged`.
 
 ### CLI Options
 
