@@ -155,7 +155,7 @@ EOF;
 				if (false !== strpos($command, "git status --short 'foobar.php'")) {
 					return ' M foobar.php'; // note the leading space
 				}
-				if (false !== strpos($command, "git show HEAD:$(git ls-files --full-name 'foobar.php')")) {
+				if (false !== strpos($command, "git show :0:$(git ls-files --full-name 'foobar.php')")) {
 					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
 				}
 				if (false !== strpos($command, "cat 'foobar.php'")) {
