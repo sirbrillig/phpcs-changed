@@ -24,7 +24,7 @@ class FullReporter implements Reporter {
 
 		return implode("\n", array_filter(array_map(function(string $file) use ($messages): ?string {
 			$messagesForFile = array_values(array_filter($messages->getMessages(), function(PhpcsMessage $message) use ($file): bool {
-				return $message->getFile() === $file;
+				return ($message->getFile() ?? 'STDIN') === $file;
 			}));
 			return $this->getFormattedMessagesForFile($messagesForFile, $file);
 		}, $files)));
