@@ -19,8 +19,9 @@ function validateGitFileExists(string $gitFile, string $git, callable $isReadabl
 	}
 }
 
-function getGitUnifiedDiff(string $gitFile, string $git, callable $executeCommand, callable $debug): string {
-	$unifiedDiffCommand = "{$git} diff --staged --no-prefix " . escapeshellarg($gitFile);
+function getGitUnifiedDiff(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): string {
+	$stagedOption = isset($options['git-unstaged']) ? '' : ' --staged';
+	$unifiedDiffCommand = "{$git} diff{$stagedOption} --no-prefix " . escapeshellarg($gitFile);
 	$debug('running diff command:', $unifiedDiffCommand);
 	$unifiedDiff = $executeCommand($unifiedDiffCommand);
 	if (! $unifiedDiff) {
@@ -44,8 +45,9 @@ function isNewGitFile(string $gitFile, string $git, callable $executeCommand, ca
 	return isset($gitStatusOutput[0]) && $gitStatusOutput[0] === 'A';
 }
 
-function getGitBasePhpcsOutput(string $gitFile, string $git, string $phpcs, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
-	$oldFilePhpcsOutputCommand = "${git} show HEAD:" . escapeshellarg($gitFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) . ' -';
+function getGitBasePhpcsOutput(string $gitFile, string $git, string $phpcs, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
+	$rev = isset($options['git-unstaged']) ? ':0' : 'HEAD';
+	$oldFilePhpcsOutputCommand = "${git} show {$rev}:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ") | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) . ' -';
 	$debug('running orig phpcs command:', $oldFilePhpcsOutputCommand);
 	$oldFilePhpcsOutput = $executeCommand($oldFilePhpcsOutputCommand);
 	if (! $oldFilePhpcsOutput) {
