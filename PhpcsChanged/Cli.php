@@ -191,7 +191,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput, $fileName), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput, $fileName));
 }
 
-function runGitWorkflow($gitFile, $options, ShellOperator $shell, callable $debug): PhpcsMessages {
+function runGitWorkflow(array $gitFiles, array $options, ShellOperator $shell, callable $debug): PhpcsMessages {
 	$git = getenv('GIT') ?: 'git';
 	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$cat = getenv('CAT') ?: 'cat';
@@ -202,9 +202,27 @@ function runGitWorkflow($gitFile, $options, ShellOperator $shell, callable $debu
 		$shell->validateExecutableExists('phpcs', $phpcs);
 		$shell->validateExecutableExists('cat', $cat);
 		$debug('executables are valid');
+	} catch(\Exception $err) {
+		$shell->printError($err->getMessage());
+		$shell->exitWithCode(1);
+		throw $err; // Just in case we do not actually exit
+	}
 
-		$phpcsStandard = $options['standard'] ?? null;
-		$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
+	$phpcsMessages = array_map(function(string $gitFile) use ($options, $shell, $debug): PhpcsMessages {
+		return runGitWorkflowForFile($gitFile, $options, $shell, $debug);
+	}, $gitFiles);
+	return PhpcsMessages::merge($phpcsMessages);
+}
+
+function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $shell, callable $debug): PhpcsMessages {
+	$git = getenv('GIT') ?: 'git';
+	$phpcs = getenv('PHPCS') ?: 'phpcs';
+	$cat = getenv('CAT') ?: 'cat';
+
+	$phpcsStandard = $options['standard'] ?? null;
+	$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
+
+	try {
 		validateGitFileExists($gitFile, $git, [$shell, 'isReadable'], [$shell, 'executeCommand'], $debug);
 		$unifiedDiff = getGitUnifiedDiff($gitFile, $git, [$shell, 'executeCommand'], $debug);
 		$isNewFile = isNewGitFile($gitFile, $git, [$shell, 'executeCommand'], $debug);
