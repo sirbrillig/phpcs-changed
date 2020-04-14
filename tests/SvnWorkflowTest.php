@@ -289,7 +289,6 @@ EOF;
 			], 'bin/baz.php'),
 		]);
 		$messages = runSvnWorkflow($svnFiles, $options, $shell, $debug);
-		var_dump($expected->getMessages());
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
