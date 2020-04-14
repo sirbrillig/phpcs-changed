@@ -70,7 +70,7 @@ function run(array $options, array $fileNames, callable $debug): void {
 		return;
 	}
 
-	if ($options['svn']) {
+	if (isset($options['svn'])) {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
 			runSvnWorkflow($fileNames, $options, $shell, $debug),
