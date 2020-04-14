@@ -38,6 +38,12 @@ $options = getopt(
 );
 
 $fileNames = array_slice($argv, $optind);
+$fileNamesExpanded = array_reduce($fileNames, function(array $expandedNames, string $file): array {
+	if (is_dir($file)) {
+		return array_merge($expandedNames, glob("{$file}/**/*.php"));
+	}
+	return array_merge($expandedNames, [$file]);
+}, []);
 
 if (isset($options['h']) || isset($options['help'])) {
 	printHelp();
@@ -48,10 +54,10 @@ if (isset($options['version'])) {
 }
 
 $debug = getDebug(isset($options['debug']));
-run($options, $fileNames, $debug);
+run($options, $fileNamesExpanded, $debug);
 
-function run(array $options, array $fileNames, callable $debug): void {
-	$debug('Running...');
+function run(array $options, array $fileNamesExpanded, callable $debug): void {
+	$debug('Running on filenames: ' . implode(', ', $fileNamesExpanded));
 	$reportType = $options['report'] ?? 'full';
 	$diffFile = $options['diff'] ?? null;
 	$phpcsOldFile = $options['phpcs-orig'] ?? null;
@@ -65,7 +71,7 @@ function run(array $options, array $fileNames, callable $debug): void {
 		return;
 	}
 
-	if (empty($fileNames)) {
+	if (empty($fileNamesExpanded)) {
 		printErrorAndExit('No files specified.');
 		return;
 	}
@@ -73,7 +79,7 @@ function run(array $options, array $fileNames, callable $debug): void {
 	if (isset($options['svn'])) {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
-			runSvnWorkflow($fileNames, $options, $shell, $debug),
+			runSvnWorkflow($fileNamesExpanded, $options, $shell, $debug),
 			$reportType
 		);
 		return;
@@ -82,7 +88,7 @@ function run(array $options, array $fileNames, callable $debug): void {
 	if (isset($options['git'])) {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
-			runGitWorkflow($fileNames, $options, $shell, $debug),
+			runGitWorkflow($fileNamesExpanded, $options, $shell, $debug),
 			$reportType
 		);
 		return;
