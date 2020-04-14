@@ -59,7 +59,7 @@ EOF;
 			return $diff;
 		};
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		$this->assertEquals($diff, getGitUnifiedDiff($gitFile, $git, $executeCommand, $debug));
+		$this->assertEquals($diff, getGitUnifiedDiff($gitFile, $git, $executeCommand, [], $debug));
 	}
 
 	public function testFullGitWorkflowForOneFile() {

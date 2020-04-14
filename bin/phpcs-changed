@@ -30,6 +30,8 @@ $options = getopt(
 		'phpcs-new:',
 		'svn',
 		'git',
+		'git-unstaged',
+		'git-staged',
 		'standard:',
 		'report:',
 		'debug'

@@ -19,8 +19,9 @@ function validateGitFileExists(string $gitFile, string $git, callable $isReadabl
 	}
 }
 
-function getGitUnifiedDiff(string $gitFile, string $git, callable $executeCommand, callable $debug): string {
-	$unifiedDiffCommand = "{$git} diff --staged --no-prefix " . escapeshellarg($gitFile);
+function getGitUnifiedDiff(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): string {
+	$stagedOption = isset($options['git-unstaged']) ? '' : ' --staged';
+	$unifiedDiffCommand = "{$git} diff{$stagedOption} --no-prefix " . escapeshellarg($gitFile);
 	$debug('running diff command:', $unifiedDiffCommand);
 	$unifiedDiff = $executeCommand($unifiedDiffCommand);
 	if (! $unifiedDiff) {
