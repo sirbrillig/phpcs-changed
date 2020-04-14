@@ -9,9 +9,9 @@ use PhpcsChanged\PhpcsMessage;
 
 class JsonReporter implements Reporter {
 	public function getFormattedMessages(PhpcsMessages $messages): string {
-		$files = array_map(function(PhpcsMessage $message): string {
+		$files = array_unique(array_map(function(PhpcsMessage $message): string {
 			return $message->getFile() ?? 'STDIN';
-		}, $messages->getMessages());
+		}, $messages->getMessages()));
 		if (empty($files)) {
 			$files = ['STDIN'];
 		}
