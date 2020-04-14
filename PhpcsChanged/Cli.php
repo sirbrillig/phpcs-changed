@@ -244,8 +244,8 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput, $fileName), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput, $fileName));
 }
 
-function reportMessagesAndExit(PhpcsMessages $messages, string $reportType): void {
+function reportMessagesAndExit(PhpcsMessages $messages, string $reportType, array $options): void {
 	$reporter = getReporter($reportType);
-	echo $reporter->getFormattedMessages($messages);
+	echo $reporter->getFormattedMessages($messages, $options);
 	exit($reporter->getExitCode($messages));
 }

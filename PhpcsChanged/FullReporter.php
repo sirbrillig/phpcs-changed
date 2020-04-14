@@ -9,7 +9,7 @@ use PhpcsChanged\PhpcsMessage;
 use function PhpcsChanged\Cli\getLongestString;
 
 class FullReporter implements Reporter {
-	public function getFormattedMessages(PhpcsMessages $messages): string {
+	public function getFormattedMessages(PhpcsMessages $messages, array $options): string {
 		$files = array_unique(array_map(function(PhpcsMessage $message): string {
 			return $message->getFile() ?? 'STDIN';
 		}, $messages->getMessages()));
@@ -22,15 +22,15 @@ class FullReporter implements Reporter {
 			return '';
 		}
 
-		return implode("\n", array_filter(array_map(function(string $file) use ($messages): ?string {
+		return implode("\n", array_filter(array_map(function(string $file) use ($messages, $options): ?string {
 			$messagesForFile = array_values(array_filter($messages->getMessages(), function(PhpcsMessage $message) use ($file): bool {
 				return ($message->getFile() ?? 'STDIN') === $file;
 			}));
-			return $this->getFormattedMessagesForFile($messagesForFile, $file);
+			return $this->getFormattedMessagesForFile($messagesForFile, $file, $options);
 		}, $files)));
 	}
 
-	private function getFormattedMessagesForFile(array $messages, string $file): ?string {
+	private function getFormattedMessagesForFile(array $messages, string $file, array $options): ?string {
 		$lineCount = count($messages);
 		if ($lineCount < 1) {
 			return null;
