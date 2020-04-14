@@ -117,7 +117,7 @@ EOF;
 				'message' => 'Found unused symbol Emergent.',
 			],
 		], 'bin/foobar.php');
-		$messages = runGitWorkflow($gitFile, $options, $shell, $debug);
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
@@ -154,7 +154,7 @@ EOF;
 		};
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([], '/dev/null');
-		$messages = runGitWorkflow($gitFile, $options, $shell, $debug);
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
@@ -191,7 +191,7 @@ EOF;
 		};
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([], '/dev/null');
-		$messages = runGitWorkflow($gitFile, $options, $shell, $debug);
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
@@ -228,7 +228,7 @@ EOF;
 			}
 		};
 		$options = [];
-		runGitWorkflow($gitFile, $options, $shell, $debug);
+		runGitWorkflow([$gitFile], $options, $shell, $debug);
 	}
 
 	public function testFullGitWorkflowForNewFile() {
@@ -294,7 +294,7 @@ EOF;
 				'message' => 'Found unused symbol Emergent.',
 			],
 		], '/dev/null');
-		$messages = runGitWorkflow($gitFile, $options, $shell, $debug);
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
@@ -345,7 +345,7 @@ Run "phpcs --help" for usage information
 		};
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([], '/dev/null');
-		$messages = runGitWorkflow($gitFile, $options, $shell, $debug);
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 }
