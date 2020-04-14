@@ -10,6 +10,7 @@ require_once __DIR__ . '/../index.php';
 use function PhpcsChanged\Cli\{
 	printHelp,
 	printVersion,
+	printErrorAndExit,
 	getDebug,
 	runManualWorkflow,
 	runSvnWorkflow,
@@ -18,6 +19,7 @@ use function PhpcsChanged\Cli\{
 };
 use PhpcsChanged\UnixShell;
 
+$optind = 0;
 $options = getopt(
 	'h',
 	[
@@ -26,13 +28,22 @@ $options = getopt(
 		'diff:',
 		'phpcs-orig:',
 		'phpcs-new:',
-		'svn:',
-		'git:',
+		'svn',
+		'git',
 		'standard:',
 		'report:',
-		'debug',
-	]
+		'debug'
+	],
+	$optind
 );
+
+$fileNames = array_slice($argv, $optind);
+$fileNamesExpanded = array_reduce($fileNames, function(array $expandedNames, string $file): array {
+	if (is_dir($file)) {
+		return array_merge($expandedNames, glob("{$file}/**/*.php"));
+	}
+	return array_merge($expandedNames, [$file]);
+}, []);
 
 if (isset($options['h']) || isset($options['help'])) {
 	printHelp();
@@ -43,27 +54,46 @@ if (isset($options['version'])) {
 }
 
 $debug = getDebug(isset($options['debug']));
-$debug('Running...');
+run($options, $fileNamesExpanded, $debug);
 
-$reportType = $options['report'] ?? 'full';
-$diffFile = $options['diff'] ?? null;
-$phpcsOldFile = $options['phpcs-orig'] ?? null;
-$phpcsNewFile = $options['phpcs-new'] ?? null;
+function run(array $options, array $fileNamesExpanded, callable $debug): void {
+	$debug('Running on filenames: ' . implode(', ', $fileNamesExpanded));
+	$reportType = $options['report'] ?? 'full';
+	$diffFile = $options['diff'] ?? null;
+	$phpcsOldFile = $options['phpcs-orig'] ?? null;
+	$phpcsNewFile = $options['phpcs-new'] ?? null;
 
-if ($diffFile && $phpcsOldFile && $phpcsNewFile) {
-	reportMessagesAndExit(runManualWorkflow($diffFile, $phpcsOldFile, $phpcsNewFile), $reportType);
+	if ($diffFile && $phpcsOldFile && $phpcsNewFile) {
+		reportMessagesAndExit(
+			runManualWorkflow($diffFile, $phpcsOldFile, $phpcsNewFile),
+			$reportType
+		);
+		return;
+	}
+
+	if (empty($fileNamesExpanded)) {
+		printErrorAndExit('No files specified.');
+		return;
+	}
+
+	if (isset($options['svn'])) {
+		$shell = new UnixShell();
+		reportMessagesAndExit(
+			runSvnWorkflow($fileNamesExpanded, $options, $shell, $debug),
+			$reportType
+		);
+		return;
+	}
+
+	if (isset($options['git'])) {
+		$shell = new UnixShell();
+		reportMessagesAndExit(
+			runGitWorkflow($fileNamesExpanded, $options, $shell, $debug),
+			$reportType
+		);
+		return;
+	}
+
+	printHelp();
 }
 
-$svnFile = $options['svn'] ?? null;
-if ($svnFile) {
-	$shell = new UnixShell();
-	reportMessagesAndExit(runSvnWorkflow($svnFile, $options, $shell, $debug), $reportType);
-}
-
-$gitFile = $options['git'] ?? null;
-if ($gitFile) {
-	$shell = new UnixShell();
-	reportMessagesAndExit(runGitWorkflow($gitFile, $options, $shell, $debug), $reportType);
-}
-
-printHelp();

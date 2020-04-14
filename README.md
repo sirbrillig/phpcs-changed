@@ -83,6 +83,8 @@ phpcs-changed --git file.php
 
 ### CLI Options
 
+More than one file can be specified after a version control option, including globs and directories. If any file is a directory, phpcs-changed will scan the directory for all files ending in `.php` and process them. For example: `phpcs-changed --git src/lib test/**/*.php` will operate on all the php files in the `src/lib/` and `test/` directories.
+
 You can use `--report` to customize the output type. `full` (the default) is human-readable and `json` prints a JSON object as shown above. These match the phpcs reporters of the same names.
 
 You can use `--standard` to specify a specific phpcs standard to run. This matches the phpcs option of the same name.
@@ -103,15 +105,17 @@ It will return an instance of `PhpcsMessages` which is a filtered list of the th
 
 `PhpcsMessages` represents the output of running phpcs.
 
-To read the phpcs JSON output from an instance of `PhpcsMessages`, you can run `$messages->toPhpcsJson()`.
+To read the phpcs JSON output from an instance of `PhpcsMessages`, you can use the `toPhpcsJson()` method. For example:
 
 ```php
 use function PhpcsChanged\getNewPhpcsMessagesFromFiles;
+
 $changedMessages = getNewPhpcsMessagesFromFiles(
 	$unifiedDiffFileName,
 	$oldFilePhpcsOutputFileName,
 	$newFilePhpcsOutputFileName
 );
+
 echo $changedMessages->toPhpcsJson();
 ```
 
@@ -154,21 +158,43 @@ If the previous function is not sufficient, this library exposes a lower-level f
 
 It will return an instance of `PhpcsMessages` which is a filtered list of the third argument above where every line that was present in the second argument has been removed.
 
-You can create an instance of `PhpcsMessages` from real phpcs JSON output by using `PhpcsMessages::fromPhpcsJson()`.
+You can create an instance of `PhpcsMessages` from real phpcs JSON output by using `PhpcsMessages::fromPhpcsJson()`. The following example produces the same output as the previous one:
 
 ```php
 use function PhpcsChanged\getNewPhpcsMessages;
-use PhpcsChanged\PhpcsMessages;
-$changedMessages = getNewPhpcsMessages(
-     $unifiedDiff,
-     PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput),
-     PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput)
 use function PhpcsChanged\getNewPhpcsMessagesFromFiles;
+use PhpcsChanged\PhpcsMessages;
+
 $changedMessages = getNewPhpcsMessagesFromFiles(
      $unifiedDiffFileName,
      $oldFilePhpcsOutputFileName,
      $newFilePhpcsOutputFileName
 );
+
+echo $changedMessages->toPhpcsJson();
+```
+
+### Multiple files
+
+You can combine the results of `getNewPhpcsMessages` or `getNewPhpcsMessagesFromFiles` by using `PhpcsChanged\PhpcsMessages::merge()` which takes an array of `PhpcsMessages` instances and merges them into one instance. For example:
+
+```php
+use function PhpcsChanged\getNewPhpcsMessages;
+use function PhpcsChanged\getNewPhpcsMessagesFromFiles;
+use PhpcsChanged\PhpcsMessages;
+
+$changedMessagesA = getNewPhpcsMessages(
+     $unifiedDiffA,
+     PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutputA),
+     PhpcsMessages::fromPhpcsJson($newFilePhpcsOutputA)
+$changedMessagesB = getNewPhpcsMessagesFromFiles(
+     $unifiedDiffFileNameB,
+     $oldFilePhpcsOutputFileNameB,
+     $newFilePhpcsOutputFileNameB
+);
+
+$changedMessages = PhpcsMessages::merge([$changedMessagesA, $changedMessagesB]);
+
 echo $changedMessages->toPhpcsJson();
 ```
 
@@ -179,6 +205,13 @@ Run the following commands in this directory to run the built-in test suite:
 ```
 composer install
 composer test
+```
+
+You can also run linting and static analysis:
+
+```
+composer lint
+composer phpstan
 ```
 
 ## Inspiration
