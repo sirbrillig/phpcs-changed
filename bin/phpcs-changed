@@ -79,11 +79,10 @@ function run(array $options, array $fileNames, callable $debug): void {
 		return;
 	}
 
-	$gitFile = isset($options['git']) ? $fileNames[0] : null;
-	if ($gitFile) {
+	if (isset($options['git'])) {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
-			runGitWorkflow($gitFile, $options, $shell, $debug),
+			runGitWorkflow($fileNames, $options, $shell, $debug),
 			$reportType
 		);
 		return;
