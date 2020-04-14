@@ -21,7 +21,7 @@ use PhpcsChanged\UnixShell;
 
 $optind = 0;
 $options = getopt(
-	'h',
+	'hs',
 	[
 		'help',
 		'version',

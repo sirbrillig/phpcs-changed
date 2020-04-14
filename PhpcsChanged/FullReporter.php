@@ -50,8 +50,10 @@ class FullReporter implements Reporter {
 			return $message->getLineNumber();
 		}, $messages));
 
-		$formattedLines = implode("\n", array_map(function(PhpcsMessage $message) use ($longestNumber): string {
-			return sprintf(" %{$longestNumber}d | %s | %s", $message->getLineNumber(), $message->getType(), $message->getMessage());
+		$formattedLines = implode("\n", array_map(function(PhpcsMessage $message) use ($longestNumber, $options): string {
+			$source = $message->getSource() ?: 'Unknown';
+			$sourceString = isset($options['s']) ? " ({$source})" : '';
+			return sprintf(" %{$longestNumber}d | %s | %s%s", $message->getLineNumber(), $message->getType(), $message->getMessage(), $sourceString);
 		}, $messages));
 
 		return <<<EOF

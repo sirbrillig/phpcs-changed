@@ -36,6 +36,10 @@ class PhpcsMessage {
 		return $this->otherProperties['message'] ?? '';
 	}
 
+	public function getSource(): string {
+		return $this->otherProperties['source'] ?? '';
+	}
+
 	public function toPhpcsArray(): array {
 		return array_merge([
 			'line' => $this->line,
