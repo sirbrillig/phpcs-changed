@@ -62,7 +62,7 @@ EOF;
 		$this->assertEquals($diff, getGitUnifiedDiff($gitFile, $git, $executeCommand, $debug));
 	}
 
-	public function testFullGitWorkflow() {
+	public function testFullGitWorkflowForOneFile() {
 		$gitFile = 'foobar.php';
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
 		$shell = new class() implements ShellOperator {
@@ -118,6 +118,103 @@ EOF;
 			],
 		], 'bin/foobar.php');
 		$messages = runGitWorkflow([$gitFile], $options, $shell, $debug);
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	public function testFullGitWorkflowForMultipleFiles() {
+		$gitFiles = ['foobar.php', 'baz.php'];
+		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
+		$shell = new class() implements ShellOperator {
+			public function isReadable(string $fileName): bool {
+				return ($fileName === 'foobar.php' || $fileName === 'baz.php');
+			}
+
+			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
+
+			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
+
+			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
+
+			public function executeCommand(string $command): string {
+				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
+					return <<<EOF
+diff --git bin/foobar.php bin/foobar.php
+index 038d718..d6c3357 100644
+--- bin/foobar.php
++++ bin/foobar.php
+@@ -17,6 +17,7 @@
+ use Billing\Purchases\Order;
+ use Billing\Services;
+ use Billing\Ebanx;
++use Foobar;
+ use Billing\Emergent;
+ use Billing\Monetary_Amount;
+ use Stripe\Error;
+EOF;
+				}
+				if (false !== strpos($command, "git diff --staged --no-prefix 'baz.php'")) {
+					return <<<EOF
+diff --git bin/baz.php bin/baz.php
+index 038d718..d6c3357 100644
+--- bin/baz.php
++++ bin/baz.php
+@@ -17,6 +17,7 @@
+ use Billing\Purchases\Order;
+ use Billing\Services;
+ use Billing\Ebanx;
++use Baz;
+ use Billing\Emergent;
+ use Billing\Monetary_Amount;
+ use Stripe\Error;
+EOF;
+				}
+				if (false !== strpos($command, "git status --short 'foobar.php'")) {
+					return ' M foobar.php'; // note the leading space
+				}
+				if (false !== strpos($command, "git status --short 'baz.php'")) {
+					return ' M baz.php'; // note the leading space
+				}
+				if (false !== strpos($command, "git show HEAD:'foobar.php'")) {
+					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
+				}
+				if (false !== strpos($command, "git show HEAD:'baz.php'")) {
+					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."}]}}}';
+				}
+				if (false !== strpos($command, "cat 'foobar.php'")) {
+					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
+				}
+				if (false !== strpos($command, "cat 'baz.php'")) {
+					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."}]}}}';
+				}
+				return '';
+			}
+		};
+		$options = [];
+		$expected = PhpcsMessages::merge([
+			PhpcsMessages::fromArrays([
+				[
+					'type' => 'ERROR',
+					'severity' => 5,
+					'fixable' => false,
+					'column' => 5,
+					'source' => 'ImportDetection.Imports.RequireImports.Import',
+					'line' => 20,
+					'message' => 'Found unused symbol Emergent.',
+				],
+			], 'bin/foobar.php'),
+			PhpcsMessages::fromArrays([
+				[
+					'type' => 'ERROR',
+					'severity' => 5,
+					'fixable' => false,
+					'column' => 5,
+					'source' => 'ImportDetection.Imports.RequireImports.Import',
+					'line' => 20,
+					'message' => 'Found unused symbol Baz.',
+				],
+			], 'bin/baz.php'),
+		]);
+		$messages = runGitWorkflow($gitFiles, $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
