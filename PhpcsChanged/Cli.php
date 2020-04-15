@@ -83,15 +83,15 @@ EOF;
 
 Automatic Mode:
 
-	Automatic mode will try to gather data itself if you specify the version
-	control system (you must run phpcs-changed from within the version-controlled
-	directory for this to work):
+	Automatic mode can scan multiple files and will gather the required data
+	itself if you specify the version control system (you must run phpcs-changed
+	from within the version-controlled directory for this to work):
 
 EOF;
 
 	printTwoColumns([
-		'--svn' => 'Assume svn-versioned file.',
-		'--git' => 'Assume git-versioned file.',
+		'--svn' => 'Assume svn-versioned files.',
+		'--git' => 'Assume git-versioned files.',
 	], "	");
 
 	echo <<<EOF
@@ -106,21 +106,22 @@ EOF;
 EOF;
 
 	printTwoColumns([
-		'--git-staged' => 'Compare the staged version to the HEAD version (this is the default)',
-		'--git-unstaged' => 'Compare the working copy version to the staged (or HEAD) version',
+		'--git-staged' => 'Compare the staged version to the HEAD version (this is the default).',
+		'--git-unstaged' => 'Compare the working copy version to the staged (or HEAD) version.',
 	], "	");
 
 	echo <<<EOF
 Options:
 
-	All modes support the following options:
+	All modes support the following options. Some of the options match options of
+	the same name from phpcs for convenience (eg: --standard, -s, and --report).
 
 EOF;
 
 	printTwoColumns([
 		'--standard <STANDARD>' => 'The phpcs standard to use.',
 		'--report <REPORTER>' => 'The phpcs reporter to use. One of "full" (default) or "json".',
-		'-s' => 'Show sniff codes for each error when the reporter is "full"',
+		'-s' => 'Show sniff codes for each error when the reporter is "full".',
 		'--debug' => 'Enable debug output.',
 		'--help' => 'Print this help.',
 		'--version' => 'Print the current version.',
