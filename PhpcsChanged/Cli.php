@@ -100,7 +100,7 @@ The git mode also allows for an additional option, one of:
 EOF;
 
 	printTwoColumns([
-		'--git-staged' => 'Compare the staged version to the HEAD version',
+		'--git-staged' => 'Compare the staged version to the HEAD version (this is the default)',
 		'--git-unstaged' => 'Compare the HEAD version to the staged (or HEAD) version',
 	]);
 
