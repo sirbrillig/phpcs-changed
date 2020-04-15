@@ -32,6 +32,7 @@ function printError($output) {
 
 function printErrorAndExit($output) {
 	printError($output);
+	fwrite(STDERR, PHP_EOL . 'Run "phpcs-changed --help" for usage information.'. PHP_EOL);
 	exit(1);
 }
 
