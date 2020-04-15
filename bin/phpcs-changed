@@ -76,7 +76,7 @@ function run(array $options, array $fileNamesExpanded, callable $debug): void {
 	}
 
 	if ((isset($options['svn']) || isset($options['git'])) && empty($fileNamesExpanded)) {
-		printErrorAndExit('No files specified.');
+		printErrorAndExit('You must supply at least one file or directory to process.');
 		return;
 	}
 
