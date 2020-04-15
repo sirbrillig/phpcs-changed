@@ -125,7 +125,6 @@ override them, you can use the environment variables 'SVN', 'GIT', 'CAT', and
 'PHPCS', respectively, to specify the full path for each one.
 
 EOF;
-	exit(0);
 }
 
 function getReporter(string $reportType): Reporter {

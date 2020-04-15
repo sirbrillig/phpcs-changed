@@ -49,6 +49,7 @@ $fileNamesExpanded = array_reduce($fileNames, function(array $expandedNames, str
 
 if (isset($options['h']) || isset($options['help'])) {
 	printHelp();
+	exit(0);
 }
 
 if (isset($options['version'])) {
@@ -100,5 +101,6 @@ function run(array $options, array $fileNamesExpanded, callable $debug): void {
 	}
 
 	printHelp();
+	exit(1);
 }
 
