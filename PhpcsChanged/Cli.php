@@ -26,12 +26,13 @@ function getDebug($debugEnabled) {
 }
 
 function printError($output) {
-	fwrite(STDERR, 'phpcs-changed: Fatal error!' . PHP_EOL);
-	fwrite(STDERR, $output . PHP_EOL);
+	fwrite(STDERR, 'phpcs-changed: An error occurred.' . PHP_EOL);
+	fwrite(STDERR, 'ERROR: ' . $output . PHP_EOL);
 }
 
 function printErrorAndExit($output) {
 	printError($output);
+	fwrite(STDERR, PHP_EOL . 'Run "phpcs-changed --help" for usage information.'. PHP_EOL);
 	exit(1);
 }
 
@@ -124,7 +125,6 @@ override them, you can use the environment variables 'SVN', 'GIT', 'CAT', and
 'PHPCS', respectively, to specify the full path for each one.
 
 EOF;
-	exit(0);
 }
 
 function getReporter(string $reportType): Reporter {
