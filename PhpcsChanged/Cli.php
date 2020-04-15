@@ -42,11 +42,11 @@ function getLongestString(array $strings): int {
 	}, 0);
 }
 
-function printTwoColumns(array $columns) {
+function printTwoColumns(array $columns, string $indent) {
 	$longestFirstCol = getLongestString(array_keys($columns));
 	echo PHP_EOL;
 	foreach ($columns as $firstCol => $secondCol) {
-		printf("%{$longestFirstCol}s\t%s" . PHP_EOL, $firstCol, $secondCol);
+		printf("%s%{$longestFirstCol}s\t%s" . PHP_EOL, $indent, $firstCol, $secondCol);
 	}
 	echo PHP_EOL;
 }
@@ -66,7 +66,10 @@ Run phpcs on files and only report new warnings/errors compared to the previous 
 
 This can be run in two modes: manual or automatic.
 
-Manual mode requires these three arguments:
+Manual Mode:
+
+	In manual mode, only one file can be scanned and three arguments are required
+	to collect all the information needed for that file:
 
 EOF;
 
@@ -74,38 +77,43 @@ EOF;
 		'--diff <FILE>' => 'A file containing a unified diff of the changes.',
 		'--phpcs-orig <FILE>' => 'A file containing the JSON output of phpcs on the unchanged file.',
 		'--phpcs-new <FILE>' => 'A file containing the JSON output of phpcs on the changed file.',
-	]);
+	], "	");
 
 	echo <<<EOF
-Automatic mode will try to gather data itself if you specify the version
-control system (you must run phpcs-changed from within the version-controlled
-directory for this to work):
+
+Automatic Mode:
+
+	Automatic mode will try to gather data itself if you specify the version
+	control system (you must run phpcs-changed from within the version-controlled
+	directory for this to work):
 
 EOF;
 
 	printTwoColumns([
 		'--svn' => 'Assume svn-versioned file.',
 		'--git' => 'Assume git-versioned file.',
-	]);
+	], "	");
 
 	echo <<<EOF
-After this option you can specify a list of files to scan. You can also specify
-globs or directories. If a directory is found, all the files ending in .php
-within that directory (recursively) will be scanned.
+	After this option you can specify a list of files to scan. You can also specify
+	globs or directories. If a directory is found, all the files ending in .php
+	within that directory (recursively) will be scanned.
 
-Example: phpcs-changed --svn file.php path/to/other/file.php path/to/directory
+	Example: phpcs-changed --svn file.php path/to/other/file.php path/to/directory
 
-The git mode also allows for an additional option, one of:
+	The git mode also allows for an additional option, one of:
 
 EOF;
 
 	printTwoColumns([
 		'--git-staged' => 'Compare the staged version to the HEAD version (this is the default)',
 		'--git-unstaged' => 'Compare the working copy version to the staged (or HEAD) version',
-	]);
+	], "	");
 
 	echo <<<EOF
-All modes support the following options:
+Options:
+
+	All modes support the following options:
 
 EOF;
 
@@ -116,13 +124,14 @@ EOF;
 		'--debug' => 'Enable debug output.',
 		'--help' => 'Print this help.',
 		'--version' => 'Print the current version.',
-	]);
+	], "	");
 	echo <<<EOF
+Overrides:
 
-If using automatic mode, this requires three shell commands: 'svn' or 'git',
-'cat', and 'phpcs'. If those commands are not in your PATH or you would like to
-override them, you can use the environment variables 'SVN', 'GIT', 'CAT', and
-'PHPCS', respectively, to specify the full path for each one.
+	If using automatic mode, this script requires three shell commands: 'svn' or
+	'git', 'cat', and 'phpcs'. If those commands are not in your PATH or you would
+	like to override them, you can use the environment variables 'SVN', 'GIT',
+	'CAT', and 'PHPCS', respectively, to specify the full path for each one.
 
 EOF;
 }
