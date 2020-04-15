@@ -100,6 +100,10 @@ function run(array $options, array $fileNamesExpanded, callable $debug): void {
 		return;
 	}
 
+	if (count($options) > 0) {
+		printErrorAndExit('You must use either manual or automatic mode.');
+		return;
+	}
 	printHelp();
 	exit(1);
 }
