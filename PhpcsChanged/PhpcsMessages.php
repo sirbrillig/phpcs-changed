@@ -78,6 +78,6 @@ class PhpcsMessages {
 
 	public function toPhpcsJson(): string {
 		$reporter = new JsonReporter();
-		return $reporter->getFormattedMessages($this);
+		return $reporter->getFormattedMessages($this, []);
 	}
 }

@@ -21,7 +21,7 @@ use PhpcsChanged\UnixShell;
 
 $optind = 0;
 $options = getopt(
-	'h',
+	'hs',
 	[
 		'help',
 		'version',
@@ -68,7 +68,8 @@ function run(array $options, array $fileNamesExpanded, callable $debug): void {
 	if ($diffFile && $phpcsOldFile && $phpcsNewFile) {
 		reportMessagesAndExit(
 			runManualWorkflow($diffFile, $phpcsOldFile, $phpcsNewFile),
-			$reportType
+			$reportType,
+			$options
 		);
 		return;
 	}
@@ -82,7 +83,8 @@ function run(array $options, array $fileNamesExpanded, callable $debug): void {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
 			runSvnWorkflow($fileNamesExpanded, $options, $shell, $debug),
-			$reportType
+			$reportType,
+			$options
 		);
 		return;
 	}
@@ -91,7 +93,8 @@ function run(array $options, array $fileNamesExpanded, callable $debug): void {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
 			runGitWorkflow($fileNamesExpanded, $options, $shell, $debug),
-			$reportType
+			$reportType,
+			$options
 		);
 		return;
 	}
