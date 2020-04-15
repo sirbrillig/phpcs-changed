@@ -61,11 +61,7 @@ EOF;
 
 function printHelp() {
 	echo <<<EOF
-A tool to run phpcs on changed sections of files.
-
-Usage: phpcs-changed <OPTIONS> <file.php>
-
-Currently you can only run the tool on one file at a time.
+Run phpcs on files and only report new warnings/errors compared to the previous version.
 
 This can be run in two modes: manual or automatic.
 
@@ -81,17 +77,33 @@ EOF;
 
 	echo <<<EOF
 Automatic mode will try to gather data itself if you specify the version
-control system:
+control system (you must run phpcs-changed from within the version-controlled
+directory for this to work):
 
 EOF;
 
 	printTwoColumns([
-		'--svn <FILE>' => 'This is the svn-versioned file to check.',
-		'--git <FILE>' => 'This is the git-versioned file to check.',
+		'--svn' => 'Assume svn-versioned file.',
+		'--git' => 'Assume git-versioned file.',
 	]);
 
 	echo <<<EOF
+After this option you can specify a list of files to scan. You can also specify
+globs or directories. If a directory is found, all the files ending in .php
+within that directory (recursively) will be scanned.
 
+Example: phpcs-changed --svn file.php path/to/other/file.php path/to/directory
+
+The git mode also allows for an additional option, one of:
+
+EOF;
+
+	printTwoColumns([
+		'--git-staged' => 'Compare the staged version to the HEAD version',
+		'--git-unstaged' => 'Compare the HEAD version to the staged (or HEAD) version',
+	]);
+
+	echo <<<EOF
 All modes support the following options:
 
 EOF;
@@ -99,6 +111,7 @@ EOF;
 	printTwoColumns([
 		'--standard <STANDARD>' => 'The phpcs standard to use.',
 		'--report <REPORTER>' => 'The phpcs reporter to use. One of "full" (default) or "json".',
+		'-s' => 'Show sniff codes for each error when the reporter is "full"',
 		'--debug' => 'Enable debug output.',
 		'--help' => 'Print this help.',
 		'--version' => 'Print the current version.',
