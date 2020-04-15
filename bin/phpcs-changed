@@ -74,7 +74,7 @@ function run(array $options, array $fileNamesExpanded, callable $debug): void {
 		return;
 	}
 
-	if (empty($fileNamesExpanded)) {
+	if ((isset($options['svn']) || isset($options['git'])) && empty($fileNamesExpanded)) {
 		printErrorAndExit('No files specified.');
 		return;
 	}
