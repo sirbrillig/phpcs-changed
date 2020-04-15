@@ -36,4 +36,71 @@ final class PhpcsMessagesTest extends TestCase {
 		]);
 		$this->assertEquals($expected, $messages->toPhpcsJson());
 	}
+
+	public function testMerge() {
+		$expected = PhpcsMessages::fromArrays([
+			[
+				'type' => 'WARNING',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 15,
+				'message' => 'Found unused symbol Foo.',
+			],
+			[
+				'type' => 'WARNING',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 18,
+				'message' => 'Found unused symbol Baz.',
+			],
+			[
+				'type' => 'WARNING',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 20,
+				'message' => 'Found unused symbol Bar.',
+			],
+		]);
+		$messagesA = PhpcsMessages::fromArrays([
+			[
+				'type' => 'WARNING',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 15,
+				'message' => 'Found unused symbol Foo.',
+			],
+		]);
+		$messagesB = PhpcsMessages::fromArrays([
+			[
+				'type' => 'WARNING',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 18,
+				'message' => 'Found unused symbol Baz.',
+			],
+		]);
+		$messagesC = PhpcsMessages::fromArrays([
+			[
+				'type' => 'WARNING',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 20,
+				'message' => 'Found unused symbol Bar.',
+			],
+		]);
+		$messages = PhpcsMessages::merge([$messagesA, $messagesB, $messagesC]);
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
 }
