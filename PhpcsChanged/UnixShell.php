@@ -29,7 +29,7 @@ class UnixShell implements ShellOperator {
 	}
 
 	public function printError(string $output): void {
-		fwrite(STDERR, 'phpcs-changed: Fatal error!' . PHP_EOL);
-		fwrite(STDERR, $output . PHP_EOL);
+		fwrite(STDERR, 'phpcs-changed: An error occurred.' . PHP_EOL);
+		fwrite(STDERR, 'ERROR:' . $output . PHP_EOL);
 	}
 }

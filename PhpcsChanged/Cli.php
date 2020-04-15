@@ -26,8 +26,8 @@ function getDebug($debugEnabled) {
 }
 
 function printError($output) {
-	fwrite(STDERR, 'phpcs-changed: Fatal error!' . PHP_EOL);
-	fwrite(STDERR, $output . PHP_EOL);
+	fwrite(STDERR, 'phpcs-changed: An error occurred.' . PHP_EOL);
+	fwrite(STDERR, 'ERROR: ' . $output . PHP_EOL);
 }
 
 function printErrorAndExit($output) {
