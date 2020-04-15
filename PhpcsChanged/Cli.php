@@ -101,7 +101,7 @@ EOF;
 
 	printTwoColumns([
 		'--git-staged' => 'Compare the staged version to the HEAD version (this is the default)',
-		'--git-unstaged' => 'Compare the HEAD version to the staged (or HEAD) version',
+		'--git-unstaged' => 'Compare the working copy version to the staged (or HEAD) version',
 	]);
 
 	echo <<<EOF
