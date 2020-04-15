@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace PhpcsChanged;
 
 use PhpcsChanged\ShellOperator;
+use function PhpcsChanged\Cli\printError;
 
 /**
  * Module to perform file and shell operations
@@ -29,7 +30,6 @@ class UnixShell implements ShellOperator {
 	}
 
 	public function printError(string $output): void {
-		fwrite(STDERR, 'phpcs-changed: An error occurred.' . PHP_EOL);
-		fwrite(STDERR, 'ERROR:' . $output . PHP_EOL);
+		printError($output);
 	}
 }
