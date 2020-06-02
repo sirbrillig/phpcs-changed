@@ -40,12 +40,19 @@ $options = getopt(
 );
 
 $fileNames = array_slice($argv, $optind);
-$fileNamesExpanded = array_reduce($fileNames, function(array $expandedNames, string $file): array {
-	if (is_dir($file)) {
-		return array_merge($expandedNames, glob("{$file}/**/*.php"));
+$fileNamesExpanded = [];
+foreach( $fileNames as $file ) {
+	if ( is_dir($file) ) {
+		$iterator = new RecursiveIteratorIterator(new RecursiveCallbackFilterIterator(new RecursiveDirectoryIterator($file, (RecursiveDirectoryIterator::SKIP_DOTS | FilesystemIterator::FOLLOW_SYMLINKS)), function($file, $key, $iterator){
+			return $iterator->hasChildren() || ( $file->isFile() && '.php' === substr($file->getFilename(),-4) ) ? true : false;
+		}));
+		foreach( $iterator as $file ) {
+			$fileNamesExpanded[] = $file->getPathName();
+		}
+	} else {
+		$fileNamesExpanded[] = $file;
 	}
-	return array_merge($expandedNames, [$file]);
-}, []);
+}
 
 if (isset($options['h']) || isset($options['help'])) {
 	printHelp();
