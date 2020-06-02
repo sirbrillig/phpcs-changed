@@ -64,7 +64,11 @@ function isNewGitFileLocal(string $gitFile, string $git, callable $executeComman
 }
 
 function getGitBasePhpcsOutput(string $gitFile, string $git, string $phpcs, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
-	$rev = isset($options['git-unstaged']) ? ':0' : 'HEAD';
+	if ( isset($options['git-branch']) && ! empty($options['git-branch']) ) {
+		$rev = escapeshellarg($options['git-branch']);
+	} else {
+		$rev = empty( $branchOption ) && isset($options['git-unstaged']) ? ':0' : 'HEAD';
+	}
 	$oldFilePhpcsOutputCommand = "${git} show {$rev}:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ") | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) . ' -';
 	$debug('running orig phpcs command:', $oldFilePhpcsOutputCommand);
 	$oldFilePhpcsOutput = $executeCommand($oldFilePhpcsOutputCommand);
