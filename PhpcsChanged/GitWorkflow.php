@@ -20,8 +20,9 @@ function validateGitFileExists(string $gitFile, string $git, callable $isReadabl
 }
 
 function getGitUnifiedDiff(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): string {
-	$stagedOption = isset($options['git-unstaged']) ? '' : ' --staged';
-	$unifiedDiffCommand = "{$git} diff{$stagedOption} --no-prefix " . escapeshellarg($gitFile);
+	$branchOption = isset($options['git-branch']) && ! empty($options['git-branch']) ? ' ' . escapeshellarg($options['git-branch']) . '...' : '';
+	$stagedOption = empty( $branchOption ) && ! isset($options['git-unstaged']) ? ' --staged' : '';
+	$unifiedDiffCommand = "{$git} diff{$stagedOption}{$branchOption} --no-prefix " . escapeshellarg($gitFile);
 	$debug('running diff command:', $unifiedDiffCommand);
 	$unifiedDiff = $executeCommand($unifiedDiffCommand);
 	if (! $unifiedDiff) {
@@ -31,7 +32,24 @@ function getGitUnifiedDiff(string $gitFile, string $git, callable $executeComman
 	return $unifiedDiff;
 }
 
-function isNewGitFile(string $gitFile, string $git, callable $executeCommand, callable $debug): bool {
+function isNewGitFile(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
+	if ( isset($options['git-branch']) && ! empty($options['git-branch']) ) {
+		return isNewGitFileRemote( $gitFile, $git, $executeCommand, $options, $debug );
+	} else {
+		return isNewGitFileLocal( $gitFile, $git, $executeCommand, $options, $debug );
+	}
+}
+
+function isNewGitFileRemote(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
+	$gitStatusCommand = "${git} cat-file -e " . escapeshellarg($options['git-branch']) . ':' . escapeshellarg($gitFile);
+	$debug('checking status of file with command:', $gitStatusCommand);
+	$gitStatusOutput = $executeCommand($gitStatusCommand,$output,$return_val);
+	$debug('status command output:', $gitStatusOutput);
+	$debug('status command return val:', $return_val);
+	return 0 !== $return_val;
+}
+
+function isNewGitFileLocal(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
 	$gitStatusCommand = "${git} status --short " . escapeshellarg($gitFile);
 	$debug('checking git status of file with command:', $gitStatusCommand);
 	$gitStatusOutput = $executeCommand($gitStatusCommand);
