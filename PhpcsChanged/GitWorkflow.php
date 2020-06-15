@@ -43,9 +43,11 @@ function isNewGitFile(string $gitFile, string $git, callable $executeCommand, ar
 function isNewGitFileRemote(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
 	$gitStatusCommand = "${git} cat-file -e " . escapeshellarg($options['git-branch']) . ':' . escapeshellarg($gitFile);
 	$debug('checking status of file with command:', $gitStatusCommand);
-	$gitStatusOutput = $executeCommand($gitStatusCommand, $gitStatusOutput, $retVal);
+	$gitStatusOutput = array();
+	$return_val = 0;
+	$gitStatusOutput = $executeCommand($gitStatusCommand, $gitStatusOutput, $return_val);
 	$debug('status command output:', $gitStatusOutput);
-	$debug('status command return val:', $retVal);
+	$debug('status command return val:', $return_val);
 	return 0 !== $return_val;
 }
 
