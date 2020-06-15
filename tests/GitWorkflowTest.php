@@ -20,7 +20,7 @@ final class GitWorkflowTest extends TestCase {
 			}
 		};
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		$this->assertTrue(isNewGitFile($gitFile, $git, $executeCommand, $debug));
+		$this->assertTrue(isNewGitFile($gitFile, $git, $executeCommand, array(), $debug));
 	}
 
 	public function testIsNewGitFileReturnsFalseForOldFile() {
@@ -32,7 +32,7 @@ final class GitWorkflowTest extends TestCase {
 			}
 		};
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		$this->assertFalse(isNewGitFile($gitFile, $git, $executeCommand, $debug));
+		$this->assertFalse(isNewGitFile($gitFile, $git, $executeCommand, array(), $debug));
 	}
 
 	public function testGetGitUnifiedDiff() {
