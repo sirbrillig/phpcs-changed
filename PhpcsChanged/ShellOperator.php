@@ -9,7 +9,7 @@ namespace PhpcsChanged;
 interface ShellOperator {
 	public function validateExecutableExists(string $name, string $command): void;
 
-	public function executeCommand(string $command, ?array &$output, ?array &$return_val): string;
+	public function executeCommand(string $command, array &$output = null, array &$return_val = null): string;
 
 	public function isReadable(string $fileName): bool;
 
