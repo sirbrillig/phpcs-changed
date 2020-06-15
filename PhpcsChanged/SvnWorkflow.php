@@ -55,7 +55,7 @@ function getSvnBasePhpcsOutput(string $svnFile, string $svn, string $phpcs, stri
 function getSvnNewPhpcsOutput(string $svnFile, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
 	$newFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($svnFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($svnFile) . ' -';
 	$debug('running new phpcs command:', $newFilePhpcsOutputCommand);
-	$newFilePhpcsOutput = $executeCommand($newFilePhpcsOutputCommand;
+	$newFilePhpcsOutput = $executeCommand($newFilePhpcsOutputCommand);
 	if (! $newFilePhpcsOutput) {
 		throw new ShellException("Cannot get new phpcs output for file '{$svnFile}'");
 	}

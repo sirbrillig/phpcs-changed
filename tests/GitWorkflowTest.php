@@ -76,7 +76,7 @@ EOF;
 
 			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command, array &$output, array &$return_val): string {
+			public function executeCommand(string $command, ?array &$output, ?array &$return_val): string {
 				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 					return <<<EOF
 diff --git bin/foobar.php bin/foobar.php
@@ -135,7 +135,7 @@ EOF;
 
 			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command, array &$output, array &$return_val): string {
+			public function executeCommand(string $command, ?array &$output, ?array &$return_val): string {
 				if (false !== strpos($command, "git diff --no-prefix 'foobar.php'")) {
 					return <<<EOF
 diff --git bin/foobar.php bin/foobar.php
@@ -194,7 +194,7 @@ EOF;
 
 			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command, array &$output, array &$return_val): string {
+			public function executeCommand(string $command, ?array &$output, ?array &$return_val): string {
 				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 					return <<<EOF
 diff --git bin/foobar.php bin/foobar.php
@@ -291,7 +291,7 @@ EOF;
 
 			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command, array &$output, array &$return_val): string {
+			public function executeCommand(string $command, ?array &$output, ?array &$return_val): string {
 				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 					return <<<EOF
 EOF;
@@ -328,7 +328,7 @@ EOF;
 
 			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command, array &$output, array &$return_val): string {
+			public function executeCommand(string $command, ?array &$output, ?array &$return_val): string {
 				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 					return <<<EOF
 EOF;
@@ -366,7 +366,7 @@ EOF;
 
 			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command, array &$output, array &$return_val): string {
+			public function executeCommand(string $command, ?array &$output, ?array &$return_val): string {
 				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 					return <<<EOF
 EOF;
@@ -401,7 +401,7 @@ EOF;
 
 			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command, array &$output, array &$return_val): string {
+			public function executeCommand(string $command, ?array &$output, ?array &$return_val): string {
 				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 					return <<<EOF
 diff --git bin/foobar.php bin/foobar.php
@@ -468,7 +468,7 @@ EOF;
 
 			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command, array &$output, array &$return_val): string {
+			public function executeCommand(string $command, ?array &$output, ?array &$return_val): string {
 				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 					return <<<EOF
 diff --git bin/foobar.php bin/foobar.php
