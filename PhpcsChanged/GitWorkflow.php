@@ -12,7 +12,7 @@ function validateGitFileExists(string $gitFile, string $git, callable $isReadabl
 	}
 	$gitStatusCommand = "${git} status --short " . escapeshellarg($gitFile);
 	$debug('checking git existence of file with command:', $gitStatusCommand);
-	$gitStatusOutput = $executeCommand($gitStatusCommand);
+	$gitStatusOutput = $executeCommand($gitStatusCommand, $gitStatusOutput, $retVal);
 	$debug('git status output:', $gitStatusOutput);
 	if (isset($gitStatusOutput[0]) && $gitStatusOutput[0] === '?') {
 		throw new ShellException("File does not appear to be tracked by git: '{$gitFile}'");
@@ -24,7 +24,7 @@ function getGitUnifiedDiff(string $gitFile, string $git, callable $executeComman
 	$stagedOption = empty( $branchOption ) && ! isset($options['git-unstaged']) ? ' --staged' : '';
 	$unifiedDiffCommand = "{$git} diff{$stagedOption}{$branchOption} --no-prefix " . escapeshellarg($gitFile);
 	$debug('running diff command:', $unifiedDiffCommand);
-	$unifiedDiff = $executeCommand($unifiedDiffCommand);
+	$unifiedDiff = $executeCommand($unifiedDiffCommand, $unifiedDiff, $retVal);
 	if (! $unifiedDiff) {
 		throw new NoChangesException("Cannot get git diff for file '{$gitFile}'; skipping");
 	}
@@ -43,16 +43,16 @@ function isNewGitFile(string $gitFile, string $git, callable $executeCommand, ar
 function isNewGitFileRemote(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
 	$gitStatusCommand = "${git} cat-file -e " . escapeshellarg($options['git-branch']) . ':' . escapeshellarg($gitFile);
 	$debug('checking status of file with command:', $gitStatusCommand);
-	$gitStatusOutput = $executeCommand($gitStatusCommand,$output,$return_val);
+	$gitStatusOutput = $executeCommand($gitStatusCommand, $gitStatusOutput, $retVal);
 	$debug('status command output:', $gitStatusOutput);
-	$debug('status command return val:', $return_val);
+	$debug('status command return val:', $retVal);
 	return 0 !== $return_val;
 }
 
 function isNewGitFileLocal(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
 	$gitStatusCommand = "${git} status --short " . escapeshellarg($gitFile);
 	$debug('checking git status of file with command:', $gitStatusCommand);
-	$gitStatusOutput = $executeCommand($gitStatusCommand);
+	$gitStatusOutput = $executeCommand($gitStatusCommand, $gitStatusOutput, $retVal);
 	$debug('git status output:', $gitStatusOutput);
 	if (! $gitStatusOutput || false === strpos($gitStatusOutput, $gitFile)) {
 		throw new ShellException("Cannot get git status for file '{$gitFile}'");
@@ -71,7 +71,7 @@ function getGitBasePhpcsOutput(string $gitFile, string $git, string $phpcs, stri
 	}
 	$oldFilePhpcsOutputCommand = "${git} show {$rev}:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ") | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) . ' -';
 	$debug('running orig phpcs command:', $oldFilePhpcsOutputCommand);
-	$oldFilePhpcsOutput = $executeCommand($oldFilePhpcsOutputCommand);
+	$oldFilePhpcsOutput = $executeCommand($oldFilePhpcsOutputCommand, $oldFilePhpcsOutput, $retVal);
 	if (! $oldFilePhpcsOutput) {
 		throw new ShellException("Cannot get old phpcs output for file '{$gitFile}'");
 	}
@@ -82,7 +82,7 @@ function getGitBasePhpcsOutput(string $gitFile, string $git, string $phpcs, stri
 function getGitNewPhpcsOutput(string $gitFile, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
 	$newFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($gitFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) .' -';
 	$debug('running new phpcs command:', $newFilePhpcsOutputCommand);
-	$newFilePhpcsOutput = $executeCommand($newFilePhpcsOutputCommand);
+	$newFilePhpcsOutput = $executeCommand($newFilePhpcsOutputCommand, $newFilePhpcsOutput, $retVal);
 	if (! $newFilePhpcsOutput) {
 		throw new ShellException("Cannot get new phpcs output for file '{$gitFile}'");
 	}
