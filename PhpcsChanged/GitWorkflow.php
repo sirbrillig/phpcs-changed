@@ -67,7 +67,7 @@ function getGitBasePhpcsOutput(string $gitFile, string $git, string $phpcs, stri
 	if ( isset($options['git-branch']) && ! empty($options['git-branch']) ) {
 		$rev = escapeshellarg($options['git-branch']);
 	} else {
-		$rev = empty( $branchOption ) && isset($options['git-unstaged']) ? ':0' : 'HEAD';
+		$rev = isset($options['git-unstaged']) ? ':0' : 'HEAD';
 	}
 	$oldFilePhpcsOutputCommand = "${git} show {$rev}:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ") | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) . ' -';
 	$debug('running orig phpcs command:', $oldFilePhpcsOutputCommand);
