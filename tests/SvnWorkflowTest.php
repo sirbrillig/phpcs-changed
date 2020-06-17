@@ -102,7 +102,7 @@ EOF;
 
 			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command, array &$output = null, array &$return_val = null): string {
+			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
 				if (false !== strpos($command, "svn diff 'foobar.php'")) {
 					return <<<EOF
 Index: foobar.php
@@ -177,7 +177,7 @@ EOF;
 
 			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command, array &$output = null, array &$return_val = null): string {
+			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
 				if (false !== strpos($command, "svn diff 'foobar.php'")) {
 					return <<<EOF
 Index: foobar.php
@@ -306,7 +306,7 @@ EOF;
 
 			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command, array &$output = null, array &$return_val = null): string {
+			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
 				if (false !== strpos($command, "svn diff 'foobar.php'")) {
 					return <<<EOF
 EOF;
@@ -359,7 +359,7 @@ EOF;
 
 			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command, array &$output = null, array &$return_val = null): string {
+			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
 				if (false !== strpos($command, "svn diff 'foobar.php'")) {
 					return <<<EOF
 EOF;
@@ -413,7 +413,7 @@ EOF;
 
 			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command, array &$output = null, array &$return_val = null): string {
+			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
 				if (false !== strpos($command, "svn diff 'foobar.php'")) {
 					return <<<EOF
 svn: E155010: The node 'foobar.php' was not found.
@@ -452,7 +452,7 @@ EOF;
 
 			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command, array &$output = null, array &$return_val = null): string {
+			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
 				if (false !== strpos($command, "svn diff 'foobar.php'")) {
 					return <<<EOF
 Index: foobar.php
@@ -524,7 +524,7 @@ EOF;
 
 			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command, array &$output = null, array &$return_val = null): string {
+			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
 				if (false !== strpos($command, "svn diff 'foobar.php'")) {
 					return <<<EOF
 Index: foobar.php
