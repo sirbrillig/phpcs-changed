@@ -272,3 +272,31 @@ function reportMessagesAndExit(PhpcsMessages $messages, string $reportType, arra
 	echo $reporter->getFormattedMessages($messages, $options);
 	exit($reporter->getExitCode($messages));
 }
+
+function fileHasValidExtension(\SplFileInfo $file): bool {
+	$extensions = [
+		'php',
+		'inc',
+		'js',
+		'css',
+	];
+	if ($file->isFile()) {
+		$fileName = basename($file->getFilename());
+		$fileParts = explode('.', $fileName);
+		if ($fileParts[0] === $fileName || $fileParts[0] === '') {
+			return false;
+		}
+
+		$fileExtensions = [];
+		array_shift($fileParts);
+		foreach ($fileParts as $part) {
+			$fileExtensions[] = implode('.', $fileParts);
+			array_shift($fileParts);
+		}
+		$matches = array_intersect($fileExtensions, $extensions);
+		if (empty($matches) === true) {
+			return false;
+		}
+	}
+	return true;
+}

@@ -15,7 +15,8 @@ use function PhpcsChanged\Cli\{
 	runManualWorkflow,
 	runSvnWorkflow,
 	runGitWorkflow,
-	reportMessagesAndExit
+	reportMessagesAndExit,
+	fileHasValidExtension
 };
 use PhpcsChanged\UnixShell;
 
@@ -44,31 +45,9 @@ $fileNamesExpanded = [];
 foreach( $fileNames as $file ) {
 	if ( is_dir($file) ) {
 		$iterator = new RecursiveIteratorIterator(new RecursiveCallbackFilterIterator(new RecursiveDirectoryIterator($file, (RecursiveDirectoryIterator::SKIP_DOTS | FilesystemIterator::FOLLOW_SYMLINKS)), function($file, $key, $iterator){
-			$extensions = [
-				'php',
-				'inc',
-				'js',
-				'css',
-			];
-			if ($file->isFile()) {
-				$fileName = basename($file->getFilename());
-				$fileParts = explode('.', $fileName);
-				if ($fileParts[0] === $fileName || $fileParts[0] === '') {
-					return false;
-				}
-
-				$fileExtensions = [];
-				array_shift($fileParts);
-				foreach ($fileParts as $part) {
-					$fileExtensions[] = implode('.', $fileParts);
-					array_shift($fileParts);
-				}
-				$matches = array_intersect($fileExtensions, $extensions);
-				if (empty($matches) === true) {
-					return false;
-				}
+			if ( ! fileHasValidExtension( $file ) ) {
+				return false;
 			}
-
 			return $iterator->hasChildren() || $file->isFile() ? true : false;
 		}));
 		foreach ($iterator as $file) {
