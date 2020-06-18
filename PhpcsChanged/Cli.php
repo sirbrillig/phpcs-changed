@@ -274,7 +274,8 @@ function reportMessagesAndExit(PhpcsMessages $messages, string $reportType, arra
 }
 
 function fileHasValidExtension(\SplFileInfo $file): bool {
-	$extensions = [
+	// The followin logic follows the same in PHPCS. See https://github.com/squizlabs/PHP_CodeSniffer/blob/2ecd8dc15364cdd6e5089e82ffef2b205c98c412/src/Filters/Filter.php#L161
+	$AllowedExtensions = [
 		'php',
 		'inc',
 		'js',
@@ -287,13 +288,13 @@ function fileHasValidExtension(\SplFileInfo $file): bool {
 			return false;
 		}
 
-		$fileExtensions = [];
+		$extensions = [];
 		array_shift($fileParts);
 		foreach ($fileParts as $part) {
-			$fileExtensions[] = implode('.', $fileParts);
+			$extensions[] = implode('.', $fileParts);
 			array_shift($fileParts);
 		}
-		$matches = array_intersect($fileExtensions, $extensions);
+		$matches = array_intersect($extensions, $AllowedExtensions);
 		if (empty($matches) === true) {
 			return false;
 		}
