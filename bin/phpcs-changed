@@ -43,9 +43,9 @@ $options = getopt(
 $fileNames = array_slice($argv, $optind);
 $fileNamesExpanded = [];
 foreach( $fileNames as $file ) {
-	if ( is_dir($file) ) {
+	if (is_dir($file)) {
 		$iterator = new RecursiveIteratorIterator(new RecursiveCallbackFilterIterator(new RecursiveDirectoryIterator($file, (RecursiveDirectoryIterator::SKIP_DOTS | FilesystemIterator::FOLLOW_SYMLINKS)), function($file, $key, $iterator){
-			if ( ! fileHasValidExtension( $file ) ) {
+			if (!fileHasValidExtension($file)) {
 				return false;
 			}
 			return $iterator->hasChildren() || $file->isFile() ? true : false;
