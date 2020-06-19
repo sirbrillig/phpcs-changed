@@ -507,7 +507,7 @@ Run "phpcs --help" for usage information
 
 	function testFullGitWorkflowForInterBranchDiff() {
 		$gitFile = 'bin/foobar.php';
-		$debug = function($message) { var_dump( $message ); }; //phpcs:ignore VariableAnalysis
+		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
 		$shell = new class() implements ShellOperator {
 			public function isReadable(string $fileName): bool {
 				return ($fileName === 'bin/foobar.php');
