@@ -4,8 +4,6 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/index.php';
 
 use PHPUnit\Framework\TestCase;
-use PhpcsChanged\PhpcsMessages;
-use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles};
 use function PhpcsChanged\Cli\fileHasValidExtension;
 
 class MockSplFileInfo extends SplFileInfo {
