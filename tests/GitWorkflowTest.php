@@ -552,8 +552,8 @@ EOF;
 				if ( false !== strpos($command, "cat 'bin/foobar.php' | phpcs --report=json -q --stdin-path='bin/foobar.php' -")) {
 					return '{"totals":{"errors":0,"warnings":2,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php":{"errors":0,"warnings":2,"messages":[{"message":"Found unused symbol '."'Foobar'".'.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5},{"message":"Found unused symbol '."'Billing\\\\Emergent'".'.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":7,"column":5}]}}}';
 				}
-				
-				return '';
+			
+				throw new \Exception("Unknown command: {$command}");	
 			}
 		};
 		$options = [ 'git-branch' => 'master' ];
