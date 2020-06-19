@@ -20,7 +20,7 @@ final class GitWorkflowTest extends TestCase {
 			}
 		};
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		$this->assertTrue(isNewGitFile($gitFile, $git, $executeCommand, $debug));
+		$this->assertTrue(isNewGitFile($gitFile, $git, $executeCommand, array(), $debug));
 	}
 
 	public function testIsNewGitFileReturnsFalseForOldFile() {
@@ -32,7 +32,7 @@ final class GitWorkflowTest extends TestCase {
 			}
 		};
 		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		$this->assertFalse(isNewGitFile($gitFile, $git, $executeCommand, $debug));
+		$this->assertFalse(isNewGitFile($gitFile, $git, $executeCommand, array(), $debug));
 	}
 
 	public function testGetGitUnifiedDiff() {
@@ -76,7 +76,7 @@ EOF;
 
 			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command): string {
+			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
 				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 					return <<<EOF
 diff --git bin/foobar.php bin/foobar.php
@@ -135,7 +135,7 @@ EOF;
 
 			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command): string {
+			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
 				if (false !== strpos($command, "git diff --no-prefix 'foobar.php'")) {
 					return <<<EOF
 diff --git bin/foobar.php bin/foobar.php
@@ -194,7 +194,7 @@ EOF;
 
 			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command): string {
+			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
 				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 					return <<<EOF
 diff --git bin/foobar.php bin/foobar.php
@@ -291,7 +291,7 @@ EOF;
 
 			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command): string {
+			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
 				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 					return <<<EOF
 EOF;
@@ -328,7 +328,7 @@ EOF;
 
 			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command): string {
+			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
 				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 					return <<<EOF
 EOF;
@@ -366,7 +366,7 @@ EOF;
 
 			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command): string {
+			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
 				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 					return <<<EOF
 EOF;
@@ -401,7 +401,7 @@ EOF;
 
 			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command): string {
+			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
 				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 					return <<<EOF
 diff --git bin/foobar.php bin/foobar.php
@@ -468,7 +468,7 @@ EOF;
 
 			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
-			public function executeCommand(string $command): string {
+			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
 				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 					return <<<EOF
 diff --git bin/foobar.php bin/foobar.php
@@ -501,6 +501,72 @@ Run "phpcs --help" for usage information
 		};
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([], '/dev/null');
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $debug);
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	function testFullGitWorkflowForInterBranchDiff() {
+		$gitFile = 'bin/foobar.php';
+		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
+		$shell = new class() implements ShellOperator {
+			public function isReadable(string $fileName): bool {
+				return ($fileName === 'bin/foobar.php');
+			}
+
+			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
+
+			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
+
+			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
+
+			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
+				if (false !== strpos($command, "git diff 'master'... --no-prefix 'bin/foobar.php'")) {
+					$return_val = 0;
+					return <<<EOF
+diff --git bin/foobar.php bin/foobar.php
+index c012707..319ecf3 100644
+--- bin/foobar.php
++++ bin/foobar.php
+@@ -3,6 +3,7 @@
+ use Billing\Purchases\Order;
+ use Billing\Services;
+ use Billing\Ebanx;
++use Foobar;
+ use Billing\Emergent;
+ use Billing\Monetary_Amount;
+ use Stripe\Error;
+EOF;
+				}
+				if (false !== strpos($command, "git status --short 'bin/foobar.php'")) {
+					$return_val = 0;
+					return ''; // the file is not modified, as this runs on fresh checkout.
+				}
+				if ( false !== strpos($command, "git cat-file -e 'master':'bin/foobar.php'")) {
+					$return_val = 0;
+					return '';
+				}
+				if ( false !== strpos($command, "git show 'master':$(git ls-files --full-name 'bin/foobar.php') | phpcs --report=json -q --stdin-path='bin/foobar.php' -") ){
+					return '{"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php":{"errors":0,"warnings":1,"messages":[{"message":"Found unused symbol '."'Billing\\\\Emergent'".'","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5}]}}}';
+				}
+				if ( false !== strpos($command, "cat 'bin/foobar.php' | phpcs --report=json -q --stdin-path='bin/foobar.php' -")) {
+					return '{"totals":{"errors":0,"warnings":2,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php":{"errors":0,"warnings":2,"messages":[{"message":"Found unused symbol '."'Foobar'".'.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5},{"message":"Found unused symbol '."'Billing\\\\Emergent'".'.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":7,"column":5}]}}}';
+				}
+			
+				throw new \Exception("Unknown command: {$command}");	
+			}
+		};
+		$options = [ 'git-branch' => 'master' ];
+		$expected = PhpcsMessages::fromArrays([
+			[
+				'type' => 'WARNING',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 6,
+				'message' => "Found unused symbol 'Foobar'.",
+			],
+		], 'bin/foobar.php');
 		$messages = runGitWorkflow([$gitFile], $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}

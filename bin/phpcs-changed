@@ -32,6 +32,7 @@ $options = getopt(
 		'git',
 		'git-unstaged',
 		'git-staged',
+		'git-branch:',
 		'standard:',
 		'report:',
 		'debug'

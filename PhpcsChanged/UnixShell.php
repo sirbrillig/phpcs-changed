@@ -17,8 +17,9 @@ class UnixShell implements ShellOperator {
 		}
 	}
 
-	public function executeCommand(string $command): string {
-		return shell_exec($command) ?? '';
+	public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
+		exec($command, $output, $return_val) ?? '';
+		return join(PHP_EOL, $output) . PHP_EOL;
 	}
 
 	public function isReadable(string $fileName): bool {
