@@ -281,23 +281,27 @@ function fileHasValidExtension(\SplFileInfo $file): bool {
 		'js',
 		'css',
 	];
-	if ($file->isFile()) {
-		$fileName = basename($file->getFilename());
-		$fileParts = explode('.', $fileName);
-		if ($fileParts[0] === $fileName || $fileParts[0] === '') {
-			return false;
-		}
-
-		$extensions = [];
-		array_shift($fileParts);
-		foreach ($fileParts as $part) {
-			$extensions[] = implode('.', $fileParts);
-			array_shift($fileParts);
-		}
-		$matches = array_intersect($extensions, $AllowedExtensions);
-		if (empty($matches) === true) {
-			return false;
-		}
+	// Extensions can only be checked for files.
+	if (!$file->isFile()) {
+		return false;
 	}
+
+	$fileName = basename($file->getFilename());
+	$fileParts = explode('.', $fileName);
+	if ($fileParts[0] === $fileName || $fileParts[0] === '') {
+		return false;
+	}
+
+	$extensions = [];
+	array_shift($fileParts);
+	foreach ($fileParts as $part) {
+		$extensions[] = implode('.', $fileParts);
+		array_shift($fileParts);
+	}
+	$matches = array_intersect($extensions, $AllowedExtensions);
+	if (empty($matches) === true) {
+		return false;
+	}
+
 	return true;
 }
