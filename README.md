@@ -83,6 +83,13 @@ phpcs-changed --git --git-unstaged file.php
 
 You should specify `--git-staged` or `--git-unstaged` to tell `phpcs-changed` if you want to compare the current staged changes or the current working copy changes, respectively. The default is `--git-staged`.
 
+Alternatively, if you want to compare the current committed HEAD changes to another branch, you can use the `--git-branch` option followed by a branch name:
+
+```
+git checkout add-new-feature
+phpcs-changed --git --git-branch master file.php
+```
+
 ### CLI Options
 
 More than one file can be specified after a version control option, including globs and directories. If any file is a directory, phpcs-changed will scan the directory for all files ending in `.php` and process them. For example: `phpcs-changed --git src/lib test/**/*.php` will operate on all the php files in the `src/lib/` and `test/` directories.
