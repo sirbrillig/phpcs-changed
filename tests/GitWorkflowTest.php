@@ -504,6 +504,7 @@ Run "phpcs --help" for usage information
 		$messages = runGitWorkflow([$gitFile], $options, $shell, $debug);
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
+
 	function testFullGitWorkflowForInterBranchDiff() {
 		$gitFile = 'bin/foobar.php';
 		$debug = function($message) { var_dump( $message ); }; //phpcs:ignore VariableAnalysis
