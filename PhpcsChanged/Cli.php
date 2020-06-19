@@ -272,3 +272,36 @@ function reportMessagesAndExit(PhpcsMessages $messages, string $reportType, arra
 	echo $reporter->getFormattedMessages($messages, $options);
 	exit($reporter->getExitCode($messages));
 }
+
+function fileHasValidExtension(\SplFileInfo $file): bool {
+	// The followin logic follows the same in PHPCS. See https://github.com/squizlabs/PHP_CodeSniffer/blob/2ecd8dc15364cdd6e5089e82ffef2b205c98c412/src/Filters/Filter.php#L161
+	$AllowedExtensions = [
+		'php',
+		'inc',
+		'js',
+		'css',
+	];
+	// Extensions can only be checked for files.
+	if (!$file->isFile()) {
+		return false;
+	}
+
+	$fileName = basename($file->getFilename());
+	$fileParts = explode('.', $fileName);
+	if ($fileParts[0] === $fileName || $fileParts[0] === '') {
+		return false;
+	}
+
+	$extensions = [];
+	array_shift($fileParts);
+	foreach ($fileParts as $part) {
+		$extensions[] = implode('.', $fileParts);
+		array_shift($fileParts);
+	}
+	$matches = array_intersect($extensions, $AllowedExtensions);
+	if (empty($matches) === true) {
+		return false;
+	}
+
+	return true;
+}
