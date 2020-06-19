@@ -520,7 +520,6 @@ Run "phpcs --help" for usage information
 			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
 
 			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
-				var_dump( $command );
 				if (false !== strpos($command, "git diff 'master'... --no-prefix 'bin/foobar.php'")) {
 					$return_val = 0;
 					return <<<EOF
