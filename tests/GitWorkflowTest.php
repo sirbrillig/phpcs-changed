@@ -2,13 +2,16 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/index.php';
+require_once __DIR__ . '/helpers/helpers.php';
 
 use PHPUnit\Framework\TestCase;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\ShellOperator;
 use PhpcsChanged\ShellException;
+use PhpcsChangedTests\TestShell;
 use function PhpcsChanged\Cli\runGitWorkflow;
 use function PhpcsChanged\GitWorkflow\{isNewGitFile, getGitUnifiedDiff};
+
 
 final class GitWorkflowTest extends TestCase {
 	public function testIsNewGitFileReturnsTrueForNewFile() {
@@ -19,8 +22,7 @@ final class GitWorkflowTest extends TestCase {
 				return 'A foobar.php';
 			}
 		};
-		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		$this->assertTrue(isNewGitFile($gitFile, $git, $executeCommand, array(), $debug));
+		$this->assertTrue(isNewGitFile($gitFile, $git, $executeCommand, array(), '\PhpcsChangedTests\Debug'));
 	}
 
 	public function testIsNewGitFileReturnsFalseForOldFile() {
@@ -31,8 +33,7 @@ final class GitWorkflowTest extends TestCase {
 				return ' M foobar.php'; // note the leading space
 			}
 		};
-		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		$this->assertFalse(isNewGitFile($gitFile, $git, $executeCommand, array(), $debug));
+		$this->assertFalse(isNewGitFile($gitFile, $git, $executeCommand, array(), '\PhpcsChangedTests\Debug'));
 	}
 
 	public function testGetGitUnifiedDiff() {
@@ -58,27 +59,13 @@ EOF;
 			}
 			return $diff;
 		};
-		$debug = function($message) {}; //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		$this->assertEquals($diff, getGitUnifiedDiff($gitFile, $git, $executeCommand, [], $debug));
+		$this->assertEquals($diff, getGitUnifiedDiff($gitFile, $git, $executeCommand, [], '\PhpcsChangedTests\Debug'));
 	}
 
 	public function testFullGitWorkflowForOneFile() {
 		$gitFile = 'foobar.php';
-		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
-		$shell = new class() implements ShellOperator {
-			public function isReadable(string $fileName): bool {
-				return ($fileName === 'foobar.php');
-			}
-
-			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
-
-			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
-
-			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
-
-			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
-				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
-					return <<<EOF
+		$shell = new TestShell([$gitFile]);
+		$fixture = <<<EOF
 diff --git bin/foobar.php bin/foobar.php
 index 038d718..d6c3357 100644
 --- bin/foobar.php
@@ -92,19 +79,10 @@ index 038d718..d6c3357 100644
  use Billing\Monetary_Amount;
  use Stripe\Error;
 EOF;
-				}
-				if (false !== strpos($command, "git status --short 'foobar.php'")) {
-					return ' M foobar.php'; // note the leading space
-				}
-				if (false !== strpos($command, "git show HEAD:$(git ls-files --full-name 'foobar.php')")) {
-					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
-				}
-				if (false !== strpos($command, "cat 'foobar.php'")) {
-					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
-				}
-				return '';
-			}
-		};
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --short 'foobar.php'", ' M foobar.php'); // note the leading space
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([
 			[
@@ -117,27 +95,14 @@ EOF;
 				'message' => 'Found unused symbol Emergent.',
 			],
 		], 'bin/foobar.php');
-		$messages = runGitWorkflow([$gitFile], $options, $shell, $debug);
+		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	public function testFullGitWorkflowForOneFileUnstaged() {
 		$gitFile = 'foobar.php';
-		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
-		$shell = new class() implements ShellOperator {
-			public function isReadable(string $fileName): bool {
-				return ($fileName === 'foobar.php');
-			}
-
-			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
-
-			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
-
-			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
-
-			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
-				if (false !== strpos($command, "git diff --no-prefix 'foobar.php'")) {
-					return <<<EOF
+		$shell = new TestShell([$gitFile]);
+		$fixture = <<<EOF
 diff --git bin/foobar.php bin/foobar.php
 index 038d718..d6c3357 100644
 --- bin/foobar.php
@@ -151,19 +116,10 @@ index 038d718..d6c3357 100644
  use Billing\Monetary_Amount;
  use Stripe\Error;
 EOF;
-				}
-				if (false !== strpos($command, "git status --short 'foobar.php'")) {
-					return ' M foobar.php'; // note the leading space
-				}
-				if (false !== strpos($command, "git show :0:$(git ls-files --full-name 'foobar.php')")) {
-					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
-				}
-				if (false !== strpos($command, "cat 'foobar.php'")) {
-					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
-				}
-				return '';
-			}
-		};
+		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --short 'foobar.php'", ' M foobar.php'); // note the leading space
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = ['git-unstaged' => '1'];
 		$expected = PhpcsMessages::fromArrays([
 			[
@@ -176,27 +132,14 @@ EOF;
 				'message' => 'Found unused symbol Emergent.',
 			],
 		], 'bin/foobar.php');
-		$messages = runGitWorkflow([$gitFile], $options, $shell, $debug);
+		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	public function testFullGitWorkflowForMultipleFiles() {
 		$gitFiles = ['foobar.php', 'baz.php'];
-		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
-		$shell = new class() implements ShellOperator {
-			public function isReadable(string $fileName): bool {
-				return ($fileName === 'foobar.php' || $fileName === 'baz.php');
-			}
-
-			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
-
-			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
-
-			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
-
-			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
-				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
-					return <<<EOF
+		$shell = new TestShell($gitFiles);
+		$fixture = <<<EOF
 diff --git bin/foobar.php bin/foobar.php
 index 038d718..d6c3357 100644
 --- bin/foobar.php
@@ -210,9 +153,8 @@ index 038d718..d6c3357 100644
  use Billing\Monetary_Amount;
  use Stripe\Error;
 EOF;
-				}
-				if (false !== strpos($command, "git diff --staged --no-prefix 'baz.php'")) {
-					return <<<EOF
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$fixture = <<<EOF
 diff --git bin/baz.php bin/baz.php
 index 038d718..d6c3357 100644
 --- bin/baz.php
@@ -226,28 +168,13 @@ index 038d718..d6c3357 100644
  use Billing\Monetary_Amount;
  use Stripe\Error;
 EOF;
-				}
-				if (false !== strpos($command, "git status --short 'foobar.php'")) {
-					return ' M foobar.php'; // note the leading space
-				}
-				if (false !== strpos($command, "git status --short 'baz.php'")) {
-					return ' M baz.php'; // note the leading space
-				}
-				if (false !== strpos($command, "git show HEAD:$(git ls-files --full-name 'foobar.php')")) {
-					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
-				}
-				if (false !== strpos($command, "git show HEAD:$(git ls-files --full-name 'baz.php')")) {
-					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."}]}}}';
-				}
-				if (false !== strpos($command, "cat 'foobar.php'")) {
-					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
-				}
-				if (false !== strpos($command, "cat 'baz.php'")) {
-					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."}]}}}';
-				}
-				return '';
-			}
-		};
+		$shell->registerCommand("git diff --staged --no-prefix 'baz.php'", $fixture);
+		$shell->registerCommand("git status --short 'foobar.php'", ' M foobar.php'); // note the leading space
+		$shell->registerCommand("git status --short 'baz.php'", ' M baz.php'); // note the leading space
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'baz.php')", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."}]}}}');
+		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("cat 'baz.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."}]}}}');
 		$options = [];
 		$expected = PhpcsMessages::merge([
 			PhpcsMessages::fromArrays([
@@ -273,137 +200,58 @@ EOF;
 				],
 			], 'bin/baz.php'),
 		]);
-		$messages = runGitWorkflow($gitFiles, $options, $shell, $debug);
+		$messages = runGitWorkflow($gitFiles, $options, $shell, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	public function testFullGitWorkflowForUnchangedFileWithPhpcsMessages() {
 		$gitFile = 'foobar.php';
-		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
-		$shell = new class() implements ShellOperator {
-			public function isReadable(string $fileName): bool {
-				return ($fileName === 'foobar.php');
-			}
-
-			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
-
-			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
-
-			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
-
-			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
-				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
-					return <<<EOF
+		$shell = new TestShell([$gitFile]);
+		$fixture = <<<EOF
 EOF;
-				}
-				if (false !== strpos($command, "git status --short 'foobar.php'")) {
-					return '';
-				}
-				if (false !== strpos($command, "git show HEAD:$(git ls-files --full-name 'foobar.php')")) {
-					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
-				}
-				if (false !== strpos($command, "cat 'foobar.php'")) {
-					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
-				}
-				return '';
-			}
-		};
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --short 'foobar.php'", '');
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([], '/dev/null');
-		$messages = runGitWorkflow([$gitFile], $options, $shell, $debug);
+		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	public function testFullGitWorkflowForUnchangedFileWithoutPhpcsMessages() {
 		$gitFile = 'foobar.php';
-		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
-		$shell = new class() implements ShellOperator {
-			public function isReadable(string $fileName): bool {
-				return ($fileName === 'foobar.php');
-			}
-
-			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
-
-			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
-
-			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
-
-			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
-				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
-					return <<<EOF
+		$shell = new TestShell([$gitFile]);
+		$fixture = <<<EOF
 EOF;
-				}
-				if (false !== strpos($command, "git status --short 'foobar.php'")) {
-					return '';
-				}
-				if (false !== strpos($command, "git show HEAD:$(git ls-files --full-name 'foobar.php')")) {
-					return '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}';
-				}
-				if (false !== strpos($command, "cat 'foobar.php'")) {
-					return '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}';
-				}
-				return '';
-			}
-		};
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --short 'foobar.php'", '');
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
+		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([], '/dev/null');
-		$messages = runGitWorkflow([$gitFile], $options, $shell, $debug);
+		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	public function testFullGitWorkflowForNonGitFile() {
 		$this->expectException(ShellException::class);
 		$gitFile = 'foobar.php';
-		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
-		$shell = new class() implements ShellOperator {
-			public function isReadable(string $fileName): bool {
-				return ($fileName === 'foobar.php');
-			}
-
-			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
-
-			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
-
-			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
-
-			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
-				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
-					return <<<EOF
+		$shell = new TestShell([$gitFile]);
+		$fixture = <<<EOF
 EOF;
-				}
-				if (false !== strpos($command, "git status --short 'foobar.php'")) {
-					return "?? foobar.php";
-				}
-				if (false !== strpos($command, "git show HEAD:$(git ls-files --full-name 'foobar.php')")) {
-					return "fatal: Path 'foobar.php' exists on disk, but not in 'HEAD'.";
-				}
-				if (false !== strpos($command, "cat 'foobar.php'")) {
-					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
-				}
-				throw new \Exception("Unknown command: {$command}");
-			}
-		};
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --short 'foobar.php'", "?? foobar.php" );
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", "fatal: Path 'foobar.php' exists on disk, but not in 'HEAD'.", 128);
+		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [];
-		runGitWorkflow([$gitFile], $options, $shell, $debug);
+		runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
 	}
 
 	public function testFullGitWorkflowForNewFile() {
 		$gitFile = 'foobar.php';
-		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
-		$shell = new class() implements ShellOperator {
-			public function isReadable(string $fileName): bool {
-				return ($fileName === 'foobar.php');
-			}
-
-			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
-
-			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
-
-			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
-
-			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
-				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
-					return <<<EOF
+		$shell = new TestShell([$gitFile]);
+		$fixture = <<<EOF
 diff --git bin/foobar.php bin/foobar.php
 new file mode 100644
 index 0000000..efa970f
@@ -419,16 +267,9 @@ index 0000000..efa970f
 +use Billing\Monetary_Amount;
 +use Stripe\Error;
 EOF;
-				}
-				if (false !== strpos($command, "git status --short 'foobar.php'")) {
-					return 'A foobar.php';
-				}
-				if (false !== strpos($command, "cat 'foobar.php'")) {
-					return '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":4,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":5,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}';
-				}
-				throw new \Exception("Unknown command: {$command}");
-			}
-		};
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --short 'foobar.php'",'A foobar.php');
+		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":4,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":5,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([
 			[
@@ -450,27 +291,14 @@ EOF;
 				'message' => 'Found unused symbol Emergent.',
 			],
 		], '/dev/null');
-		$messages = runGitWorkflow([$gitFile], $options, $shell, $debug);
+		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	public function testFullGitWorkflowForEmptyNewFile() {
 		$gitFile = 'foobar.php';
-		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
-		$shell = new class() implements ShellOperator {
-			public function isReadable(string $fileName): bool {
-				return ($fileName === 'foobar.php');
-			}
-
-			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
-
-			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
-
-			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
-
-			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
-				if (false !== strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
-					return <<<EOF
+		$shell = new TestShell([$gitFile]);
+		$fixture = <<<EOF
 diff --git bin/foobar.php bin/foobar.php
 new file mode 100644
 index 0000000..efa970f
@@ -486,43 +314,24 @@ index 0000000..efa970f
 +use Billing\Monetary_Amount;
 +use Stripe\Error;
 EOF;
-				}
-				if (false !== strpos($command, "git status --short 'foobar.php'")) {
-					return 'A foobar.php';
-				}
-				if (false !== strpos($command, "cat 'foobar.php'")) {
-					return 'ERROR: You must supply at least one file or directory to process.
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --short 'foobar.php'", 'A foobar.php');
+		$fixture ='ERROR: You must supply at least one file or directory to process.
 
 Run "phpcs --help" for usage information
 ';
-				}
-				throw new \Exception("Unknown command: {$command}");
-			}
-		};
+		$shell->registerCommand("cat 'foobar.php'", $fixture, 1);
+
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([], '/dev/null');
-		$messages = runGitWorkflow([$gitFile], $options, $shell, $debug);
+		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	function testFullGitWorkflowForInterBranchDiff() {
 		$gitFile = 'bin/foobar.php';
-		$debug = function($message) {}; //phpcs:ignore VariableAnalysis
-		$shell = new class() implements ShellOperator {
-			public function isReadable(string $fileName): bool {
-				return ($fileName === 'bin/foobar.php');
-			}
-
-			public function exitWithCode(int $code): void {} // phpcs:ignore VariableAnalysis
-
-			public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
-
-			public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
-
-			public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
-				if (false !== strpos($command, "git diff 'master'... --no-prefix 'bin/foobar.php'")) {
-					$return_val = 0;
-					return <<<EOF
+		$shell = new TestShell([$gitFile]);
+		$fixture = <<<EOF
 diff --git bin/foobar.php bin/foobar.php
 index c012707..319ecf3 100644
 --- bin/foobar.php
@@ -536,25 +345,11 @@ index c012707..319ecf3 100644
  use Billing\Monetary_Amount;
  use Stripe\Error;
 EOF;
-				}
-				if (false !== strpos($command, "git status --short 'bin/foobar.php'")) {
-					$return_val = 0;
-					return ''; // the file is not modified, as this runs on fresh checkout.
-				}
-				if ( false !== strpos($command, "git cat-file -e 'master':'bin/foobar.php'")) {
-					$return_val = 0;
-					return '';
-				}
-				if ( false !== strpos($command, "git show 'master':$(git ls-files --full-name 'bin/foobar.php') | phpcs --report=json -q --stdin-path='bin/foobar.php' -") ){
-					return '{"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php":{"errors":0,"warnings":1,"messages":[{"message":"Found unused symbol '."'Billing\\\\Emergent'".'","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5}]}}}';
-				}
-				if ( false !== strpos($command, "cat 'bin/foobar.php' | phpcs --report=json -q --stdin-path='bin/foobar.php' -")) {
-					return '{"totals":{"errors":0,"warnings":2,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php":{"errors":0,"warnings":2,"messages":[{"message":"Found unused symbol '."'Foobar'".'.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5},{"message":"Found unused symbol '."'Billing\\\\Emergent'".'.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":7,"column":5}]}}}';
-				}
-			
-				throw new \Exception("Unknown command: {$command}");	
-			}
-		};
+		$shell->registerCommand("git diff 'master'... --no-prefix 'bin/foobar.php'", $fixture);
+		$shell->registerCommand("git status --short 'bin/foobar.php'", '');
+		$shell->registerCommand("git cat-file -e 'master':'bin/foobar.php'", '');
+		$shell->registerCommand("git show 'master':$(git ls-files --full-name 'bin/foobar.php') | phpcs --report=json -q --stdin-path='bin/foobar.php' -", '{"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php":{"errors":0,"warnings":1,"messages":[{"message":"Found unused symbol '."'Billing\\\\Emergent'".'","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5}]}}}');
+		$shell->registerCommand("cat 'bin/foobar.php' | phpcs --report=json -q --stdin-path='bin/foobar.php' -", '{"totals":{"errors":0,"warnings":2,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php":{"errors":0,"warnings":2,"messages":[{"message":"Found unused symbol '."'Foobar'".'.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5},{"message":"Found unused symbol '."'Billing\\\\Emergent'".'.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":7,"column":5}]}}}');
 		$options = [ 'git-branch' => 'master' ];
 		$expected = PhpcsMessages::fromArrays([
 			[
@@ -567,7 +362,7 @@ EOF;
 				'message' => "Found unused symbol 'Foobar'.",
 			],
 		], 'bin/foobar.php');
-		$messages = runGitWorkflow([$gitFile], $options, $shell, $debug);
+		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 }
