@@ -319,6 +319,10 @@ function shouldIgnorePath(string $path, string $patternOption = null): bool {
 		$patternOption
 	);
 
+	if (!$patterns) {
+		return false;
+	}
+
 	$ignorePatterns = [];
 	foreach ($patterns as $pattern) {
 		$pattern = trim($pattern);
