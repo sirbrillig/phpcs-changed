@@ -307,7 +307,7 @@ function fileHasValidExtension(\SplFileInfo $file): bool {
 }
 
 function shouldIgnorePath(string $path, string $patterns = null): bool {
-	if (null===$paterns) {
+	if (null===$patterns) {
 		return false;
 	}
 
