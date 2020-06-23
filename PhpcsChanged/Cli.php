@@ -306,8 +306,8 @@ function fileHasValidExtension(\SplFileInfo $file): bool {
 	return true;
 }
 
-function shouldIgnorePath(string $path, string $patterns = null): bool {
-	if (null===$patterns) {
+function shouldIgnorePath(string $path, string $patternOption = null): bool {
+	if (null===$patternOption) {
 		return false;
 	}
 
@@ -316,7 +316,7 @@ function shouldIgnorePath(string $path, string $patterns = null): bool {
 	// using 1 or 3 slashes (\, or \\\,).
 	$patterns = preg_split(
 		'/(?<=(?<!\\\\)\\\\\\\\),|(?<!\\\\),/',
-		$patterns
+		$patternOption
 	);
 
 	$ignorePatterns = [];
@@ -347,8 +347,6 @@ function shouldIgnorePath(string $path, string $patterns = null): bool {
 		}
 	}
 
-	$relativePath = $path;
-
 	if (is_dir($path) === true) {
 		$ignorePatterns = $ignoreDirPatterns;
 	} else {
@@ -370,11 +368,7 @@ function shouldIgnorePath(string $path, string $patterns = null): bool {
 
 		$pattern = strtr($pattern, $replacements);
 
-		if ($type === 'relative') {
-			$testPath = $relativePath;
-		} else {
-			$testPath = $path;
-		}
+		$testPath = $path;
 
 		$pattern = '`'.$pattern.'`i';
 		if (preg_match($pattern, $testPath) === 1) {
