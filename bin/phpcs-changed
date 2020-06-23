@@ -16,7 +16,8 @@ use function PhpcsChanged\Cli\{
 	runSvnWorkflow,
 	runGitWorkflow,
 	reportMessagesAndExit,
-	fileHasValidExtension
+	fileHasValidExtension,
+	shouldIgnorePath,
 };
 use PhpcsChanged\UnixShell;
 
@@ -36,7 +37,8 @@ $options = getopt(
 		'git-branch:',
 		'standard:',
 		'report:',
-		'debug'
+		'debug',
+		'ignore:',
 	],
 	$optind
 );
@@ -45,6 +47,9 @@ $fileNames = array_slice($argv, $optind);
 $fileNamesExpanded = [];
 foreach( $fileNames as $file ) {
 	if (is_dir($file)) {
+		if ( shouldIgnorePath($file, $options['ignore'] ?? null, '') ) {
+			continue;
+		}
 		$iterator = new RecursiveIteratorIterator(new RecursiveCallbackFilterIterator(new RecursiveDirectoryIterator($file, (RecursiveDirectoryIterator::SKIP_DOTS | FilesystemIterator::FOLLOW_SYMLINKS)), function($file, $key, $iterator){
 			
 			if ($file->isFile() && !fileHasValidExtension($file)) {
@@ -53,9 +58,12 @@ foreach( $fileNames as $file ) {
 			return $iterator->hasChildren() || $file->isFile() ? true : false;
 		}));
 		foreach ($iterator as $file) {
+			if (shouldIgnorePath($file->getPathName(), $options['ignore'] ?? null,'')) {
+				continue;
+			}
 			$fileNamesExpanded[] = $file->getPathName();
 		}
-	} else {
+	} elseif (!shouldIgnorePath($file,$options['ignore'] ?? null,'')) {
 		$fileNamesExpanded[] = $file;
 	}
 }
