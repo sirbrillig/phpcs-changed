@@ -306,7 +306,11 @@ function fileHasValidExtension(\SplFileInfo $file): bool {
 	return true;
 }
 
-function shouldIgnorePath(string $path, $patterns = null): bool {
+function shouldIgnorePath(string $path, array $patterns = null): bool {
+	if ( null === $paterns ) {
+		return false;
+	}
+
 	/* Follows the logic in https://github.com/squizlabs/PHP_CodeSniffer/blob/1802f6b3827b66dc392219fdba27dadd2cd7d057/src/Config.php#L1156 */
 	// Split the ignore string on commas, unless the comma is escaped
 	// using 1 or 3 slashes (\, or \\\,).
@@ -352,13 +356,6 @@ function shouldIgnorePath(string $path, $patterns = null): bool {
 	}
 
 	foreach ($ignorePatterns as $pattern => $type) {
-		// Maintains backwards compatibility in case the ignore pattern does
-		// not have a relative/absolute value.
-		if (is_int($pattern) === true) {
-			$pattern = $type;
-			$type = 'absolute';
-		}
-
 		$replacements = [
 			'\\,' => ',',
 			'*'   => '.*',
