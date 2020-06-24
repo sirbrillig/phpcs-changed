@@ -290,7 +290,7 @@ EOF;
 				'line' => 5,
 				'message' => 'Found unused symbol Emergent.',
 			],
-		], '/dev/null');
+		], 'bin/foobar.php');
 		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
@@ -362,6 +362,59 @@ EOF;
 				'message' => "Found unused symbol 'Foobar'.",
 			],
 		], 'bin/foobar.php');
+		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	function testNameDetectionInFullGitWorkflowForInterBranchDiff() {
+		$gitFile = 'test.php';
+		$shell = new TestShell([$gitFile]);
+		$shell->registerCommand("git status --short 'test.php'", ' M test.php');
+		
+		$fixture = <<<EOF
+diff --git test.php test.php
+new file mode 100644
+index 0000000..b3d9bbc
+--- /dev/null
++++ test.php
+@@ -0,0 +1 @@
++<?php
+
+EOF;
+		$shell->registerCommand("git diff 'master'... --no-prefix 'test.php'", $fixture);
+		$shell->registerCommand("git cat-file -e 'master':'test.php'", '', 128);
+		$shell->registerCommand("cat 'test.php' | phpcs --report=json -q --stdin-path='test.php' -", '{"totals":{"errors":0,"warnings":3,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/test.php":{"errors":0,"warnings":3,"messages":[{"message":"Found unused symbol ' . "'Foobar'" . '.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5},{"message":"Found unused symbol ' . "'Foobar'" . '.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":7,"column":5},{"message":"Found unused symbol ' . "'Billing\\\\Emergent'" . '.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":8,"column":5}]}}}');
+		$options = [ 'git-branch' => 'master' ];
+		$expected = PhpcsMessages::fromArrays([
+			[
+				'type' => 'WARNING',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 6,
+				'message' => "Found unused symbol 'Foobar'.",
+			],
+			[
+				'type' => 'WARNING',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 7,
+				'message' => "Found unused symbol 'Foobar'.",
+				
+			],
+			[
+				'type' => 'WARNING',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 8,
+				'message' => "Found unused symbol 'Billing\Emergent'.",
+			],
+		], 'test.php');
 		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
