@@ -63,7 +63,7 @@ foreach( $fileNames as $file ) {
 			}
 			$fileNamesExpanded[] = $file->getPathName();
 		}
-	} elseif (!shouldIgnorePath($file,$options['ignore'] ?? null,'')) {
+	} elseif (!shouldIgnorePath($file, $options['ignore'] ?? null, '')) {
 		$fileNamesExpanded[] = $file;
 	}
 }
