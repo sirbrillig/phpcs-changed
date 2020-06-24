@@ -122,6 +122,7 @@ EOF;
 		'--standard <STANDARD>' => 'The phpcs standard to use.',
 		'--report <REPORTER>' => 'The phpcs reporter to use. One of "full" (default) or "json".',
 		'-s' => 'Show sniff codes for each error when the reporter is "full".',
+		'--ignore <PATTERNS>' => 'A comma separated list of patterns to ignore files and directories.',
 		'--debug' => 'Enable debug output.',
 		'--help' => 'Print this help.',
 		'--version' => 'Print the current version.',
