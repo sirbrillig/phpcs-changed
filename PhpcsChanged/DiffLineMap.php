@@ -81,7 +81,7 @@ class DiffLineMap {
 		$diffStringLines = preg_split("/\r\n|\n|\r/", $unifiedDiff) ?: [];
 		foreach ($diffStringLines as $diffStringLine) {
 			$matches = [];
-			if (1 === preg_match('/^\-\-\- (\S+)/', $diffStringLine, $matches)) {
+			if (1 === preg_match('/^\+\+\+ (\S+)/', $diffStringLine, $matches)) {
 				return $matches[1] ?? null;
 			}
 		}
