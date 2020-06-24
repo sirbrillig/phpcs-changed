@@ -94,6 +94,8 @@ phpcs-changed --git --git-branch master file.php
 
 More than one file can be specified after a version control option, including globs and directories. If any file is a directory, phpcs-changed will scan the directory for all files ending in `.php` and process them. For example: `phpcs-changed --git src/lib test/**/*.php` will operate on all the php files in the `src/lib/` and `test/` directories.
 
+You can use `--ignore` to ignore any directory, file, or paths matching provided pattern(s). For example.: `--ignore=bin/*,vendor/*` would ignore any files in bin directory, as well as in vendor.
+
 You can use `--report` to customize the output type. `full` (the default) is human-readable and `json` prints a JSON object as shown above. These match the phpcs reporters of the same names.
 
 You can use `--standard` to specify a specific phpcs standard to run. This matches the phpcs option of the same name.
