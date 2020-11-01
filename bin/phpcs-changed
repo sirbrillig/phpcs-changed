@@ -39,11 +39,17 @@ $options = getopt(
 		'report:',
 		'debug',
 		'ignore:',
+		'stdin-path:',
 	],
 	$optind
 );
 
-$fileNames = array_slice($argv, $optind);
+if ( isset( $options['stdin-path'] ) ) {
+	$fileNames = [ $options['stdin-path'] ];
+} else {
+	$fileNames = array_slice($argv, $optind);
+}
+
 $fileNamesExpanded = [];
 foreach( $fileNames as $file ) {
 	if (is_dir($file)) {
@@ -51,7 +57,7 @@ foreach( $fileNames as $file ) {
 			continue;
 		}
 		$iterator = new RecursiveIteratorIterator(new RecursiveCallbackFilterIterator(new RecursiveDirectoryIterator($file, (RecursiveDirectoryIterator::SKIP_DOTS | FilesystemIterator::FOLLOW_SYMLINKS)), function($file, $key, $iterator){
-			
+
 			if ($file->isFile() && !fileHasValidExtension($file)) {
 				return false;
 			}
