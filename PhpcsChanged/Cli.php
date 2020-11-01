@@ -7,6 +7,7 @@ use PhpcsChanged\NoChangesException;
 use PhpcsChanged\Reporter;
 use PhpcsChanged\JsonReporter;
 use PhpcsChanged\FullReporter;
+use PhpcsChanged\EmacsReporter;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\DiffLineMap;
 use PhpcsChanged\ShellOperator;
@@ -121,8 +122,9 @@ EOF;
 
 	printTwoColumns([
 		'--standard <STANDARD>' => 'The phpcs standard to use.',
-		'--report <REPORTER>' => 'The phpcs reporter to use. One of "full" (default) or "json".',
-		'-s' => 'Show sniff codes for each error when the reporter is "full".',
+		'--report <REPORTER>' => 'The phpcs reporter to use. One of "full" (default), "json", or "emacs".',
+		'-s' => 'Show sniff codes for each error when the reporter is "full" or "emacs".',
+		'--ignore <PATTERNS>' => 'A comma separated list of patterns to ignore files and directories.',
 		'--debug' => 'Enable debug output.',
 		'--help' => 'Print this help.',
 		'--version' => 'Print the current version.',
@@ -144,6 +146,8 @@ function getReporter(string $reportType): Reporter {
 			return new FullReporter();
 		case 'json':
 			return new JsonReporter();
+		case 'emacs':
+			return new EmacsReporter();
 	}
 	printErrorAndExit("Unknown Reporter '{$reportType}'");
 }
@@ -305,4 +309,81 @@ function fileHasValidExtension(\SplFileInfo $file): bool {
 	}
 
 	return true;
+}
+
+function shouldIgnorePath(string $path, string $patternOption = null): bool {
+	if (null===$patternOption) {
+		return false;
+	}
+
+	/* Follows the logic in https://github.com/squizlabs/PHP_CodeSniffer/blob/1802f6b3827b66dc392219fdba27dadd2cd7d057/src/Config.php#L1156 */
+	// Split the ignore string on commas, unless the comma is escaped
+	// using 1 or 3 slashes (\, or \\\,).
+	$patterns = preg_split(
+		'/(?<=(?<!\\\\)\\\\\\\\),|(?<!\\\\),/',
+		$patternOption
+	);
+
+	if (!$patterns) {
+		return false;
+	}
+
+	$ignorePatterns = [];
+	foreach ($patterns as $pattern) {
+		$pattern = trim($pattern);
+		if ($pattern === '') {
+			continue;
+		}
+
+		$ignorePatterns[$pattern] = 'absolute';
+	}
+
+	/* Follows the logic in https://github.com/squizlabs/PHP_CodeSniffer/blob/2ecd8dc15364cdd6e5089e82ffef2b205c98c412/src/Filters/Filter.php#L198 */
+	$ignoreFilePatterns = [];
+	$ignoreDirPatterns = [];
+	foreach ($ignorePatterns as $pattern => $type) {
+		// If the ignore pattern ends with /* then it is ignoring an entire directory.
+		if (substr($pattern, -2) === '/*') {
+			// Need to check this pattern for dirs as well as individual file paths.
+			$ignoreFilePatterns[$pattern] = $type;
+
+			$pattern = substr($pattern, 0, -2);
+			$ignoreDirPatterns[$pattern] = $type;
+		} else {
+			// This is a file-specific pattern, so only need to check this
+			// for individual file paths.
+			$ignoreFilePatterns[$pattern] = $type;
+		}
+	}
+
+	if (is_dir($path) === true) {
+		$ignorePatterns = $ignoreDirPatterns;
+	} else {
+		$ignorePatterns = $ignoreFilePatterns;
+	}
+
+	foreach ($ignorePatterns as $pattern => $type) {
+		$replacements = [
+			'\\,' => ',',
+			'*'   => '.*',
+		];
+
+		// We assume a / directory separator, as do the exclude rules
+		// most developers write, so we need a special case for any system
+		// that is different.
+		if (DIRECTORY_SEPARATOR === '\\') {
+			$replacements['/'] = '\\\\';
+		}
+
+		$pattern = strtr($pattern, $replacements);
+
+		$testPath = $path;
+
+		$pattern = '`'.$pattern.'`i';
+		if (preg_match($pattern, $testPath) === 1) {
+			return true;
+		}
+	}
+
+	return false;
 }

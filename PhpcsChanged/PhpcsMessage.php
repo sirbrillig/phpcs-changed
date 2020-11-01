@@ -20,6 +20,10 @@ class PhpcsMessage {
 		return $this->line;
 	}
 
+	public function getColumnNumber(): int {
+		return $this->otherProperties['column'] ?? 0;
+	}
+
 	public function getFile(): ?string {
 		return $this->file;
 	}
