@@ -10,6 +10,7 @@ use PhpcsChanged\FullReporter;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\DiffLineMap;
 use PhpcsChanged\ShellOperator;
+use PhpcsChanged\XmlReporter;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
 use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, validateSvnFileExists};
 use function PhpcsChanged\GitWorkflow\{getGitUnifiedDiff, isNewGitFile, getGitBasePhpcsOutput, getGitNewPhpcsOutput, validateGitFileExists};
@@ -145,6 +146,8 @@ function getReporter(string $reportType): Reporter {
 			return new FullReporter();
 		case 'json':
 			return new JsonReporter();
+		case 'xml':
+			return new XmlReporter();
 	}
 	printErrorAndExit("Unknown Reporter '{$reportType}'");
 }
@@ -381,6 +384,6 @@ function shouldIgnorePath(string $path, string $patternOption = null): bool {
 			return true;
 		}
 	}
-	
+
 	return false;
 }

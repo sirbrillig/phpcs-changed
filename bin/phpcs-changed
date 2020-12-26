@@ -51,7 +51,7 @@ foreach( $fileNames as $file ) {
 			continue;
 		}
 		$iterator = new RecursiveIteratorIterator(new RecursiveCallbackFilterIterator(new RecursiveDirectoryIterator($file, (RecursiveDirectoryIterator::SKIP_DOTS | FilesystemIterator::FOLLOW_SYMLINKS)), function($file, $key, $iterator){
-			
+
 			if ($file->isFile() && !fileHasValidExtension($file)) {
 				return false;
 			}
