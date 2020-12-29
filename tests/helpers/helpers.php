@@ -5,3 +5,4 @@ namespace PhpcsChangedTests;
 
 require_once __DIR__ . '/TestShell.php';
 require_once __DIR__ . '/Functions.php';
+require_once __DIR__ . '/TestXmlReporter.php';
