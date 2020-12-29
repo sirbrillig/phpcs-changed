@@ -40,6 +40,18 @@ class PhpcsMessage {
 		return $this->otherProperties['source'] ?? '';
 	}
 
+	public function getFixable(): bool {
+		return $this->otherProperties['fixable'] ?? false;
+	}
+
+	public function getColumn(): int {
+		return $this->otherProperties['column'] ?? 0;
+	}
+
+	public function getSeverity(): int {
+		return $this->otherProperties['severity'] ?? 5;
+	}
+
 	public function toPhpcsArray(): array {
 		return array_merge([
 			'line' => $this->line,

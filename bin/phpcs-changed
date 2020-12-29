@@ -18,12 +18,13 @@ use function PhpcsChanged\Cli\{
 	reportMessagesAndExit,
 	fileHasValidExtension,
 	shouldIgnorePath,
+	printInstalledCodingStandards
 };
 use PhpcsChanged\UnixShell;
 
 $optind = 0;
 $options = getopt(
-	'hs',
+	'hsi',
 	[
 		'help',
 		'version',
@@ -51,7 +52,6 @@ foreach( $fileNames as $file ) {
 			continue;
 		}
 		$iterator = new RecursiveIteratorIterator(new RecursiveCallbackFilterIterator(new RecursiveDirectoryIterator($file, (RecursiveDirectoryIterator::SKIP_DOTS | FilesystemIterator::FOLLOW_SYMLINKS)), function($file, $key, $iterator){
-			
 			if ($file->isFile() && !fileHasValidExtension($file)) {
 				return false;
 			}
@@ -75,6 +75,10 @@ if (isset($options['h']) || isset($options['help'])) {
 
 if (isset($options['version'])) {
 	printVersion();
+}
+
+if (isset($options['i'])) {
+	printInstalledCodingStandards();
 }
 
 $debug = getDebug(isset($options['debug']));
