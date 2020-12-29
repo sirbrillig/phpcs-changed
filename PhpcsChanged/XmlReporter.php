@@ -6,6 +6,8 @@ namespace PhpcsChanged;
 use PhpcsChanged\Reporter;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\PhpcsMessage;
+use PhpcsChanged\UnixShell;
+use PhpcsChanged\ShellException;
 
 class XmlReporter implements Reporter {
 	public function getFormattedMessages(PhpcsMessages $messages, array $options): string {
@@ -24,8 +26,10 @@ class XmlReporter implements Reporter {
 			return $output;
 		}, '');
 
+		$phpcsVersion = $this->getPhpcsVersion();
+
 		$output =  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-		$output .= "<phpcs version=\"3.5.6\">\n";
+		$output .= "<phpcs version=\"{$phpcsVersion}\">\n";
 		$output .= $outputByFile;
 		$output .= "</phpcs>\n";
 
@@ -57,6 +61,24 @@ class XmlReporter implements Reporter {
 		$xmlOutputForFile .= "\t</file>\n";
 
 		return $xmlOutputForFile;
+	}
+
+	private function getPhpcsVersion(): string {
+		$phpcs = getenv('PHPCS') ?: 'phpcs';
+		$shell = new UnixShell();
+
+		$versionPhpcsOutputCommand = "{$phpcs} --version";
+		$versionPhpcsOutput = $shell->executeCommand($versionPhpcsOutputCommand);
+		if (! $versionPhpcsOutput) {
+			throw new ShellException("Cannot get phpcs version");
+		}
+
+		$matched = preg_match('/version\\s([0-9.]+)/uim', $versionPhpcsOutput, $matches);
+		if (empty($matched) || empty($matches[1])) {
+			throw new ShellException("Cannot parse phpcs version output");
+		}
+
+		return $matches[1];
 	}
 
 	public function getExitCode(PhpcsMessages $messages): int {

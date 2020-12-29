@@ -9,7 +9,9 @@ use PhpcsChanged\JsonReporter;
 use PhpcsChanged\FullReporter;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\DiffLineMap;
+use PhpcsChanged\ShellException;
 use PhpcsChanged\ShellOperator;
+use PhpcsChanged\UnixShell;
 use PhpcsChanged\XmlReporter;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
 use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, validateSvnFileExists};
@@ -58,6 +60,23 @@ function printVersion() {
 phpcs-changed version {$version}
 
 EOF;
+	exit(0);
+}
+
+function printInstalledCodingStandards() {
+	$phpcs = getenv('PHPCS') ?: 'phpcs';
+	$shell = new UnixShell();
+
+	$installedCodingStandardsPhpcsOutputCommand = "{$phpcs} -i";
+	$installedCodingStandardsPhpcsOutput = $shell->executeCommand($installedCodingStandardsPhpcsOutputCommand);
+	if (! $installedCodingStandardsPhpcsOutput) {
+		$errorMessage = "Cannot get installed coding standards";
+		$shell->printError($errorMessage);
+		$shell->exitWithCode(1);
+		throw new ShellException($errorMessage); // Just in case we do not actually exit, like in tests
+	}
+
+	echo $installedCodingStandardsPhpcsOutput;
 	exit(0);
 }
 
@@ -122,12 +141,13 @@ EOF;
 
 	printTwoColumns([
 		'--standard <STANDARD>' => 'The phpcs standard to use.',
-		'--report <REPORTER>' => 'The phpcs reporter to use. One of "full" (default) or "json".',
+		'--report <REPORTER>' => 'The phpcs reporter to use. One of "full" (default), "json", or "xml".',
 		'-s' => 'Show sniff codes for each error when the reporter is "full".',
 		'--ignore <PATTERNS>' => 'A comma separated list of patterns to ignore files and directories.',
 		'--debug' => 'Enable debug output.',
 		'--help' => 'Print this help.',
 		'--version' => 'Print the current version.',
+		'-i' => 'Show a list of installed coding standards',
 	], "	");
 	echo <<<EOF
 Overrides:
