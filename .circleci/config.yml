@@ -5,10 +5,8 @@ jobs:
       - image: circleci/php:8.0
     steps:
       - checkout
-      - run: COMPOSER=composer.json composer install
-      - run: COMPOSER=composer.json composer test
-      - run: COMPOSER=composer.json composer phpstan
-      - run: COMPOSER=composer.json composer lint
+      - run: COMPOSER=composer-php-8.json composer install
+      - run: COMPOSER=composer-php-8.json composer test
   build_php7.4:
     docker:
       - image: circleci/php:7.4.6
