@@ -1,5 +1,14 @@
 version: 2
 jobs:
+  build_php8.0:
+    docker:
+      - image: circleci/php:8.0
+    steps:
+      - checkout
+      - run: COMPOSER=composer.json composer install
+      - run: COMPOSER=composer.json composer test
+      - run: COMPOSER=composer.json composer phpstan
+      - run: COMPOSER=composer.json composer lint
   build_php7.4:
     docker:
       - image: circleci/php:7.4.6
@@ -24,3 +33,4 @@ workflows:
     jobs:
       - build_php7.1
       - build_php7.4
+      - build_php8.0
