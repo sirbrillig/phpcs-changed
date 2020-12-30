@@ -81,8 +81,18 @@ function getGitBasePhpcsOutput(string $gitFile, string $git, string $phpcs, stri
 	return $oldFilePhpcsOutput;
 }
 
-function getGitNewPhpcsOutput(string $gitFile, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
-	$newFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($gitFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) .' -';
+function getGitNewPhpcsOutput(string $gitFile, string $git, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
+	// default mode is git-staged, so we get the contents from the staged version of the file
+	$newFileContents = "{$git} show :0:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
+	// for git-unstaged mode, we get the contents of the file from the current working copy
+	if ( isset($options['git-unstaged']) ) {
+		$newFileContents = "{$cat} " . escapeshellarg($gitFile);
+	}
+	// for git-branch mode, we get the contents of the file from the HEAD version of the file in the current branch
+	if ( isset($options['git-branch']) && ! empty($options['git-branch']) ) {
+		$newFileContents = "{$git} show HEAD:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
+	}
+	$newFilePhpcsOutputCommand = "{$newFileContents} | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) .' -';
 	$debug('running new phpcs command:', $newFilePhpcsOutputCommand);
 	$newFilePhpcsOutput = $executeCommand($newFilePhpcsOutputCommand);
 	if (! $newFilePhpcsOutput) {
