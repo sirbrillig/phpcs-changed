@@ -170,6 +170,7 @@ function getReporter(string $reportType): Reporter {
 			return new XmlReporter();
 	}
 	printErrorAndExit("Unknown Reporter '{$reportType}'");
+	throw new \Exception("Unknown Reporter '{$reportType}'"); // Just in case we don't exit for some reason.
 }
 
 function runManualWorkflow(string $diffFile, string $phpcsOldFile, string $phpcsNewFile): PhpcsMessages {
