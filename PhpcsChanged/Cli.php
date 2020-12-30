@@ -17,7 +17,7 @@ use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, ge
 use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, validateSvnFileExists};
 use function PhpcsChanged\GitWorkflow\{getGitUnifiedDiff, isNewGitFile, getGitBasePhpcsOutput, getGitNewPhpcsOutput, validateGitFileExists};
 
-function getDebug($debugEnabled) {
+function getDebug(bool $debugEnabled): callable {
 	return function(...$outputs) use ($debugEnabled) {
 		if (! $debugEnabled) {
 			return;
@@ -28,12 +28,12 @@ function getDebug($debugEnabled) {
 	};
 }
 
-function printError($output) {
+function printError(string $output): void {
 	fwrite(STDERR, 'phpcs-changed: An error occurred.' . PHP_EOL);
 	fwrite(STDERR, 'ERROR: ' . $output . PHP_EOL);
 }
 
-function printErrorAndExit($output) {
+function printErrorAndExit(string $output): void {
 	printError($output);
 	fwrite(STDERR, PHP_EOL . 'Run "phpcs-changed --help" for usage information.'. PHP_EOL);
 	exit(1);
@@ -45,7 +45,7 @@ function getLongestString(array $strings): int {
 	}, 0);
 }
 
-function printTwoColumns(array $columns, string $indent) {
+function printTwoColumns(array $columns, string $indent): void {
 	$longestFirstCol = getLongestString(array_keys($columns));
 	echo PHP_EOL;
 	foreach ($columns as $firstCol => $secondCol) {
@@ -54,7 +54,7 @@ function printTwoColumns(array $columns, string $indent) {
 	echo PHP_EOL;
 }
 
-function printVersion() {
+function printVersion(): void {
 	$version = getVersion();
 	echo <<<EOF
 phpcs-changed version {$version}
@@ -63,7 +63,7 @@ EOF;
 	exit(0);
 }
 
-function printInstalledCodingStandards() {
+function printInstalledCodingStandards(): void {
 	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$shell = new UnixShell();
 
@@ -80,7 +80,7 @@ function printInstalledCodingStandards() {
 	exit(0);
 }
 
-function printHelp() {
+function printHelp(): void {
 	echo <<<EOF
 Run phpcs on files and only report new warnings/errors compared to the previous version.
 
@@ -172,7 +172,7 @@ function getReporter(string $reportType): Reporter {
 	printErrorAndExit("Unknown Reporter '{$reportType}'");
 }
 
-function runManualWorkflow($diffFile, $phpcsOldFile, $phpcsNewFile): PhpcsMessages {
+function runManualWorkflow(string $diffFile, string $phpcsOldFile, string $phpcsNewFile): PhpcsMessages {
 	try {
 		$messages = getNewPhpcsMessagesFromFiles(
 			$diffFile,
