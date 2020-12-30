@@ -299,7 +299,8 @@ function reportMessagesAndExit(PhpcsMessages $messages, string $reportType, arra
 }
 
 function fileHasValidExtension(\SplFileInfo $file): bool {
-	// The followin logic follows the same in PHPCS. See https://github.com/squizlabs/PHP_CodeSniffer/blob/2ecd8dc15364cdd6e5089e82ffef2b205c98c412/src/Filters/Filter.php#L161
+	// The following logic is copied from PHPCS itself. See https://github.com/squizlabs/PHP_CodeSniffer/blob/2ecd8dc15364cdd6e5089e82ffef2b205c98c412/src/Filters/Filter.php#L161
+	// phpcs:disable
 	$AllowedExtensions = [
 		'php',
 		'inc',
@@ -329,6 +330,7 @@ function fileHasValidExtension(\SplFileInfo $file): bool {
 	}
 
 	return true;
+	// phpcs:enable
 }
 
 function shouldIgnorePath(string $path, string $patternOption = null): bool {
