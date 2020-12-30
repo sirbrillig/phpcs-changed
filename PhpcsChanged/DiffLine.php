@@ -6,10 +6,25 @@ namespace PhpcsChanged;
 use PhpcsChanged\DiffLineType;
 
 class DiffLine {
-	private $oldLine = null;
-	private $newLine = null;
-	private $type = null;
-	private $line = null;
+	/**
+	 * @var int
+	 */
+	private $oldLine;
+
+	/**
+	 * @var int
+	 */
+	private $newLine;
+
+	/**
+	 * @var DiffLineType
+	 */
+	private $type;
+
+	/**
+	 * @var string
+	 */
+	private $line;
 
 	public function __construct(int $oldLine, int $newLine, DiffLineType $type, string $line) {
 		$this->type = $type;
