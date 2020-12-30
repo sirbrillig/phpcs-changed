@@ -276,7 +276,7 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 		$unifiedDiff = getGitUnifiedDiff($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
 		$isNewFile = isNewGitFile($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
 		$oldFilePhpcsOutput = $isNewFile ? '' : getGitBasePhpcsOutput($gitFile, $git, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
-		$newFilePhpcsOutput = getGitNewPhpcsOutput($gitFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+		$newFilePhpcsOutput = getGitNewPhpcsOutput($gitFile, $git, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
 	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());
 		$unifiedDiff = '';
