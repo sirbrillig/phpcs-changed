@@ -1,6 +1,5 @@
 <phpunit
         bootstrap="index.php"
-        printerClass="LimeDeck\Testing\Printer"
         >
         <testsuites>
                 <testsuite name="'all-tests">
