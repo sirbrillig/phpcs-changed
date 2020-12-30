@@ -211,8 +211,8 @@ EOF;
 EOF;
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", '');
-		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([], '/dev/null');
 		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
@@ -227,7 +227,7 @@ EOF;
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", '');
 		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([], '/dev/null');
 		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
@@ -243,7 +243,7 @@ EOF;
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", "?? foobar.php" );
 		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", "fatal: Path 'foobar.php' exists on disk, but not in 'HEAD'.", 128);
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [];
 		runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
 	}
@@ -269,7 +269,7 @@ index 0000000..efa970f
 EOF;
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'",'A foobar.php');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":4,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":5,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":5,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foobar."},{"line":6,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([
 			[
@@ -278,8 +278,8 @@ EOF;
 				'fixable' => false,
 				'column' => 5,
 				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 4,
-				'message' => 'Found unused symbol Emergent.',
+				'line' => 5,
+				'message' => 'Found unused symbol Foobar.',
 			],
 			[
 				'type' => 'ERROR',
@@ -287,7 +287,7 @@ EOF;
 				'fixable' => false,
 				'column' => 5,
 				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 5,
+				'line' => 6,
 				'message' => 'Found unused symbol Emergent.',
 			],
 		], 'bin/foobar.php');
@@ -348,8 +348,8 @@ EOF;
 		$shell->registerCommand("git diff 'master'... --no-prefix 'bin/foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'bin/foobar.php'", '');
 		$shell->registerCommand("git cat-file -e 'master':'bin/foobar.php'", '');
-		$shell->registerCommand("git show 'master':$(git ls-files --full-name 'bin/foobar.php') | phpcs --report=json -q --stdin-path='bin/foobar.php' -", '{"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php":{"errors":0,"warnings":1,"messages":[{"message":"Found unused symbol '."'Billing\\\\Emergent'".'","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5}]}}}');
-		$shell->registerCommand("cat 'bin/foobar.php' | phpcs --report=json -q --stdin-path='bin/foobar.php' -", '{"totals":{"errors":0,"warnings":2,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php":{"errors":0,"warnings":2,"messages":[{"message":"Found unused symbol '."'Foobar'".'.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5},{"message":"Found unused symbol '."'Billing\\\\Emergent'".'.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":7,"column":5}]}}}');
+		$shell->registerCommand("git show 'master':$(git ls-files --full-name 'bin/foobar.php') | phpcs --report=json -q --stdin-path='bin/foobar.php' -", '{"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php":{"errors":0,"warnings":1,"messages":[{"message":"Found unused symbol Emergent.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5}]}}}');
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'bin/foobar.php')| phpcs --report=json -q --stdin-path='bin/foobar.php' -", '{"totals":{"errors":0,"warnings":2,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php":{"errors":0,"warnings":2,"messages":[{"message":"Found unused symbol Foobar.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5},{"message":"Found unused symbol Emergent.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":7,"column":5}]}}}');
 		$options = [ 'git-branch' => 'master' ];
 		$expected = PhpcsMessages::fromArrays([
 			[
@@ -359,7 +359,7 @@ EOF;
 				'column' => 5,
 				'source' => 'ImportDetection.Imports.RequireImports.Import',
 				'line' => 6,
-				'message' => "Found unused symbol 'Foobar'.",
+				'message' => "Found unused symbol Foobar.",
 			],
 		], 'bin/foobar.php');
 		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
@@ -383,7 +383,7 @@ index 0000000..b3d9bbc
 EOF;
 		$shell->registerCommand("git diff 'master'... --no-prefix 'test.php'", $fixture);
 		$shell->registerCommand("git cat-file -e 'master':'test.php'", '', 128);
-		$shell->registerCommand("cat 'test.php' | phpcs --report=json -q --stdin-path='test.php' -", '{"totals":{"errors":0,"warnings":3,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/test.php":{"errors":0,"warnings":3,"messages":[{"message":"Found unused symbol ' . "'Foobar'" . '.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5},{"message":"Found unused symbol ' . "'Foobar'" . '.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":7,"column":5},{"message":"Found unused symbol ' . "'Billing\\\\Emergent'" . '.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":8,"column":5}]}}}');
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'test.php')| phpcs --report=json -q --stdin-path='test.php' -", '{"totals":{"errors":0,"warnings":3,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/test.php":{"errors":0,"warnings":3,"messages":[{"message":"Found unused symbol ' . "'Foobar'" . '.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5},{"message":"Found unused symbol ' . "'Foobar'" . '.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":7,"column":5},{"message":"Found unused symbol ' . "'Billing\\\\Emergent'" . '.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":8,"column":5}]}}}');
 		$options = [ 'git-branch' => 'master' ];
 		$expected = PhpcsMessages::fromArrays([
 			[
