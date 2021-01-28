@@ -349,7 +349,7 @@ EOF;
 		$shell->registerCommand("git cat-file -e 'master':'bin/foobar.php'", '');
 		$shell->registerCommand("git show 'master':$(git ls-files --full-name 'bin/foobar.php') | phpcs --report=json -q --stdin-path='bin/foobar.php' -", '{"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php":{"errors":0,"warnings":1,"messages":[{"message":"Found unused symbol Emergent.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5}]}}}');
 		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'bin/foobar.php') | phpcs --report=json -q --stdin-path='bin/foobar.php' -", '{"totals":{"errors":0,"warnings":2,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php":{"errors":0,"warnings":2,"messages":[{"message":"Found unused symbol Foobar.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5},{"message":"Found unused symbol Emergent.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":7,"column":5}]}}}');
-		$options = [ 'git-branch' => 'master' ];
+		$options = [ 'git-base' => 'master' ];
 		$expected = PhpcsMessages::fromArrays([
 			[
 				'type' => 'WARNING',
@@ -383,7 +383,7 @@ EOF;
 		$shell->registerCommand("git diff 'master'... --no-prefix 'test.php'", $fixture);
 		$shell->registerCommand("git cat-file -e 'master':'test.php'", '', 128);
 		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'test.php') | phpcs --report=json -q --stdin-path='test.php' -", '{"totals":{"errors":0,"warnings":3,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/test.php":{"errors":0,"warnings":3,"messages":[{"message":"Found unused symbol ' . "'Foobar'" . '.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5},{"message":"Found unused symbol ' . "'Foobar'" . '.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":7,"column":5},{"message":"Found unused symbol ' . "'Billing\\\\Emergent'" . '.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":8,"column":5}]}}}');
-		$options = [ 'git-branch' => 'master' ];
+		$options = [ 'git-base' => 'master' ];
 		$expected = PhpcsMessages::fromArrays([
 			[
 				'type' => 'WARNING',

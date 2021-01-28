@@ -20,9 +20,9 @@ function validateGitFileExists(string $gitFile, string $git, callable $isReadabl
 }
 
 function getGitUnifiedDiff(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): string {
-	$branchOption = isset($options['git-branch']) && ! empty($options['git-branch']) ? ' ' . escapeshellarg($options['git-branch']) . '...' : '';
-	$stagedOption = empty( $branchOption ) && ! isset($options['git-unstaged']) ? ' --staged' : '';
-	$unifiedDiffCommand = "{$git} diff{$stagedOption}{$branchOption} --no-prefix " . escapeshellarg($gitFile);
+	$objectOption = isset($options['git-base']) && ! empty($options['git-base']) ? ' ' . escapeshellarg($options['git-base']) . '...' : '';
+	$stagedOption = empty( $objectOption ) && ! isset($options['git-unstaged']) ? ' --staged' : '';
+	$unifiedDiffCommand = "{$git} diff{$stagedOption}{$objectOption} --no-prefix " . escapeshellarg($gitFile);
 	$debug('running diff command:', $unifiedDiffCommand);
 	$unifiedDiff = $executeCommand($unifiedDiffCommand);
 	if (! $unifiedDiff) {
@@ -33,7 +33,7 @@ function getGitUnifiedDiff(string $gitFile, string $git, callable $executeComman
 }
 
 function isNewGitFile(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
-	if ( isset($options['git-branch']) && ! empty($options['git-branch']) ) {
+	if ( isset($options['git-base']) && ! empty($options['git-base']) ) {
 		return isNewGitFileRemote( $gitFile, $git, $executeCommand, $options, $debug );
 	} else {
 		return isNewGitFileLocal( $gitFile, $git, $executeCommand, $options, $debug );
@@ -41,7 +41,7 @@ function isNewGitFile(string $gitFile, string $git, callable $executeCommand, ar
 }
 
 function isNewGitFileRemote(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
-	$gitStatusCommand = "${git} cat-file -e " . escapeshellarg($options['git-branch']) . ':' . escapeshellarg($gitFile);
+	$gitStatusCommand = "${git} cat-file -e " . escapeshellarg($options['git-base']) . ':' . escapeshellarg($gitFile);
 	$debug('checking status of file with command:', $gitStatusCommand);
 	$return_val = 1;
 	$gitStatusOutput = [];
@@ -66,8 +66,8 @@ function isNewGitFileLocal(string $gitFile, string $git, callable $executeComman
 }
 
 function getGitBasePhpcsOutput(string $gitFile, string $git, string $phpcs, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
-	if ( isset($options['git-branch']) && ! empty($options['git-branch']) ) {
-		$rev = escapeshellarg($options['git-branch']);
+	if ( isset($options['git-base']) && ! empty($options['git-base']) ) {
+		$rev = escapeshellarg($options['git-base']);
 	} else {
 		$rev = isset($options['git-unstaged']) ? ':0' : 'HEAD';
 	}
@@ -88,8 +88,8 @@ function getGitNewPhpcsOutput(string $gitFile, string $git, string $phpcs, strin
 	if ( isset($options['git-unstaged']) ) {
 		$newFileContents = "{$cat} " . escapeshellarg($gitFile);
 	}
-	// for git-branch mode, we get the contents of the file from the HEAD version of the file in the current branch
-	if ( isset($options['git-branch']) && ! empty($options['git-branch']) ) {
+	// for git-base mode, we get the contents of the file from the HEAD version of the file in the current branch
+	if ( isset($options['git-base']) && ! empty($options['git-base']) ) {
 		$newFileContents = "{$git} show HEAD:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
 	}
 	$newFilePhpcsOutputCommand = "{$newFileContents} | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) .' -';
