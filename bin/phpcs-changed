@@ -36,6 +36,7 @@ $options = getopt(
 		'git-unstaged',
 		'git-staged',
 		'git-branch:',
+		'git-base:',
 		'standard:',
 		'report:',
 		'debug',
@@ -79,6 +80,12 @@ if (isset($options['version'])) {
 
 if (isset($options['i'])) {
 	printInstalledCodingStandards();
+}
+
+// --git-branch exists for compatibility, --git-bases supports branches
+if (isset($options['git-branch'])) {
+	$options['git-base'] = $options['git-branch'];
+	unset($options['git-branch']);
 }
 
 $debug = getDebug(isset($options['debug']));

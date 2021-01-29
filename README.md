@@ -83,11 +83,11 @@ phpcs-changed --git --git-unstaged file.php
 
 You should specify `--git-staged` or `--git-unstaged` to tell `phpcs-changed` if you want to compare the current staged changes or the current working copy changes, respectively. The default is `--git-staged`.
 
-Alternatively, if you want to compare the current committed HEAD changes to another branch, you can use the `--git-branch` option followed by a branch name:
+Alternatively, if you want to compare the current committed HEAD changes to another object (which can be a branch, a commit, or another object), you can use the `--git-base` option followed by an object name:
 
 ```
 git checkout add-new-feature
-phpcs-changed --git --git-branch master file.php
+phpcs-changed --git --git-base master file.php
 ```
 
 ### CLI Options

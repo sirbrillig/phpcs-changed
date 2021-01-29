@@ -128,7 +128,8 @@ EOF;
 	printTwoColumns([
 		'--git-staged' => 'Compare the staged version to the HEAD version (this is the default).',
 		'--git-unstaged' => 'Compare the working copy version to the staged (or HEAD) version.',
-		'--git-branch <BRANCH>' => 'Compare the HEAD version to the HEAD of a different branch.',
+		'--git-branch <BRANCH>' => 'Compare the HEAD version to the HEAD of a different branch (deprecated in favor of --git-base).',
+		'--git-base <OBJECT>' => 'Compare the HEAD version to version found in OBJECT which can be a branch, commit, or other git object.',
 	], "	");
 
 	echo <<<EOF
