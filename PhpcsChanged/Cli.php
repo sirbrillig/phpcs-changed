@@ -15,7 +15,7 @@ use PhpcsChanged\UnixShell;
 use PhpcsChanged\XmlReporter;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
 use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, validateSvnFileExists};
-use function PhpcsChanged\GitWorkflow\{getGitUnifiedDiff, isNewGitFile, getGitBasePhpcsOutput, getGitNewPhpcsOutput, validateGitFileExists};
+use function PhpcsChanged\GitWorkflow\{getGitMergeBase, getGitUnifiedDiff, isNewGitFile, getGitBasePhpcsOutput, getGitNewPhpcsOutput, validateGitFileExists};
 
 function getDebug(bool $debugEnabled): callable {
 	return function(...$outputs) use ($debugEnabled) {
@@ -252,6 +252,9 @@ function runGitWorkflow(array $gitFiles, array $options, ShellOperator $shell, c
 		$shell->validateExecutableExists('phpcs', $phpcs);
 		$shell->validateExecutableExists('cat', $cat);
 		$debug('executables are valid');
+		if (isset($options['git-base']) && ! empty($options['git-base'])) {
+			$options['git-base'] = getGitMergeBase($git, [$shell, 'executeCommand'], $options, $debug);
+		}
 	} catch(\Exception $err) {
 		$shell->printError($err->getMessage());
 		$shell->exitWithCode(1);
