@@ -19,6 +19,21 @@ function validateGitFileExists(string $gitFile, string $git, callable $isReadabl
 	}
 }
 
+function getGitMergeBase(string $git, callable $executeCommand, array $options, callable $debug): string {
+	if ( empty($options['git-base']) ) {
+		return '';
+	}
+	$mergeBaseCommand = "{$git} merge-base " . escapeshellarg($options['git-base']) . ' HEAD';
+	$debug('running merge-base command:', $mergeBaseCommand);
+	$mergeBase = $executeCommand($mergeBaseCommand);
+	if (! $mergeBase) {
+		$debug('merge-base command produced no output');
+		return $options['git-base'];
+	}
+	$debug('merge-base command output:', $mergeBase);
+	return trim($mergeBase);
+}
+
 function getGitUnifiedDiff(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): string {
 	$objectOption = isset($options['git-base']) && ! empty($options['git-base']) ? ' ' . escapeshellarg($options['git-base']) . '...' : '';
 	$stagedOption = empty( $objectOption ) && ! isset($options['git-unstaged']) ? ' --staged' : '';
