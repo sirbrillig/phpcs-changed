@@ -14,8 +14,9 @@ use PhpcsChanged\ShellOperator;
 use PhpcsChanged\UnixShell;
 use PhpcsChanged\XmlReporter;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
-use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, validateSvnFileExists};
+use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, validateSvnFileExists, getSvnCacheKey};
 use function PhpcsChanged\GitWorkflow\{getGitMergeBase, getGitUnifiedDiff, isNewGitFile, getGitBasePhpcsOutput, getGitNewPhpcsOutput, validateGitFileExists};
+use function PhpcsChanged\Cache\{readCacheFile, writeCacheFile};
 
 function getDebug(bool $debugEnabled): callable {
 	return function(...$outputs) use ($debugEnabled) {
@@ -223,7 +224,15 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		validateSvnFileExists($svnFile, $svn, [$shell, 'isReadable'], [$shell, 'executeCommand'], $debug);
 		$unifiedDiff = getSvnUnifiedDiff($svnFile, $svn, [$shell, 'executeCommand'], $debug);
 		$isNewFile = isNewSvnFile($svnFile, $svn, [$shell, 'executeCommand'], $debug);
-		$oldFilePhpcsOutput = $isNewFile ? '' : getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+		$oldFilePhpcsOutput = '';
+		if ( ! $isNewFile ) {
+			$cacheKey = getSvnCacheKey($svnFile, $svn, [$shell, 'executeCommand'], $debug);
+			$oldFilePhpcsOutput = readCacheFile($cacheKey, $options);
+			if (! $oldFilePhpcsOutput) {
+				$oldFilePhpcsOutput = getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+				writeCacheFile($cacheKey, $oldFilePhpcsOutput, $options);
+			}
+		}
 		$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
 	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());
