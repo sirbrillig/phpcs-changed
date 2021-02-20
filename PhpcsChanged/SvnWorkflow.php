@@ -49,9 +49,9 @@ function getSvnCacheKey(string $svnFile, string $svn, callable $executeCommand, 
 	if (! $svnStatusOutput || false === strpos($svnStatusOutput, 'Schedule:')) {
 		throw new ShellException("Cannot get svn info for file '{$svnFile}'");
 	}
-	preg_match('/\bPath:\b\s([^\n]+)/', $svnStatusOutput, $matches);
+	preg_match('/\bPath:\s([^\R]+)/', $svnStatusOutput, $matches);
 	$path = $matches[1] ?? null;
-	preg_match('/\bRevision:\b\s([^\n]+)/', $svnStatusOutput, $matches);
+	preg_match('/\bRevision:\s([^\R]+)/', $svnStatusOutput, $matches);
 	$version = $matches[1] ?? null;
 	if (! $path || ! $version) {
 		throw new ShellException("Cannot get svn cache key for file '{$svnFile}'");
