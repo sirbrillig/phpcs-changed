@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace PhpcsChanged\Cache;
 
-define('DEFAULT_CACHE_DIR', '.phpcs-changed-cache')
+define('DEFAULT_CACHE_DIR', '.phpcs-changed-cache');
 
 function getCacheFilePathFromKey(string $cacheKey, array $options): string {
 	$cacheDir = $options['cacheDir'] ?? DEFAULT_CACHE_DIR;
