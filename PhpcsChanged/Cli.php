@@ -13,10 +13,11 @@ use PhpcsChanged\ShellException;
 use PhpcsChanged\ShellOperator;
 use PhpcsChanged\UnixShell;
 use PhpcsChanged\XmlReporter;
+use PhpcsChanged\Cache\FileCache;
+use PhpcsChanged\Cache\CacheInterface;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
-use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, validateSvnFileExists, getSvnCacheKey};
+use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, validateSvnFileExists, getSvnRevisionId};
 use function PhpcsChanged\GitWorkflow\{getGitMergeBase, getGitUnifiedDiff, isNewGitFile, getGitBasePhpcsOutput, getGitNewPhpcsOutput, validateGitFileExists};
-use function PhpcsChanged\Cache\{readCacheFile, writeCacheFile};
 
 function getDebug(bool $debugEnabled): callable {
 	return function(...$outputs) use ($debugEnabled) {
@@ -189,7 +190,7 @@ function runManualWorkflow(string $diffFile, string $phpcsOldFile, string $phpcs
 	return $messages;
 }
 
-function runSvnWorkflow(array $svnFiles, array $options, ShellOperator $shell, callable $debug): PhpcsMessages {
+function runSvnWorkflow(array $svnFiles, array $options, ShellOperator $shell, CacheInterface $cache, callable $debug): PhpcsMessages {
 	$svn = getenv('SVN') ?: 'svn';
 	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$cat = getenv('CAT') ?: 'cat';
@@ -206,13 +207,18 @@ function runSvnWorkflow(array $svnFiles, array $options, ShellOperator $shell, c
 		throw $err; // Just in case we do not actually exit, like in tests
 	}
 
-	$phpcsMessages = array_map(function(string $svnFile) use ($options, $shell, $debug): PhpcsMessages {
-		return runSvnWorkflowForFile($svnFile, $options, $shell, $debug);
+	$cache->load();
+
+	$phpcsMessages = array_map(function(string $svnFile) use ($options, $shell, $cache, $debug): PhpcsMessages {
+		return runSvnWorkflowForFile($svnFile, $options, $shell, $cache, $debug);
 	}, $svnFiles);
+
+	$cache->save();
+
 	return PhpcsMessages::merge($phpcsMessages);
 }
 
-function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $shell, callable $debug): PhpcsMessages {
+function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $shell, CacheInterface $cache, callable $debug): PhpcsMessages {
 	$svn = getenv('SVN') ?: 'svn';
 	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$cat = getenv('CAT') ?: 'cat';
@@ -223,14 +229,16 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 	try {
 		validateSvnFileExists($svnFile, $svn, [$shell, 'isReadable'], [$shell, 'executeCommand'], $debug);
 		$unifiedDiff = getSvnUnifiedDiff($svnFile, $svn, [$shell, 'executeCommand'], $debug);
+		$revisionId = getSvnRevisionId($svnFile, $svn, [$shell, 'executeCommand'], $debug);
 		$isNewFile = isNewSvnFile($svnFile, $svn, [$shell, 'executeCommand'], $debug);
 		$oldFilePhpcsOutput = '';
 		if ( ! $isNewFile ) {
-			$cacheKey = getSvnCacheKey($svnFile, $svn, [$shell, 'executeCommand'], $debug);
-			$oldFilePhpcsOutput = readCacheFile($cacheKey, $options);
+			$cache->setRevision($revisionId);
+			$cache->setPhpcsStandard($phpcsStandard);
+			$oldFilePhpcsOutput = $cache->getCacheForFile($svnFile);
 			if (! $oldFilePhpcsOutput) {
 				$oldFilePhpcsOutput = getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
-				writeCacheFile($cacheKey, $oldFilePhpcsOutput, $options);
+				$cache->setCacheForFile($svnFile, $oldFilePhpcsOutput);
 			}
 		}
 		$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
