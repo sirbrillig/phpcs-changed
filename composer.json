@@ -12,6 +12,7 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "scripts": {
+        "precommit": "composer test && composer lint && composer phpstan",
         "test": "./vendor/bin/phpunit --color=always --verbose",
         "lint": "./vendor/bin/phpcs -s PhpcsChanged bin tests index.php",
         "phpstan": "./vendor/bin/phpstan analyze PhpcsChanged/"
