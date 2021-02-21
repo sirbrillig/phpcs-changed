@@ -41,7 +41,7 @@ function isNewSvnFile(string $svnFile, string $svn, callable $executeCommand, ca
 	return (false !== strpos($svnStatusOutput, 'Schedule: add'));
 }
 
-function getSvnCacheKey(string $svnFile, string $svn, callable $executeCommand, callable $debug): string {
+function getSvnRevisionId(string $svnFile, string $svn, callable $executeCommand, callable $debug): string {
 	$svnStatusCommand = "${svn} info " . escapeshellarg($svnFile);
 	$debug('checking svn status of file with command:', $svnStatusCommand);
 	$svnStatusOutput = $executeCommand($svnStatusCommand);
@@ -49,15 +49,14 @@ function getSvnCacheKey(string $svnFile, string $svn, callable $executeCommand, 
 	if (! $svnStatusOutput || false === strpos($svnStatusOutput, 'Schedule:')) {
 		throw new ShellException("Cannot get svn info for file '{$svnFile}'");
 	}
-	preg_match('/\bPath:\s([^\R]+)/', $svnStatusOutput, $matches);
-	$path = $matches[1] ?? null;
-	preg_match('/\bRevision:\s([^\R]+)/', $svnStatusOutput, $matches);
+	preg_match('/\bRevision:\s([^\n]+)/', $svnStatusOutput, $matches);
 	$version = $matches[1] ?? null;
-	if (! $path || ! $version) {
-		throw new ShellException("Cannot get svn cache key for file '{$svnFile}'");
+	if (! $version) {
+		// New files will not have a revision
+		return '';
 	}
-	$debug('svn path:', $path, 'and version:', $version);
-	return "{$path}.{$version}";
+	$debug('svn version:', $version);
+	return $version;
 }
 
 function getSvnBasePhpcsOutput(string $svnFile, string $svn, string $phpcs, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
