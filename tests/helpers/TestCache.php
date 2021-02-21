@@ -9,7 +9,7 @@ class TestCache implements CacheInterface {
 	/**
 	 * @var array<string, string>
 	 */
-	private $fileDataByPath = [];
+	public $fileDataByPath = [];
 
 	/**
 	 * @var string
