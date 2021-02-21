@@ -19,7 +19,7 @@ class FileCache implements CacheInterface {
 	private $revisionId;
 
 	/**
-	 * @var string
+	 * @var string | null
 	 */
 	private $phpcsStandard;
 
