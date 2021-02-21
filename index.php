@@ -17,10 +17,11 @@ require_once __DIR__ . '/PhpcsChanged/NoChangesException.php';
 require_once __DIR__ . '/PhpcsChanged/ShellException.php';
 require_once __DIR__ . '/PhpcsChanged/ShellOperator.php';
 require_once __DIR__ . '/PhpcsChanged/UnixShell.php';
+require_once __DIR__ . '/PhpcsChanged/CacheInterface.php';
+require_once __DIR__ . '/PhpcsChanged/FileCache.php';
 
 // Function-only files
 require_once __DIR__ . '/PhpcsChanged/functions.php';
 require_once __DIR__ . '/PhpcsChanged/Cli.php';
 require_once __DIR__ . '/PhpcsChanged/SvnWorkflow.php';
 require_once __DIR__ . '/PhpcsChanged/GitWorkflow.php';
-require_once __DIR__ . '/PhpcsChanged/Cache.php';
