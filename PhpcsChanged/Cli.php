@@ -149,6 +149,8 @@ EOF;
 		'--debug' => 'Enable debug output.',
 		'--help' => 'Print this help.',
 		'--version' => 'Print the current version.',
+		'--no-cache' => 'Ignore any cached data (but cache new data).',
+		'--clear-cache' => 'Clear the cache before running (but cache new data).',
 		'-i' => 'Show a list of installed coding standards',
 	], "	");
 	echo <<<EOF
@@ -208,6 +210,10 @@ function runSvnWorkflow(array $svnFiles, array $options, ShellOperator $shell, C
 
 	$cache->load();
 
+	if (isset($options['clear-cache'])) {
+		$cache->clearCache();
+	}
+
 	$phpcsMessages = array_map(function(string $svnFile) use ($options, $shell, $cache, $debug): PhpcsMessages {
 		return runSvnWorkflowForFile($svnFile, $options, $shell, $cache, $debug);
 	}, $svnFiles);
@@ -237,7 +243,11 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		$oldFilePhpcsOutput = '';
 		if ( ! $isNewFile ) {
 			$cache->setRevision($revisionId);
-			$oldFilePhpcsOutput = $cache->getCacheForFile($svnFile, $phpcsStandard ?? '');
+
+			$oldFilePhpcsOutput = null;
+			if (! isset($options['no-cache'])) {
+				$oldFilePhpcsOutput = $cache->getCacheForFile($svnFile, $phpcsStandard ?? '');
+			}
 			if ($oldFilePhpcsOutput) {
 				$debug("Using cache for '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
 			}
@@ -249,7 +259,10 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		}
 
 		$newFileHash = $shell->getFileHash($svnFile);
-		$newFilePhpcsOutput = $cache->getCacheForFile($svnFile, $newFileHash);
+		$newFilePhpcsOutput = null;
+		if (! isset($options['no-cache'])) {
+			$newFilePhpcsOutput = $cache->getCacheForFile($svnFile, $newFileHash);
+		}
 		if ($newFilePhpcsOutput) {
 			$debug("Using cache for new file '{$svnFile}' at revision '{$revisionId}' and hash '{$newFileHash}'");
 		}
