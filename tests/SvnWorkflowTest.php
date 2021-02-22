@@ -253,6 +253,7 @@ EOF;
 		$manager = new CacheManager(new TestCache());
 		runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
 		$shell->deregisterCommand("svn cat 'foobar.php'");
+		$shell->deregisterCommand("cat 'foobar.php'");
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
