@@ -62,8 +62,8 @@ class CacheManager {
 			return;
 		}
 		$this->hasBeenModified = true;
-		$this->revisionId = $revisionId;
 		$this->clearCache();
+		$this->revisionId = $revisionId;
 	}
 
 	public function getCacheForFile(string $filePath, string $phpcsStandard): ?string {
@@ -85,6 +85,7 @@ class CacheManager {
 
 	public function clearCache(): void {
 		$this->hasBeenModified = true;
+		$this->revisionId = '';
 		$this->fileDataByPath = [];
 	}
 }
