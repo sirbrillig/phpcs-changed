@@ -15,7 +15,7 @@ use PhpcsChanged\UnixShell;
 use PhpcsChanged\XmlReporter;
 use PhpcsChanged\Cache\CacheInterface;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
-use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, validateSvnFileExists, getSvnRevisionId};
+use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, getSvnFileInfo, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, getSvnRevisionId};
 use function PhpcsChanged\GitWorkflow\{getGitMergeBase, getGitUnifiedDiff, isNewGitFile, getGitBasePhpcsOutput, getGitNewPhpcsOutput, validateGitFileExists};
 
 function getDebug(bool $debugEnabled): callable {
@@ -226,16 +226,23 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 	$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
 
 	try {
-		validateSvnFileExists($svnFile, $svn, [$shell, 'isReadable'], [$shell, 'executeCommand'], $debug);
+		if (! $shell->isReadable($svnFile)) {
+			throw new ShellException("Cannot read file '{$svnFile}'");
+		}
+		$svnFileInfo = getSvnFileInfo($svnFile, $svn, [$shell, 'executeCommand'], $debug);
 		$unifiedDiff = getSvnUnifiedDiff($svnFile, $svn, [$shell, 'executeCommand'], $debug);
-		$revisionId = getSvnRevisionId($svnFile, $svn, [$shell, 'executeCommand'], $debug);
-		$isNewFile = isNewSvnFile($svnFile, $svn, [$shell, 'executeCommand'], $debug);
+		$revisionId = getSvnRevisionId($svnFileInfo);
+		$isNewFile = isNewSvnFile($svnFileInfo);
 		$oldFilePhpcsOutput = '';
 		if ( ! $isNewFile ) {
 			$cache->setRevision($revisionId);
 			$cache->setPhpcsStandard($phpcsStandard);
 			$oldFilePhpcsOutput = $cache->getCacheForFile($svnFile);
+			if ($oldFilePhpcsOutput) {
+				$debug("Using cache for '{$svnFile}'");
+			}
 			if (! $oldFilePhpcsOutput) {
+				$debug("Not using cache for '{$svnFile}'");
 				$oldFilePhpcsOutput = getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
 				$cache->setCacheForFile($svnFile, $oldFilePhpcsOutput);
 			}

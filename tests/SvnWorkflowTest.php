@@ -10,7 +10,7 @@ use PhpcsChanged\ShellException;
 use PhpcsChangedTests\TestShell;
 use PhpcsChangedTests\TestCache;
 use function PhpcsChanged\Cli\runSvnWorkflow;
-use function PhpcsChanged\SvnWorkflow\{isNewSvnFile, getSvnUnifiedDiff};
+use function PhpcsChanged\SvnWorkflow\{getSvnFileInfo, isNewSvnFile, getSvnUnifiedDiff};
 
 final class SvnWorkflowTest extends TestCase {
 	public function testIsNewSvnFileReturnsTrueForNewFile() {
@@ -31,7 +31,8 @@ Node Kind: file
 Schedule: add
 ";
 		};
-		$this->assertTrue(isNewSvnFile($svnFile, $svn, $executeCommand, '\PhpcsChangedTests\Debug'));
+		$svnFileInfo = getSvnFileInfo($svnFile, $svn, $executeCommand, '\PhpcsChangedTests\Debug');
+		$this->assertTrue(isNewSvnFile($svnFileInfo));
 	}
 
 	public function testIsNewSvnFileReturnsFalseForOldFile() {
@@ -58,7 +59,8 @@ Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
 Checksum: abcdefg
 ";
 		};
-		$this->assertFalse(isNewSvnFile($svnFile, $svn, $executeCommand, '\PhpcsChangedTests\Debug'));
+		$svnFileInfo = getSvnFileInfo($svnFile, $svn, $executeCommand, '\PhpcsChangedTests\Debug');
+		$this->assertFalse(isNewSvnFile($svnFileInfo));
 	}
 
 	public function testGetSvnUnifiedDiff() {
