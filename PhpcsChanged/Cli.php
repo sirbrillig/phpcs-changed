@@ -250,7 +250,11 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 
 		$newFileHash = $shell->getFileHash($svnFile);
 		$newFilePhpcsOutput = $cache->getCacheForFile($svnFile, $newFileHash);
+		if ($newFilePhpcsOutput) {
+			$debug("Using cache for new file '{$svnFile}' at revision '{$revisionId}' and hash '{$newFileHash}'");
+		}
 		if (! $newFilePhpcsOutput) {
+			$debug("Not using cache for new file '{$svnFile}' at revision '{$revisionId}' and hash '{$newFileHash}'");
 			$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
 			$cache->setCacheForFile($svnFile, $newFilePhpcsOutput, $newFileHash);
 		}
