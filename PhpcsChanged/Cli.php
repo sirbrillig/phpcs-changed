@@ -259,17 +259,18 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		}
 
 		$newFileHash = $shell->getFileHash($svnFile);
+		$newFileCacheKey = ($phpcsStandard ?? '') . $newFileHash;
 		$newFilePhpcsOutput = null;
 		if (! isset($options['no-cache'])) {
-			$newFilePhpcsOutput = $cache->getCacheForFile($svnFile, $newFileHash);
+			$newFilePhpcsOutput = $cache->getCacheForFile($svnFile, $newFileCacheKey);
 		}
 		if ($newFilePhpcsOutput) {
-			$debug("Using cache for new file '{$svnFile}' at revision '{$revisionId}' and hash '{$newFileHash}'");
+			$debug("Using cache for new file '{$svnFile}' at revision '{$revisionId}' and key '{$newFileCacheKey}'");
 		}
 		if (! $newFilePhpcsOutput) {
-			$debug("Not using cache for new file '{$svnFile}' at revision '{$revisionId}' and hash '{$newFileHash}'");
+			$debug("Not using cache for new file '{$svnFile}' at revision '{$revisionId}' and key '{$newFileCacheKey}'");
 			$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
-			$cache->setCacheForFile($svnFile, $newFilePhpcsOutput, $newFileHash);
+			$cache->setCacheForFile($svnFile, $newFilePhpcsOutput, $newFileCacheKey);
 		}
 	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());
