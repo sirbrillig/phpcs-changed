@@ -25,17 +25,21 @@ class TestCache implements CacheInterface {
 	public function load(CacheManager $manager): void {
 		$this->didSave = false;
 		$manager->setRevision($this->revisionId);
-		foreach($this->fileData as $entry) {
+		foreach(array_values($this->fileData) as $entry) {
 			$manager->setCacheForFile($entry['path'], $entry['data'], $entry['phpcsStandard']);
 		}
 	}
 
-	public function save(CacheManager $manager): void { // phpcs:ignore VariableAnalysis
+	public function save(CacheManager $manager): void {
 		$this->didSave = true;
+		$this->setRevision($manager->getRevision());
+		foreach($manager->getEntries() as $entry) {
+			$this->setEntry($entry->path, $entry->data, $entry->phpcsStandard);
+		}
 	}
 
 	public function setEntry(string $path, string $data, string $phpcsStandard): void {
-		$this->fileData[] = [
+		$this->fileData[$path] = [
 			'path' => $path,
 			'data' => $data,
 			'phpcsStandard' => $phpcsStandard,
