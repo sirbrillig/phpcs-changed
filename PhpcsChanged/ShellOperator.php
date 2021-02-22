@@ -13,6 +13,8 @@ interface ShellOperator {
 
 	public function isReadable(string $fileName): bool;
 
+	public function getFileHash(string $fileName): string;
+
 	public function exitWithCode(int $code): void;
 
 	public function printError(string $message): void;

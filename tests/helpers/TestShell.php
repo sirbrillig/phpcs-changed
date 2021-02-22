@@ -11,6 +11,8 @@ class TestShell implements ShellOperator {
 
 	private $commands = [];
 
+	private $fileHashes = [];
+
 	public function __construct(array $readableFileNames) {
 		foreach ($readableFileNames as $fileName) {
 			$this->registerReadableFileName($fileName);
@@ -44,6 +46,10 @@ class TestShell implements ShellOperator {
 		throw new \Exception("No registered command: {$command}");
 	}
 
+	public function setFileHash(string $fileName, string $hash): void {
+		$this->fileHashes[$fileName] = $hash;
+	}
+
 	public function isReadable(string $fileName): bool {
 		return isset($this->readableFileNames[$fileName]);
 	}
@@ -53,6 +59,10 @@ class TestShell implements ShellOperator {
 	public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
 	public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
+
+	public function getFileHash(string $fileName): string {
+		return $this->fileHashes[$fileName] ?? $fileName;
+	}
 
 	public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
 		foreach ($this->commands as $registeredCommand => $return) {
