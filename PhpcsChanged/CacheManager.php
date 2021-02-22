@@ -8,7 +8,7 @@ use PhpcsChanged\Cache\CacheEntry;
 
 class CacheManager {
 	/**
-	 * @var array<string, CacheEntry>
+	 * @var array<string, array<string, CacheEntry>>
 	 */
 	private $fileDataByPath = [];
 
@@ -48,8 +48,13 @@ class CacheManager {
 		return $this->revisionId;
 	}
 
+	/**
+	 * @return CacheEntry[]
+	 */
 	public function getEntries(): array {
-		return array_values($this->fileDataByPath);
+		return array_reduce($this->fileDataByPath, function(array $entries, array $entriesByStandard): array {
+			return array_merge($entries, array_values($entriesByStandard));
+		}, []);
 	}
 
 	public function setRevision(string $revisionId): void {
@@ -62,14 +67,8 @@ class CacheManager {
 	}
 
 	public function getCacheForFile(string $filePath, string $phpcsStandard): ?string {
-		$entry = $this->fileDataByPath[$filePath] ?? null;
-		if (! $entry) {
-			return null;
-		}
-		if ($entry->phpcsStandard !== $phpcsStandard) {
-			return null;
-		}
-		return $entry->data;
+		$entry = $this->fileDataByPath[$filePath][$phpcsStandard] ?? null;
+		return $entry->data ?? null;
 	}
 
 	public function setCacheForFile(string $filePath, string $data, string $phpcsStandard): void {
@@ -78,7 +77,10 @@ class CacheManager {
 		$entry->phpcsStandard = $phpcsStandard;
 		$entry->data = $data;
 		$entry->path = $filePath;
-		$this->fileDataByPath[$filePath] = $entry;
+		if (! isset($this->fileDataByPath[$filePath])) {
+			$this->fileDataByPath[$filePath] = [];
+		}
+		$this->fileDataByPath[$filePath][$phpcsStandard] = $entry;
 	}
 
 	public function clearCache(): void {
