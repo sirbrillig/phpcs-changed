@@ -17,7 +17,9 @@ require_once __DIR__ . '/PhpcsChanged/NoChangesException.php';
 require_once __DIR__ . '/PhpcsChanged/ShellException.php';
 require_once __DIR__ . '/PhpcsChanged/ShellOperator.php';
 require_once __DIR__ . '/PhpcsChanged/UnixShell.php';
+require_once __DIR__ . '/PhpcsChanged/CacheEntry.php';
 require_once __DIR__ . '/PhpcsChanged/CacheInterface.php';
+require_once __DIR__ . '/PhpcsChanged/CacheManager.php';
 require_once __DIR__ . '/PhpcsChanged/FileCache.php';
 
 // Function-only files
