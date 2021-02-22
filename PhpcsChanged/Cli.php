@@ -233,6 +233,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		$unifiedDiff = getSvnUnifiedDiff($svnFile, $svn, [$shell, 'executeCommand'], $debug);
 		$revisionId = getSvnRevisionId($svnFileInfo);
 		$isNewFile = isNewSvnFile($svnFileInfo);
+
 		$oldFilePhpcsOutput = '';
 		if ( ! $isNewFile ) {
 			$cache->setRevision($revisionId);
@@ -246,7 +247,13 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 				$cache->setCacheForFile($svnFile, $oldFilePhpcsOutput, $phpcsStandard ?? '');
 			}
 		}
-		$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+
+		$newFileHash = $shell->getFileHash($svnFile);
+		$newFilePhpcsOutput = $cache->getCacheForFile($svnFile, $newFileHash);
+		if (! $newFilePhpcsOutput) {
+			$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+			$cache->setCacheForFile($svnFile, $newFilePhpcsOutput, $newFileHash);
+		}
 	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());
 		$unifiedDiff = '';
