@@ -315,18 +315,6 @@ EOF;
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
 EOF;
 		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
 		$fixture = <<<EOF
