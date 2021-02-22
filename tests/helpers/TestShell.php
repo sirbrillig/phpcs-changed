@@ -36,6 +36,14 @@ class TestShell implements ShellOperator {
 		throw new \Exception("Already registered command: {$command}");
 	}
 
+	public function deregisterCommand(string $command): bool {
+		if (isset($this->commands[$command])) {
+			unset($this->commands[$command]);
+			return true;
+		}
+		throw new \Exception("No registered command: {$command}");
+	}
+
 	public function isReadable(string $fileName): bool {
 		return isset($this->readableFileNames[$fileName]);
 	}
