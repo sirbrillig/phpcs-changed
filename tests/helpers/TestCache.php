@@ -22,7 +22,15 @@ class TestCache implements CacheInterface {
 	 */
 	public $didSave = false;
 
+	/**
+	 * @var bool
+	 */
+	public $disabled = false;
+
 	public function load(CacheManager $manager): void {
+		if ($this->disabled) {
+			return;
+		}
 		$this->didSave = false;
 		$manager->setRevision($this->revisionId);
 		foreach(array_values($this->fileData) as $entry) {
@@ -31,6 +39,9 @@ class TestCache implements CacheInterface {
 	}
 
 	public function save(CacheManager $manager): void {
+		if ($this->disabled) {
+			return;
+		}
 		$this->didSave = true;
 		$this->setRevision($manager->getRevision());
 		foreach($manager->getEntries() as $entry) {
