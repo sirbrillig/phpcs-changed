@@ -15,7 +15,7 @@ class TestCache implements CacheInterface {
 	/**
 	 * @var string
 	 */
-	private $revisionId;
+	private $revisionId = '';
 
 	/**
 	 * @var bool
