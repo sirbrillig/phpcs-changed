@@ -22,7 +22,7 @@ class FileCache implements CacheInterface {
 		if ($contents === false) {
 			throw new \Exception('Failed to read cache file');
 		}
-		$decoded = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+		$decoded = json_decode($contents, true);
 		if (! is_array($decoded) || ! array_key_exists('revisionId', $decoded) || ! array_key_exists('entries', $decoded) || ! is_array($decoded['entries'])) {
 			throw new \Exception('Invalid cache file');
 		}
@@ -40,7 +40,7 @@ class FileCache implements CacheInterface {
 			'revisionId' => $manager->getRevision(),
 			'entries' => $manager->getEntries(),
 		];
-		$result = file_put_contents($this->cacheFilePath, json_encode($data, JSON_THROW_ON_ERROR));
+		$result = file_put_contents($this->cacheFilePath, json_encode($data));
 		if ($result === false) {
 			throw new \Exception('Failed to write cache file');
 		}
