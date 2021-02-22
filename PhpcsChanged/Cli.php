@@ -238,10 +238,10 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 			$cache->setRevision($revisionId);
 			$oldFilePhpcsOutput = $cache->getCacheForFile($svnFile, $phpcsStandard ?? '');
 			if ($oldFilePhpcsOutput) {
-				$debug("Using cache for '{$svnFile}'");
+				$debug("Using cache for '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
 			}
 			if (! $oldFilePhpcsOutput) {
-				$debug("Not using cache for '{$svnFile}'");
+				$debug("Not using cache for '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
 				$oldFilePhpcsOutput = getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
 				$cache->setCacheForFile($svnFile, $oldFilePhpcsOutput, $phpcsStandard ?? '');
 			}
