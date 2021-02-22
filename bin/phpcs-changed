@@ -43,6 +43,7 @@ $options = getopt(
 		'report:',
 		'debug',
 		'ignore:',
+		'cache',
 		'no-cache',
 		'clear-cache',
 	],

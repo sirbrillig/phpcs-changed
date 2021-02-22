@@ -149,8 +149,9 @@ EOF;
 		'--debug' => 'Enable debug output.',
 		'--help' => 'Print this help.',
 		'--version' => 'Print the current version.',
-		'--no-cache' => 'Ignore any cached data (but cache new data).',
-		'--clear-cache' => 'Clear the cache before running (but cache new data).',
+		'--cache' => 'Cache phpcs output for improved performance (no-cache will still disable this).',
+		'--no-cache' => 'Disable caching of phpcs output (does not remove existing cache).',
+		'--clear-cache' => 'Clear the cache before running.',
 		'-i' => 'Show a list of installed coding standards',
 	], "	");
 	echo <<<EOF
@@ -208,7 +209,9 @@ function runSvnWorkflow(array $svnFiles, array $options, ShellOperator $shell, C
 		throw $err; // Just in case we do not actually exit, like in tests
 	}
 
-	$cache->load();
+	if (isCachingEnabled($options)) {
+		$cache->load();
+	}
 
 	if (isset($options['clear-cache'])) {
 		$cache->clearCache();
@@ -218,7 +221,9 @@ function runSvnWorkflow(array $svnFiles, array $options, ShellOperator $shell, C
 		return runSvnWorkflowForFile($svnFile, $options, $shell, $cache, $debug);
 	}, $svnFiles);
 
-	$cache->save();
+	if (isCachingEnabled($options)) {
+		$cache->save();
+	}
 
 	return PhpcsMessages::merge($phpcsMessages);
 }
@@ -244,10 +249,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		if ( ! $isNewFile ) {
 			$cache->setRevision($revisionId);
 
-			$oldFilePhpcsOutput = null;
-			if (! isset($options['no-cache'])) {
-				$oldFilePhpcsOutput = $cache->getCacheForFile($svnFile, $phpcsStandard ?? '');
-			}
+			$oldFilePhpcsOutput = $cache->getCacheForFile($svnFile, $phpcsStandard ?? '');
 			if ($oldFilePhpcsOutput) {
 				$debug("Using cache for '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
 			}
@@ -260,10 +262,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 
 		$newFileHash = $shell->getFileHash($svnFile);
 		$newFileCacheKey = ($phpcsStandard ?? '') . $newFileHash;
-		$newFilePhpcsOutput = null;
-		if (! isset($options['no-cache'])) {
-			$newFilePhpcsOutput = $cache->getCacheForFile($svnFile, $newFileCacheKey);
-		}
+		$newFilePhpcsOutput = $cache->getCacheForFile($svnFile, $newFileCacheKey);
 		if ($newFilePhpcsOutput) {
 			$debug("Using cache for new file '{$svnFile}' at revision '{$revisionId}' and key '{$newFileCacheKey}'");
 		}
@@ -459,5 +458,15 @@ function shouldIgnorePath(string $path, string $patternOption = null): bool {
 		}
 	}
 
+	return false;
+}
+
+function isCachingEnabled(array $options): bool {
+	if (isset($options['no-cache']) && $options['no-cache']) {
+		return false;
+	}
+	if (isset($options['cache']) && $options['cache']) {
+		return true;
+	}
 	return false;
 }
