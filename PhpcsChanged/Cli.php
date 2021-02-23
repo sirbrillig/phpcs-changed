@@ -13,7 +13,7 @@ use PhpcsChanged\ShellException;
 use PhpcsChanged\ShellOperator;
 use PhpcsChanged\UnixShell;
 use PhpcsChanged\XmlReporter;
-use PhpcsChanged\Cache\CacheManager;
+use PhpcsChanged\CacheManager;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
 use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, getSvnFileInfo, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, getSvnRevisionId};
 use function PhpcsChanged\GitWorkflow\{getGitMergeBase, getGitUnifiedDiff, isNewGitFile, getGitBasePhpcsOutput, getGitNewPhpcsOutput, validateGitFileExists};

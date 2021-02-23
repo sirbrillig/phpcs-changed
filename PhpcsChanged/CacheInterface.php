@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace PhpcsChanged\Cache;
+namespace PhpcsChanged;
 
-use PhpcsChanged\Cache\CacheManager;
+use PhpcsChanged\CacheManager;
 
 interface CacheInterface {
 	public function load(CacheManager $manager): void;

@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace PhpcsChangedTests;
 
-use PhpcsChanged\Cache\CacheInterface;
-use PhpcsChanged\Cache\CacheManager;
+use PhpcsChanged\CacheInterface;
+use PhpcsChanged\CacheManager;
 
 class TestCache implements CacheInterface {
 	/**

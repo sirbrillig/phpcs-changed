@@ -21,8 +21,8 @@ use function PhpcsChanged\Cli\{
 	printInstalledCodingStandards
 };
 use PhpcsChanged\UnixShell;
-use PhpcsChanged\Cache\CacheManager;
-use PhpcsChanged\Cache\FileCache;
+use PhpcsChanged\CacheManager;
+use PhpcsChanged\FileCache;
 
 $optind = 0;
 $options = getopt(

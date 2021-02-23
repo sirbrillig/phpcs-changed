@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace PhpcsChanged\Cache;
+namespace PhpcsChanged;
 
-use PhpcsChanged\Cache\CacheInterface;
-use PhpcsChanged\Cache\CacheManager;
+use PhpcsChanged\CacheInterface;
+use PhpcsChanged\CacheManager;
 
 define('DEFAULT_CACHE_FILE', '.phpcs-changed-cache');
 

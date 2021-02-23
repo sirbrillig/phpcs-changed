@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace PhpcsChanged\Cache;
+namespace PhpcsChanged;
 
 class CacheEntry implements \JsonSerializable {
 	/**

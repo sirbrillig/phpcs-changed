@@ -7,7 +7,7 @@ require_once __DIR__ . '/helpers/helpers.php';
 use PHPUnit\Framework\TestCase;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\ShellException;
-use PhpcsChanged\Cache\CacheManager;
+use PhpcsChanged\CacheManager;
 use PhpcsChangedTests\TestShell;
 use PhpcsChangedTests\TestCache;
 use function PhpcsChanged\Cli\runSvnWorkflow;
