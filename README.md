@@ -102,6 +102,12 @@ You can use `--standard` to specify a specific phpcs standard to run. This match
 
 You can also use the `-s` option to Always show sniff codes after each error in the full reporter. This matches the phpcs option of the same name.
 
+The `--cache` option will enable caching of phpcs output and can significantly improve performance for slow phpcs standards or when running with high frequency. There are actually two caches: one for the phpcs scan of the previous version of the file and one for the phpcs scan of the new version. The previous version phpcs output cache is invalidated when the version control revision changes or when the phpcs standard changes. The new version phpcs output cache is invalidated when the file hash changes or when the phpcs standard changes.
+
+The `--no-cache` option will disable the cache if it's been enabled. (This may also be useful in the future if caching is made the default.)
+
+The `--clear-cache` option will clear the cache before running. This works with or without caching enabled.
+
 ## PHP Library
 
 🐘🐘🐘
