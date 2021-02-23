@@ -38,6 +38,7 @@ class FileCache implements CacheInterface {
 
 	public function save(CacheManager $manager): void {
 		$data = [
+			'cacheVersion' => $manager->getCacheVersion(),
 			'revisionId' => $manager->getRevision(),
 			'entries' => $manager->getEntries(),
 		];
