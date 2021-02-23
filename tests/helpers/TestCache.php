@@ -5,6 +5,7 @@ namespace PhpcsChangedTests;
 
 use PhpcsChanged\CacheInterface;
 use PhpcsChanged\CacheManager;
+use function PhpcsChanged\getVersion;
 
 class TestCache implements CacheInterface {
 	/**
@@ -13,9 +14,9 @@ class TestCache implements CacheInterface {
 	private $fileData = [];
 
 	/**
-	 * @var string
+	 * @var string|null
 	 */
-	private $cacheVersion = '';
+	private $cacheVersion;
 
 	/**
 	 * @var string
@@ -37,7 +38,7 @@ class TestCache implements CacheInterface {
 			return;
 		}
 		$this->didSave = false;
-		$manager->setCacheVersion($this->cacheVersion);
+		$manager->setCacheVersion($this->cacheVersion ?? getVersion());
 		$manager->setRevision($this->revisionId);
 		foreach(array_values($this->fileData) as $entry) {
 			$manager->setCacheForFile($entry['path'], $entry['data'], $entry['cacheKey']);
