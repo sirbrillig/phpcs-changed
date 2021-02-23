@@ -40,6 +40,11 @@ class CacheManager {
 
 	public function load(): void {
 		$this->cache->load($this);
+		// Don't try to use old cache versions
+		if ($this->cacheVersion !== getVersion()) {
+			$this->clearCache();
+			$this->cacheVersion = getVersion();
+		}
 		$this->hasBeenModified = false;
 	}
 
