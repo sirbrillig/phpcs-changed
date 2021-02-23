@@ -28,10 +28,10 @@ class FileCache implements CacheInterface {
 		}
 		$manager->setRevision($decoded['revisionId']);
 		foreach($decoded['entries'] as $entry) {
-			if (! array_key_exists('path', $entry) || ! array_key_exists('data', $entry) || ! array_key_exists('phpcsStandard', $entry)) {
+			if (! array_key_exists('path', $entry) || ! array_key_exists('data', $entry) || ! array_key_exists('cacheKey', $entry)) {
 				throw new \Exception('Invalid cache file entry: ' . $entry);
 			}
-			$manager->setCacheForFile($entry['path'], $entry['data'], $entry['phpcsStandard']);
+			$manager->setCacheForFile($entry['path'], $entry['data'], $entry['cacheKey']);
 		}
 	}
 

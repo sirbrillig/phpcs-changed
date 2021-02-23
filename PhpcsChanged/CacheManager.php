@@ -66,21 +66,21 @@ class CacheManager {
 		$this->revisionId = $revisionId;
 	}
 
-	public function getCacheForFile(string $filePath, string $phpcsStandard): ?string {
-		$entry = $this->fileDataByPath[$filePath][$phpcsStandard] ?? null;
+	public function getCacheForFile(string $filePath, string $cacheKey): ?string {
+		$entry = $this->fileDataByPath[$filePath][$cacheKey] ?? null;
 		return $entry->data ?? null;
 	}
 
-	public function setCacheForFile(string $filePath, string $data, string $phpcsStandard): void {
+	public function setCacheForFile(string $filePath, string $data, string $cacheKey): void {
 		$this->hasBeenModified = true;
 		$entry = new CacheEntry();
-		$entry->phpcsStandard = $phpcsStandard;
+		$entry->cacheKey = $cacheKey;
 		$entry->data = $data;
 		$entry->path = $filePath;
 		if (! isset($this->fileDataByPath[$filePath])) {
 			$this->fileDataByPath[$filePath] = [];
 		}
-		$this->fileDataByPath[$filePath][$phpcsStandard] = $entry;
+		$this->fileDataByPath[$filePath][$cacheKey] = $entry;
 	}
 
 	public function clearCache(): void {

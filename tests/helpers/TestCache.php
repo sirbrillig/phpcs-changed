@@ -34,7 +34,7 @@ class TestCache implements CacheInterface {
 		$this->didSave = false;
 		$manager->setRevision($this->revisionId);
 		foreach(array_values($this->fileData) as $entry) {
-			$manager->setCacheForFile($entry['path'], $entry['data'], $entry['phpcsStandard']);
+			$manager->setCacheForFile($entry['path'], $entry['data'], $entry['cacheKey']);
 		}
 	}
 
@@ -45,15 +45,15 @@ class TestCache implements CacheInterface {
 		$this->didSave = true;
 		$this->setRevision($manager->getRevision());
 		foreach($manager->getEntries() as $entry) {
-			$this->setEntry($entry->path, $entry->data, $entry->phpcsStandard);
+			$this->setEntry($entry->path, $entry->data, $entry->cacheKey);
 		}
 	}
 
-	public function setEntry(string $path, string $data, string $phpcsStandard): void {
+	public function setEntry(string $path, string $data, string $cacheKey): void {
 		$this->fileData[$path] = [
 			'path' => $path,
 			'data' => $data,
-			'phpcsStandard' => $phpcsStandard,
+			'cacheKey' => $cacheKey,
 		];
 	}
 

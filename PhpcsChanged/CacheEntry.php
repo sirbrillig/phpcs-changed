@@ -12,7 +12,7 @@ class CacheEntry implements \JsonSerializable {
 	/**
 	 * @var string
 	 */
-	public $phpcsStandard;
+	public $cacheKey;
 
 	/**
 	 * @var string
@@ -22,7 +22,7 @@ class CacheEntry implements \JsonSerializable {
 	public function jsonSerialize(): array {
 		return [
 			'path' => $this->path,
-			'phpcsStandard' => $this->phpcsStandard,
+			'cacheKey' => $this->cacheKey,
 			'data' => $this->data,
 		];
 	}
