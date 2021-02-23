@@ -15,6 +15,11 @@ class TestCache implements CacheInterface {
 	/**
 	 * @var string
 	 */
+	private $cacheVersion = '';
+
+	/**
+	 * @var string
+	 */
 	private $revisionId = '';
 
 	/**
@@ -32,6 +37,7 @@ class TestCache implements CacheInterface {
 			return;
 		}
 		$this->didSave = false;
+		$manager->setCacheVersion($this->cacheVersion);
 		$manager->setRevision($this->revisionId);
 		foreach(array_values($this->fileData) as $entry) {
 			$manager->setCacheForFile($entry['path'], $entry['data'], $entry['cacheKey']);
@@ -43,6 +49,7 @@ class TestCache implements CacheInterface {
 			return;
 		}
 		$this->didSave = true;
+		$this->setCacheVersion($manager->getCacheVersion());
 		$this->setRevision($manager->getRevision());
 		foreach($manager->getEntries() as $entry) {
 			$this->setEntry($entry->path, $entry->data, $entry->cacheKey);
@@ -59,5 +66,9 @@ class TestCache implements CacheInterface {
 
 	public function setRevision(string $revisionId): void {
 		$this->revisionId = $revisionId;
+	}
+
+	public function setCacheVersion(string $cacheVersion): void {
+		$this->cacheVersion = $cacheVersion;
 	}
 }

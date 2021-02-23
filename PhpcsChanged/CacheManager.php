@@ -5,6 +5,7 @@ namespace PhpcsChanged;
 
 use PhpcsChanged\CacheInterface;
 use PhpcsChanged\CacheEntry;
+use function PhpcsChanged\getVersion;
 
 class CacheManager {
 	/**
@@ -18,6 +19,11 @@ class CacheManager {
 	private $revisionId;
 
 	/**
+	 * @var string
+	 */
+	private $cacheVersion;
+
+	/**
 	 * @var bool
 	 */
 	private $hasBeenModified = false;
@@ -29,6 +35,7 @@ class CacheManager {
 
 	public function __construct(CacheInterface $cache) {
 		$this->cache = $cache;
+		$this->cacheVersion = getVersion();
 	}
 
 	public function load(): void {
@@ -48,6 +55,10 @@ class CacheManager {
 		return $this->revisionId;
 	}
 
+	public function getCacheVersion(): string {
+		return $this->cacheVersion;
+	}
+
 	/**
 	 * @return CacheEntry[]
 	 */
@@ -55,6 +66,15 @@ class CacheManager {
 		return array_reduce($this->fileDataByPath, function(array $entries, array $entriesByStandard): array {
 			return array_merge($entries, array_values($entriesByStandard));
 		}, []);
+	}
+
+	public function setCacheVersion(string $cacheVersion): void {
+		if ($this->cacheVersion === $cacheVersion) {
+			return;
+		}
+		$this->hasBeenModified = true;
+		$this->clearCache();
+		$this->cacheVersion = $cacheVersion;
 	}
 
 	public function setRevision(string $revisionId): void {
