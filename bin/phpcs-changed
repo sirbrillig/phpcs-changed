@@ -98,6 +98,7 @@ run($options, $fileNamesExpanded, $debug);
 
 function run(array $options, array $fileNamesExpanded, callable $debug): void {
 	$debug('Running on filenames: ' . implode(', ', $fileNamesExpanded));
+	$debug('Options: ' . json_encode($options));
 	$reportType = $options['report'] ?? 'full';
 	$diffFile = $options['diff'] ?? null;
 	$phpcsOldFile = $options['phpcs-orig'] ?? null;
