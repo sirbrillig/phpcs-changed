@@ -213,8 +213,9 @@ function runSvnWorkflow(array $svnFiles, array $options, ShellOperator $shell, C
 		$cache->load();
 	}
 
-	if (isset($options['clear-cache'])) {
+	if (isset($options['clear-cache']) && $options['clear-cache']) {
 		$cache->clearCache();
+		$cache->save();
 	}
 
 	$phpcsMessages = array_map(function(string $svnFile) use ($options, $shell, $cache, $debug): PhpcsMessages {
