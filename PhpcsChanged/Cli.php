@@ -210,12 +210,24 @@ function runSvnWorkflow(array $svnFiles, array $options, ShellOperator $shell, C
 	}
 
 	if (isCachingEnabled($options)) {
-		$cache->load();
+		try {
+			$cache->load();
+		} catch( \Exception $err ) {
+			$shell->printError($err->getMessage());
+			$shell->exitWithCode(1);
+			throw $err; // Just in case we do not actually exit, like in tests
+		}
 	}
 
 	if (isset($options['clear-cache'])) {
 		$cache->clearCache();
-		$cache->save();
+		try {
+			$cache->save();
+		} catch( \Exception $err ) {
+			$shell->printError($err->getMessage());
+			$shell->exitWithCode(1);
+			throw $err; // Just in case we do not actually exit, like in tests
+		}
 	}
 
 	$phpcsMessages = array_map(function(string $svnFile) use ($options, $shell, $cache, $debug): PhpcsMessages {
