@@ -213,7 +213,7 @@ function runSvnWorkflow(array $svnFiles, array $options, ShellOperator $shell, C
 		$cache->load();
 	}
 
-	if (isset($options['clear-cache']) && $options['clear-cache']) {
+	if (isset($options['clear-cache'])) {
 		$cache->clearCache();
 		$cache->save();
 	}
@@ -463,10 +463,10 @@ function shouldIgnorePath(string $path, string $patternOption = null): bool {
 }
 
 function isCachingEnabled(array $options): bool {
-	if (isset($options['no-cache']) && $options['no-cache']) {
+	if (isset($options['no-cache'])) {
 		return false;
 	}
-	if (isset($options['cache']) && $options['cache']) {
+	if (isset($options['cache'])) {
 		return true;
 	}
 	return false;
