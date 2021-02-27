@@ -438,6 +438,66 @@ EOF;
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
+	public function testFullSvnWorkflowForOneFileWithCacheThatHasDifferentStandard() {
+		$svnFile = 'foobar.php';
+		$shell = new TestShell([$svnFile]);
+		$fixture = <<<EOF
+Index: foobar.php
+===================================================================
+--- bin/foobar.php	(revision 183265)
++++ bin/foobar.php	(working copy)
+@@ -17,6 +17,7 @@
+ use Billing\Purchases\Order;
+ use Billing\Services;
+ use Billing\Ebanx;
++use Foobar;
+ use Billing\Emergent;
+ use Billing\Monetary_Amount;
+ use Stripe\Error;
+EOF;
+		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$fixture = <<<EOF
+Path: foobar.php
+Name: foobar.php
+Working Copy Root Path: /home/public_html
+URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
+Relative URL: ^/trunk/foobar.php
+Repository Root: https://svn.localhost
+Repository UUID: 1111-1111-1111-1111
+Revision: 188280
+Node Kind: file
+Schedule: normal
+Last Changed Author: me
+Last Changed Rev: 175729
+Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
+Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
+Checksum: abcdefg
+EOF;
+		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$options = [
+			'cache' => false, // getopt is weird and sets options to false
+			'standard' => 'TestStandard1',
+		];
+		$expected = PhpcsMessages::fromArrays([
+			[
+				'type' => 'ERROR',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 20,
+				'message' => 'Found unused symbol Emergent.',
+			],
+		], 'bin/foobar.php');
+		$cache = new TestCache();
+		$cache->setRevision('188280');
+		$cache->setEntry('foobar.php', '', 'TestStandard2', 'blah'); // This invalid JSON will throw if the cache is used
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
 	public function testFullSvnWorkflowForOneFileWithOutdatedCache() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
