@@ -141,6 +141,19 @@ class CacheManager {
 			$this->fileDataByPath[$entry->path][$entry->hash] = [];
 		}
 		$this->fileDataByPath[$entry->path][$entry->hash][$entry->phpcsStandard] = $entry;
+		$this->pruneOldEntriesForFile($entry);
+	}
+
+	// Keep only one actual hash key (a new file) and one empty hash key (an old file) per file path
+	private function pruneOldEntriesForFile(CacheEntry $entry): void {
+		$hashKeysForFile = array_keys($this->fileDataByPath[$entry->path]);
+		foreach($hashKeysForFile as $hash) {
+			if ($hash === '' || $hash === $entry->hash) {
+				continue;
+			}
+			$this->hasBeenModified = true;
+			unset($this->fileDataByPath[$entry->path][$hash]);
+		}
 	}
 
 	public function clearCache(): void {
