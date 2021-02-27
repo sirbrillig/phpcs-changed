@@ -11,6 +11,8 @@ class TestShell implements ShellOperator {
 
 	private $commands = [];
 
+	private $commandsCalled = [];
+
 	private $fileHashes = [];
 
 	public function __construct(array $readableFileNames) {
@@ -69,10 +71,19 @@ class TestShell implements ShellOperator {
 			if ($registeredCommand === substr($command, 0, strlen($registeredCommand)) ) {
 				$return_val = $return['return_val'];
 				$output = $return['output'];
+				$this->commandsCalled[$registeredCommand] = $command;
 				return $return['output'];
 			}
 		}
 
 		throw new \Exception("Unknown command: {$command}");
+	}
+
+	public function resetCommandsCalled(): void {
+		$this->commandsCalled = [];
+	}
+
+	public function wasCommandCalled(string $registeredCommand): bool {
+		return isset($this->commandsCalled[$registeredCommand]);
 	}
 }
