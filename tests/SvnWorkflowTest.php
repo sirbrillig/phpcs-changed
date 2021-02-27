@@ -11,6 +11,7 @@ use PhpcsChanged\CacheManager;
 use PhpcsChangedTests\TestShell;
 use PhpcsChangedTests\TestCache;
 use PhpcsChangedTests\SvnFixture;
+use PhpcsChangedTests\PhpcsFixture;
 use function PhpcsChanged\Cli\runSvnWorkflow;
 use function PhpcsChanged\SvnWorkflow\{getSvnFileInfo, isNewSvnFile, getSvnUnifiedDiff};
 
@@ -18,6 +19,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function setUp(): void {
 		parent::setUp();
 		$this->fixture = new SvnFixture();
+		$this->phpcs = new PhpcsFixture();
 	}
 
 	public function testIsNewSvnFileReturnsTrueForNewFile() {
@@ -64,20 +66,10 @@ final class SvnWorkflowTest extends TestCase {
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
-		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$options = [];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 20,
-				'message' => 'Found unused symbol Emergent.',
-			],
-		], 'bin/foobar.php');
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
@@ -87,22 +79,12 @@ final class SvnWorkflowTest extends TestCase {
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
-		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$options = [
 			'cache' => false, // getopt is weird and sets options to false
 		];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 20,
-				'message' => 'Found unused symbol Emergent.',
-			],
-		], 'bin/foobar.php');
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
@@ -112,24 +94,14 @@ final class SvnWorkflowTest extends TestCase {
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$options = [
 			'cache' => false, // getopt is weird and sets options to false
 		];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 20,
-				'message' => 'Found unused symbol Emergent.',
-			],
-		], 'bin/foobar.php');
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$cache = new TestCache();
 		$cache->setRevision('188280');
-		$cache->setEntry('foobar.php', '', '', '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$cache->setEntry('foobar.php', '', '', $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 		$this->assertFalse($shell->wasCommandCalled("svn cat 'foobar.php'"));
@@ -141,22 +113,12 @@ final class SvnWorkflowTest extends TestCase {
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
-		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$options = [
 			'cache' => false, // getopt is weird and sets options to false
 		];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 20,
-				'message' => 'Found unused symbol Emergent.',
-			],
-		], 'bin/foobar.php');
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 
 		$cache = new TestCache();
 		$manager = new CacheManager($cache);
@@ -177,22 +139,12 @@ final class SvnWorkflowTest extends TestCase {
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
-		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$options = [
 			'cache' => false, // getopt is weird and sets options to false
 		];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 20,
-				'message' => 'Found unused symbol Emergent.',
-			],
-		], 'bin/foobar.php');
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 
 		$cache = new TestCache();
 		$manager = new CacheManager($cache);
@@ -211,7 +163,7 @@ final class SvnWorkflowTest extends TestCase {
 		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php'"));
 
 		// Run a third time, with the file hash changed, and make sure we don't use the (new file) cache (the old file cache will still be used because it is not keyed by hash)
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$shell->setFileHash('foobar.php', 'different-hash');
 		$shell->resetCommandsCalled();
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
@@ -224,22 +176,12 @@ final class SvnWorkflowTest extends TestCase {
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
-		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$options = [
 			'cache' => false, // getopt is weird and sets options to false
 		];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 20,
-				'message' => 'Found unused symbol Emergent.',
-			],
-		], 'bin/foobar.php');
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$original_hash = $shell->getFileHash('foobar.php');
 
 		$cache = new TestCache();
@@ -259,7 +201,7 @@ final class SvnWorkflowTest extends TestCase {
 		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php'"));
 
 		// Run a third time, with the file hash changed, and make sure we don't use the (new file) cache (the old file cache will still be used because it is not keyed by hash)
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$shell->setFileHash('foobar.php', 'different-hash');
 		$shell->resetCommandsCalled();
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
@@ -279,22 +221,12 @@ final class SvnWorkflowTest extends TestCase {
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
-		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$options = [
 			'cache' => false, // getopt is weird and sets options to false
 		];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 20,
-				'message' => 'Found unused symbol Emergent.',
-			],
-		], 'bin/foobar.php');
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 
 		$cache = new TestCache();
 		$manager = new CacheManager($cache);
@@ -335,22 +267,12 @@ final class SvnWorkflowTest extends TestCase {
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
-		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$options = [
 			'no-cache' => false, // getopt is weird and sets options to false
 		];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 20,
-				'message' => 'Found unused symbol Emergent.',
-			],
-		], 'bin/foobar.php');
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$cache = new TestCache();
 		$cache->disabled = true;
 		$manager = new CacheManager($cache);
@@ -364,22 +286,12 @@ final class SvnWorkflowTest extends TestCase {
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
-		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$options = [
 			'cache' => false, // getopt is weird and sets options to false
 		];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 20,
-				'message' => 'Found unused symbol Emergent.',
-			],
-		], 'bin/foobar.php');
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$cache = new TestCache();
 		$cache->setCacheVersion('0.1-something-else');
 		$cache->setRevision('188280');
@@ -395,23 +307,15 @@ final class SvnWorkflowTest extends TestCase {
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
-		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$oldFileOutput = $this->phpcs->getResults('STDIN', [20, 99]);
+		$newFileOutput = $this->phpcs->getResults('STDIN', [20, 21]);
+		$shell->registerCommand("svn cat 'foobar.php'", $oldFileOutput->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $newFileOutput->toPhpcsJson());
 		$options = [
 			'cache' => false, // getopt is weird and sets options to false
 			'standard' => 'TestStandard1',
 		];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 20,
-				'message' => 'Found unused symbol Emergent.',
-			],
-		], 'bin/foobar.php');
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$cache = new TestCache();
 		$cache->setRevision('188280');
 		$cache->setEntry('foobar.php', '', 'TestStandard2', 'blah'); // This invalid JSON will throw if the cache is used
@@ -426,22 +330,12 @@ final class SvnWorkflowTest extends TestCase {
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
-		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$options = [
 			'cache' => false, // getopt is weird and sets options to false
 		];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 20,
-				'message' => 'Found unused symbol Emergent.',
-			],
-		], 'bin/foobar.php');
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$cache = new TestCache();
 		$cache->setRevision('1000');
 		$cache->setEntry('foobar.php', '', '', 'blah'); // This invalid JSON will throw if the cache is used
@@ -456,14 +350,14 @@ final class SvnWorkflowTest extends TestCase {
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$options = [
 			'cache' => false, // getopt is weird and sets options to false
 		];
 		$expected = PhpcsMessages::fromArrays([], 'bin/foobar.php');
 		$cache = new TestCache();
 		$cache->setRevision('188280');
-		$cache->setEntry('foobar.php', '', '', '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$cache->setEntry('foobar.php', '', '', $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 		$this->assertFalse($shell->wasCommandCalled("svn cat 'foobar.php'"));
@@ -477,34 +371,16 @@ final class SvnWorkflowTest extends TestCase {
 		$shell->registerCommand("svn diff 'baz.php'", $this->fixture->getAddedLineDiff('baz.php', 'use Baz;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn info 'baz.php'", $this->fixture->getSvnInfo('baz.php'));
-		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("svn cat 'baz.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."}]}}}');
-		$shell->registerCommand("cat 'baz.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."}]}}}');
+
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$shell->registerCommand("svn cat 'baz.php'", $this->phpcs->getResults('STDIN', [20, 99], 'Found unused symbol Baz.')->toPhpcsJson());
+		$shell->registerCommand("cat 'baz.php'", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Baz.')->toPhpcsJson());
+
 		$options = [];
 		$expected = PhpcsMessages::merge([
-			PhpcsMessages::fromArrays([
-				[
-					'type' => 'ERROR',
-					'severity' => 5,
-					'fixable' => false,
-					'column' => 5,
-					'source' => 'ImportDetection.Imports.RequireImports.Import',
-					'line' => 20,
-					'message' => 'Found unused symbol Emergent.',
-				],
-			], 'bin/foobar.php'),
-			PhpcsMessages::fromArrays([
-				[
-					'type' => 'ERROR',
-					'severity' => 5,
-					'fixable' => false,
-					'column' => 5,
-					'source' => 'ImportDetection.Imports.RequireImports.Import',
-					'line' => 20,
-					'message' => 'Found unused symbol Baz.',
-				],
-			], 'bin/baz.php'),
+			$this->phpcs->getResults('bin/foobar.php', [20]),
+			$this->phpcs->getResults('bin/baz.php', [20], 'Found unused symbol Baz.'),
 		]);
 		$messages = runSvnWorkflow($svnFiles, $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -515,8 +391,8 @@ final class SvnWorkflowTest extends TestCase {
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
-		$shell->registerCommand("svn cat 'foobar.php'|phpcs", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'|phpcs", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([], 'STDIN');
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\Debug');
@@ -542,8 +418,8 @@ final class SvnWorkflowTest extends TestCase {
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNonSvnFileDiff('foobar.php'), 1);
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfoNonSvnFile('foobar.php'), 1);
-		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$options = [];
 		runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\Debug');
 	}
@@ -553,28 +429,9 @@ final class SvnWorkflowTest extends TestCase {
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNewFileDiff('foobar.php'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfoNewFile('foobar.php'));
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$options = [];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 20,
-				'message' => 'Found unused symbol Emergent.',
-			],
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 21,
-				'message' => 'Found unused symbol Emergent.',
-			],
-		], 'STDIN');
+		$expected = $this->phpcs->getResults('STDIN', [20, 21]);
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}

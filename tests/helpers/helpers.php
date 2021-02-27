@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace PhpcsChangedTests;
 
+require_once __DIR__ . '/PhpcsFixture.php';
 require_once __DIR__ . '/SvnFixture.php';
 require_once __DIR__ . '/TestShell.php';
 require_once __DIR__ . '/TestCache.php';
