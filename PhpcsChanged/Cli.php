@@ -262,27 +262,26 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		if ( ! $isNewFile ) {
 			$cache->setRevision($revisionId);
 
-			$oldFilePhpcsOutput = $cache->getCacheForFile($svnFile, $phpcsStandard ?? '');
+			$oldFilePhpcsOutput = $cache->getCacheForFile($svnFile, '', $phpcsStandard ?? '');
 			if ($oldFilePhpcsOutput) {
 				$debug("Using cache for old file '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
 			}
 			if (! $oldFilePhpcsOutput) {
 				$debug("Not using cache for old file '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
 				$oldFilePhpcsOutput = getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
-				$cache->setCacheForFile($svnFile, $oldFilePhpcsOutput, $phpcsStandard ?? '');
+				$cache->setCacheForFile($svnFile, '', $phpcsStandard ?? '', $oldFilePhpcsOutput);
 			}
 		}
 
 		$newFileHash = $shell->getFileHash($svnFile);
-		$newFileCacheKey = ($phpcsStandard ?? '') . $newFileHash;
-		$newFilePhpcsOutput = $cache->getCacheForFile($svnFile, $newFileCacheKey);
+		$newFilePhpcsOutput = $cache->getCacheForFile($svnFile, $newFileHash, $phpcsStandard ?? '');
 		if ($newFilePhpcsOutput) {
-			$debug("Using cache for new file '{$svnFile}' at revision '{$revisionId}' and key '{$newFileCacheKey}'");
+			$debug("Using cache for new file '{$svnFile}' at revision '{$revisionId}', hash '{$newFileHash}', and standard '{$phpcsStandard}'");
 		}
 		if (! $newFilePhpcsOutput) {
-			$debug("Not using cache for new file '{$svnFile}' at revision '{$revisionId}' and key '{$newFileCacheKey}'");
+			$debug("Not using cache for new file '{$svnFile}' at revision '{$revisionId}', hash '{$newFileHash}', and standard '{$phpcsStandard}'");
 			$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
-			$cache->setCacheForFile($svnFile, $newFilePhpcsOutput, $newFileCacheKey);
+			$cache->setCacheForFile($svnFile, $newFileHash, $phpcsStandard ?? '', $newFilePhpcsOutput);
 		}
 	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());

@@ -253,7 +253,7 @@ EOF;
 		], 'bin/foobar.php');
 		$cache = new TestCache();
 		$cache->setRevision('188280');
-		$cache->setEntry('foobar.php', '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}', '');
+		$cache->setEntry('foobar.php', '', '', '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
@@ -433,7 +433,7 @@ EOF;
 		$cache = new TestCache();
 		$cache->setCacheVersion('0.1-something-else');
 		$cache->setRevision('188280');
-		$cache->setEntry('foobar.php', 'blah', ''); // This invalid JSON will throw if the cache is used
+		$cache->setEntry('foobar.php', '', '', 'blah'); // This invalid JSON will throw if the cache is used
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
@@ -492,7 +492,7 @@ EOF;
 		], 'bin/foobar.php');
 		$cache = new TestCache();
 		$cache->setRevision('1000');
-		$cache->setEntry('foobar.php', 'blah', ''); // This invalid JSON will throw if the cache is used
+		$cache->setEntry('foobar.php', '', '', 'blah'); // This invalid JSON will throw if the cache is used
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
@@ -528,7 +528,7 @@ EOF;
 		$expected = PhpcsMessages::fromArrays([], 'bin/foobar.php');
 		$cache = new TestCache();
 		$cache->setRevision('188280');
-		$cache->setEntry('foobar.php', '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}', '');
+		$cache->setEntry('foobar.php', '', '', '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}

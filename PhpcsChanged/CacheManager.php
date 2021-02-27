@@ -9,7 +9,13 @@ use function PhpcsChanged\getVersion;
 
 class CacheManager {
 	/**
-	 * @var array<string, array<string, CacheEntry>>
+	 * A cache map with three levels of keys:
+	 *
+	 * 1. The file path
+	 * 2. The file hash (if needed; this is not used for old files)
+	 * 3. The phpcs standard
+	 *
+	 * @var array<string, array<string, array<string, CacheEntry>>>
 	 */
 	private $fileDataByPath = [];
 
@@ -68,9 +74,29 @@ class CacheManager {
 	 * @return CacheEntry[]
 	 */
 	public function getEntries(): array {
-		return array_reduce($this->fileDataByPath, function(array $entries, array $entriesByStandard): array {
-			return array_merge($entries, array_values($entriesByStandard));
-		}, []);
+		return $this->flattenArray($this->fileDataByPath);
+	}
+
+	/**
+	 * Flatten an array
+	 *
+	 * From https://stackoverflow.com/questions/1319903/how-to-flatten-a-multidimensional-array
+	 *
+	 * @param array|CacheEntry $array
+	 */
+	private function flattenArray($array): array {
+		if (!is_array($array)) {
+			// nothing to do if it's not an array
+			return array($array);
+		}
+
+		$result = array();
+		foreach ($array as $value) {
+			// explode the sub-array, and add the parts
+			$result = array_merge($result, $this->flattenArray($value));
+		}
+
+		return $result;
 	}
 
 	public function setCacheVersion(string $cacheVersion): void {
@@ -91,21 +117,30 @@ class CacheManager {
 		$this->revisionId = $revisionId;
 	}
 
-	public function getCacheForFile(string $filePath, string $cacheKey): ?string {
-		$entry = $this->fileDataByPath[$filePath][$cacheKey] ?? null;
+	public function getCacheForFile(string $filePath, string $hash, string $phpcsStandard): ?string {
+		$entry = $this->fileDataByPath[$filePath][$hash][$phpcsStandard] ?? null;
 		return $entry->data ?? null;
 	}
 
-	public function setCacheForFile(string $filePath, string $data, string $cacheKey): void {
+	public function setCacheForFile(string $filePath, string $hash, string $phpcsStandard, string $data): void {
 		$this->hasBeenModified = true;
 		$entry = new CacheEntry();
-		$entry->cacheKey = $cacheKey;
+		$entry->phpcsStandard = $phpcsStandard;
+		$entry->hash = $hash;
 		$entry->data = $data;
 		$entry->path = $filePath;
-		if (! isset($this->fileDataByPath[$filePath])) {
-			$this->fileDataByPath[$filePath] = [];
+		$this->addCacheEntry($entry);
+	}
+
+	public function addCacheEntry(CacheEntry $entry): void {
+		$this->hasBeenModified = true;
+		if (! isset($this->fileDataByPath[$entry->path])) {
+			$this->fileDataByPath[$entry->path] = [];
 		}
-		$this->fileDataByPath[$filePath][$cacheKey] = $entry;
+		if (! isset($this->fileDataByPath[$entry->path][$entry->hash])) {
+			$this->fileDataByPath[$entry->path][$entry->hash] = [];
+		}
+		$this->fileDataByPath[$entry->path][$entry->hash][$entry->phpcsStandard] = $entry;
 	}
 
 	public function clearCache(): void {

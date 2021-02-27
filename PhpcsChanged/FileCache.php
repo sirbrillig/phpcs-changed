@@ -5,6 +5,7 @@ namespace PhpcsChanged;
 
 use PhpcsChanged\CacheInterface;
 use PhpcsChanged\CacheManager;
+use PhpcsChanged\CacheEntry;
 
 define('DEFAULT_CACHE_FILE', '.phpcs-changed-cache');
 
@@ -32,7 +33,7 @@ class FileCache implements CacheInterface {
 			if (! $this->isDecodedEntryValid($entry)) {
 				throw new \Exception('Invalid cache file entry: ' . $entry);
 			}
-			$manager->setCacheForFile($entry['path'], $entry['data'], $entry['cacheKey']);
+			$manager->addCacheEntry(CacheEntry::fromJson($entry));
 		}
 	}
 
