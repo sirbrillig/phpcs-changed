@@ -12,7 +12,7 @@ class TestCache implements CacheInterface {
 	/**
 	 * @var array
 	 */
-	private $fileData = [];
+	private $savedFileData = [];
 
 	/**
 	 * @var string|null
@@ -41,7 +41,7 @@ class TestCache implements CacheInterface {
 		$this->didSave = false;
 		$manager->setCacheVersion($this->cacheVersion ?? getVersion());
 		$manager->setRevision($this->revisionId);
-		foreach(array_values($this->fileData) as $entry) {
+		foreach(array_values($this->savedFileData) as $entry) {
 			$manager->addCacheEntry(CacheEntry::fromJson($entry));
 		}
 	}
@@ -53,13 +53,14 @@ class TestCache implements CacheInterface {
 		$this->didSave = true;
 		$this->setCacheVersion($manager->getCacheVersion());
 		$this->setRevision($manager->getRevision());
+		$this->savedFileData = [];
 		foreach($manager->getEntries() as $entry) {
 			$this->setEntry($entry->path, $entry->hash, $entry->phpcsStandard, $entry->data);
 		}
 	}
 
 	public function setEntry(string $path, string $hash, string $phpcsStandard, string $data): void {
-		$this->fileData[$path] = [
+		$this->savedFileData[] = [
 			'path' => $path,
 			'hash' => $hash,
 			'data' => $data,
