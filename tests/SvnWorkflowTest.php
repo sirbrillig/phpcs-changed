@@ -27,16 +27,7 @@ final class SvnWorkflowTest extends TestCase {
 			if (! $command || false === strpos($command, "svn info 'foobar.php'")) {
 				return '';
 			}
-			return "Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Node Kind: file
-Schedule: add
-";
+			return $this->fixture->getSvnInfoNewFile('foobar.php');
 		};
 		$svnFileInfo = getSvnFileInfo($svnFile, $svn, $executeCommand, '\PhpcsChangedTests\Debug');
 		$this->assertTrue(isNewSvnFile($svnFileInfo));
@@ -49,22 +40,7 @@ Schedule: add
 			if (! $command || false === strpos($command, "svn info 'foobar.php'")) {
 				return '';
 			}
-			return "Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-";
+			return $this->fixture->getSvnInfo('foobar.php');
 		};
 		$svnFileInfo = getSvnFileInfo($svnFile, $svn, $executeCommand, '\PhpcsChangedTests\Debug');
 		$this->assertFalse(isNewSvnFile($svnFileInfo));
@@ -87,24 +63,7 @@ Checksum: abcdefg
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [];
@@ -127,24 +86,7 @@ EOF;
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [
@@ -169,24 +111,7 @@ EOF;
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [
 			'cache' => false, // getopt is weird and sets options to false
@@ -213,24 +138,7 @@ EOF;
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [
@@ -266,24 +174,7 @@ EOF;
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [
@@ -330,24 +221,7 @@ EOF;
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [
@@ -402,24 +276,7 @@ EOF;
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [
@@ -475,24 +332,7 @@ EOF;
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [
@@ -521,24 +361,7 @@ EOF;
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [
@@ -567,24 +390,7 @@ EOF;
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [
@@ -613,24 +419,7 @@ EOF;
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [
@@ -658,24 +447,7 @@ EOF;
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [
 			'cache' => false, // getopt is weird and sets options to false
@@ -693,42 +465,8 @@ EOF;
 		$shell = new TestShell($svnFiles);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn diff 'baz.php'", $this->fixture->getAddedLineDiff('baz.php', 'use Baz;'));
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
-		$fixture = <<<EOF
-Path: baz.php
-Name: baz.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/baz.php
-Relative URL: ^/trunk/baz.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'baz.php'", $fixture);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
+		$shell->registerCommand("svn info 'baz.php'", $this->fixture->getSvnInfo('baz.php'));
 		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("svn cat 'baz.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."}]}}}');
@@ -766,24 +504,7 @@ EOF;
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
-					$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php'|phpcs", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("cat 'foobar.php'|phpcs", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [];
@@ -796,24 +517,7 @@ EOF;
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php'|phpcs", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
 		$shell->registerCommand("cat 'foobar.php'|phpcs", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
 		$options = [];
@@ -827,12 +531,7 @@ EOF;
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNonSvnFileDiff('foobar.php'), 1);
-		$fixture = <<<EOF
-svn: warning: W155010: The node 'foobar.php' was not found.
-
-svn: E200009: Could not display info for all targets because some targets don't exist
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture, 1);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfoNonSvnFile('foobar.php'), 1);
 		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [];
@@ -843,18 +542,7 @@ EOF;
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNewFileDiff('foobar.php'));
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Node Kind: file
-Schedule: add
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfoNewFile('foobar.php'));
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([
@@ -885,18 +573,7 @@ EOF;
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNewFileDiff('foobar.php'));
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Node Kind: file
-Schedule: add
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfoNewFile('foobar.php'));
 		$fixture = 'ERROR: You must supply at least one file or directory to process.
 
 Run "phpcs --help" for usage information
