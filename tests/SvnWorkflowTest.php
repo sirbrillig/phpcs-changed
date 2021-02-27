@@ -489,6 +489,89 @@ EOF;
 		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
 	}
 
+	public function testFullSvnWorkflowForOneDoesNotClearCacheWhenStandardChanges() {
+		$svnFile = 'foobar.php';
+		$shell = new TestShell([$svnFile]);
+		$fixture = <<<EOF
+Index: foobar.php
+===================================================================
+--- bin/foobar.php	(revision 183265)
++++ bin/foobar.php	(working copy)
+@@ -17,6 +17,7 @@
+ use Billing\Purchases\Order;
+ use Billing\Services;
+ use Billing\Ebanx;
++use Foobar;
+ use Billing\Emergent;
+ use Billing\Monetary_Amount;
+ use Stripe\Error;
+EOF;
+		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$fixture = <<<EOF
+Path: foobar.php
+Name: foobar.php
+Working Copy Root Path: /home/public_html
+URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
+Relative URL: ^/trunk/foobar.php
+Repository Root: https://svn.localhost
+Repository UUID: 1111-1111-1111-1111
+Revision: 188280
+Node Kind: file
+Schedule: normal
+Last Changed Author: me
+Last Changed Rev: 175729
+Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
+Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
+Checksum: abcdefg
+EOF;
+		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$options = [
+			'cache' => false, // getopt is weird and sets options to false
+		];
+		$expected = PhpcsMessages::fromArrays([
+			[
+				'type' => 'ERROR',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 20,
+				'message' => 'Found unused symbol Emergent.',
+			],
+		], 'bin/foobar.php');
+
+		$cache = new TestCache();
+		$manager = new CacheManager($cache);
+		$cache->setRevision('188280');
+
+		// Run once to cache results
+		$options['standard'] = 'one';
+		runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
+
+		// Run again to prove results have been cached
+		$shell->resetCommandsCalled();
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php'"));
+
+		// Run a third time, with the standard changed, and make sure we don't use the cache
+		$options['standard'] = 'two';
+		$shell->resetCommandsCalled();
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
+
+		// Run a fourth time, restoring the standard, and make sure we do use the cache
+		$options['standard'] = 'one';
+		$shell->resetCommandsCalled();
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php'"));
+	}
+
 	public function testFullSvnWorkflowForOneFileUncachedWhenCachingIsDisabled() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
