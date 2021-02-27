@@ -25,7 +25,7 @@ final class GitWorkflowTest extends TestCase {
 		$git = 'git';
 		$executeCommand = function($command) {
 			if (false !== strpos($command, "git status --short 'foobar.php'")) {
-				return 'A foobar.php';
+				return $this->fixture->getNewFileInfo('foobar.php');
 			}
 		};
 		$this->assertTrue(isNewGitFile($gitFile, $git, $executeCommand, array(), '\PhpcsChangedTests\Debug'));
@@ -36,7 +36,7 @@ final class GitWorkflowTest extends TestCase {
 		$git = 'git';
 		$executeCommand = function($command) {
 			if (false !== strpos($command, "git status --short 'foobar.php'")) {
-				return ' M foobar.php'; // note the leading space
+				return $this->fixture->getModifiedFileInfo('foobar.php');
 			}
 		};
 		$this->assertFalse(isNewGitFile($gitFile, $git, $executeCommand, array(), '\PhpcsChangedTests\Debug'));
@@ -60,7 +60,7 @@ final class GitWorkflowTest extends TestCase {
 		$shell = new TestShell([$gitFile]);
 		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
-		$shell->registerCommand("git status --short 'foobar.php'", ' M foobar.php'); // note the leading space
+		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
 		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"Variables.Defined.RequiredDefined.Unused","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"Variables.Defined.RequiredDefined.Unused","message":"Found unused symbol Foobar."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"Variables.Defined.RequiredDefined.Unused","message":"Found unused symbol Emergent."}]}}}');
 		$options = [];
@@ -74,7 +74,7 @@ final class GitWorkflowTest extends TestCase {
 		$shell = new TestShell([$gitFile]);
 		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
-		$shell->registerCommand("git status --short 'foobar.php'", ' M foobar.php'); // note the leading space
+		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
 		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"Variables.Defined.RequiredDefined.Unused","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"Variables.Defined.RequiredDefined.Unused","message":"Found unused symbol Emergent."},{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"Variables.Defined.RequiredDefined.Unused","message":"Found unused symbol Foobar."}]}}}');
 		$options = ['git-unstaged' => '1'];
@@ -90,8 +90,8 @@ final class GitWorkflowTest extends TestCase {
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$fixture = $this->fixture->getAddedLineDiff('baz.php', 'use Baz;');
 		$shell->registerCommand("git diff --staged --no-prefix 'baz.php'", $fixture);
-		$shell->registerCommand("git status --short 'foobar.php'", ' M foobar.php'); // note the leading space
-		$shell->registerCommand("git status --short 'baz.php'", ' M baz.php'); // note the leading space
+		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git status --short 'baz.php'", $this->fixture->getModifiedFileInfo('baz.php'));
 		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"Variables.Defined.RequiredDefined.Unused","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'baz.php')", '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"Variables.Defined.RequiredDefined.Unused","message":"Found unused symbol Emergent."}]}}}');
 		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"Variables.Defined.RequiredDefined.Unused","message":"Found unused symbol Foobar."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"Variables.Defined.RequiredDefined.Unused","message":"Found unused symbol Emergent."}]}}}');
@@ -151,7 +151,7 @@ final class GitWorkflowTest extends TestCase {
 		$shell = new TestShell([$gitFile]);
 		$fixture = $this->fixture->getNewFileDiff('foobar.php');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
-		$shell->registerCommand("git status --short 'foobar.php'",'A foobar.php');
+		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getNewFileInfo('foobar.php'));
 		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":5,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"Variables.Defined.RequiredDefined.Unused","message":"Found unused symbol Foobar."},{"line":6,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"Variables.Defined.RequiredDefined.Unused","message":"Found unused symbol Foobar."}]}}}');
 		$options = [];
 		$expected = $this->phpcs->getResults('bin/foobar.php', [5, 6], 'Found unused symbol Foobar.');
@@ -164,7 +164,7 @@ final class GitWorkflowTest extends TestCase {
 		$shell = new TestShell([$gitFile]);
 		$fixture = $this->fixture->getNewFileDiff('foobar.php');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
-		$shell->registerCommand("git status --short 'foobar.php'", 'A foobar.php');
+		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getNewFileInfo('foobar.php'));
 		$fixture ='ERROR: You must supply at least one file or directory to process.
 
 Run "phpcs --help" for usage information
@@ -196,7 +196,7 @@ Run "phpcs --help" for usage information
 	function testNameDetectionInFullGitWorkflowForInterBranchDiff() {
 		$gitFile = 'test.php';
 		$shell = new TestShell([$gitFile]);
-		$shell->registerCommand("git status --short 'test.php'", ' M test.php');
+		$shell->registerCommand("git status --short 'test.php'", $this->fixture->getModifiedFileInfo('test.php'));
 		
 		$fixture = $this->fixture->getAltNewFileDiff('test.php');
 		$shell->registerCommand("git merge-base 'master' HEAD", "0123456789abcdef0123456789abcdef01234567\n");

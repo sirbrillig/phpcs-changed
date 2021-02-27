@@ -72,4 +72,12 @@ index 0000000..b3d9bbc
 
 EOF;
 	}
+
+	public function getNewFileInfo(string $filename): string {
+		return "A {$filename}";
+	}
+
+	public function getModifiedFileInfo(string $filename): string {
+		return " M {$filename}"; // note the leading space
+	}
 }
