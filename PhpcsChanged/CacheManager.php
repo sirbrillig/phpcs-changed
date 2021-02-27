@@ -146,6 +146,9 @@ class CacheManager {
 
 	// Keep only one actual hash key (a new file) and one empty hash key (an old file) per file path
 	private function pruneOldEntriesForFile(CacheEntry $entry): void {
+		if ($entry->hash === '') {
+			return;
+		}
 		$hashKeysForFile = array_keys($this->fileDataByPath[$entry->path]);
 		foreach($hashKeysForFile as $hash) {
 			if ($hash === '' || $hash === $entry->hash) {
