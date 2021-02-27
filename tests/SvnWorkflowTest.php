@@ -132,6 +132,8 @@ final class SvnWorkflowTest extends TestCase {
 		$cache->setEntry('foobar.php', '', '', '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
 	}
 
 	public function testFullSvnWorkflowForOneFileUncachedThenCachesBothVersionsOfTheFile() {
@@ -384,6 +386,8 @@ final class SvnWorkflowTest extends TestCase {
 		$cache->setEntry('foobar.php', '', '', 'blah'); // This invalid JSON will throw if the cache is used
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertTrue($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
 	}
 
 	public function testFullSvnWorkflowForOneFileWithCacheThatHasDifferentStandard() {
@@ -413,6 +417,8 @@ final class SvnWorkflowTest extends TestCase {
 		$cache->setEntry('foobar.php', '', 'TestStandard2', 'blah'); // This invalid JSON will throw if the cache is used
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertTrue($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
 	}
 
 	public function testFullSvnWorkflowForOneFileWithOutdatedCache() {
@@ -441,6 +447,8 @@ final class SvnWorkflowTest extends TestCase {
 		$cache->setEntry('foobar.php', '', '', 'blah'); // This invalid JSON will throw if the cache is used
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertTrue($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
 	}
 
 	public function testFullSvnWorkflowForUnchangedFileWithCache() {
@@ -458,6 +466,8 @@ final class SvnWorkflowTest extends TestCase {
 		$cache->setEntry('foobar.php', '', '', '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php'"));
 	}
 
 	public function testFullSvnWorkflowForMultipleFiles() {
