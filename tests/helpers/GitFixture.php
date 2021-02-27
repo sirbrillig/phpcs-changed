@@ -80,4 +80,8 @@ EOF;
 	public function getModifiedFileInfo(string $filename): string {
 		return " M {$filename}"; // note the leading space
 	}
+
+	public function getNonGitFileShow(string $filename): string {
+		return "fatal: Path '{$filename}' exists on disk, but not in 'HEAD'.";
+	}
 }
