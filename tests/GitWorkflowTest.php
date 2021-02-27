@@ -8,11 +8,16 @@ use PHPUnit\Framework\TestCase;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\ShellException;
 use PhpcsChangedTests\TestShell;
+use PhpcsChangedTests\GitFixture;
 use function PhpcsChanged\Cli\runGitWorkflow;
 use function PhpcsChanged\GitWorkflow\{isNewGitFile, getGitUnifiedDiff};
 
-
 final class GitWorkflowTest extends TestCase {
+	public function setUp(): void {
+		parent::setUp();
+		$this->fixture = new GitFixture();
+	}
+
 	public function testIsNewGitFileReturnsTrueForNewFile() {
 		$gitFile = 'foobar.php';
 		$git = 'git';
@@ -38,20 +43,7 @@ final class GitWorkflowTest extends TestCase {
 	public function testGetGitUnifiedDiff() {
 		$gitFile = 'foobar.php';
 		$git = 'git';
-		$diff = <<<EOF
-diff --git bin/foobar.php bin/foobar.php
-index 038d718..d6c3357 100644
---- bin/foobar.php
-+++ bin/foobar.php
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
+		$diff = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$executeCommand = function($command) use ($diff) {
 			if (! $command || false === strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 				return '';
@@ -64,20 +56,7 @@ EOF;
 	public function testFullGitWorkflowForOneFile() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$fixture = <<<EOF
-diff --git bin/foobar.php bin/foobar.php
-index 038d718..d6c3357 100644
---- bin/foobar.php
-+++ bin/foobar.php
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", ' M foobar.php'); // note the leading space
 		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
@@ -101,20 +80,7 @@ EOF;
 	public function testFullGitWorkflowForOneFileUnstaged() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$fixture = <<<EOF
-diff --git bin/foobar.php bin/foobar.php
-index 038d718..d6c3357 100644
---- bin/foobar.php
-+++ bin/foobar.php
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", ' M foobar.php'); // note the leading space
 		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
@@ -138,35 +104,9 @@ EOF;
 	public function testFullGitWorkflowForMultipleFiles() {
 		$gitFiles = ['foobar.php', 'baz.php'];
 		$shell = new TestShell($gitFiles);
-		$fixture = <<<EOF
-diff --git bin/foobar.php bin/foobar.php
-index 038d718..d6c3357 100644
---- bin/foobar.php
-+++ bin/foobar.php
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
-		$fixture = <<<EOF
-diff --git bin/baz.php bin/baz.php
-index 038d718..d6c3357 100644
---- bin/baz.php
-+++ bin/baz.php
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Baz;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
+		$fixture = $this->fixture->getAddedLineDiff('baz.php', 'use Baz;');
 		$shell->registerCommand("git diff --staged --no-prefix 'baz.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", ' M foobar.php'); // note the leading space
 		$shell->registerCommand("git status --short 'baz.php'", ' M baz.php'); // note the leading space
@@ -206,8 +146,7 @@ EOF;
 	public function testFullGitWorkflowForUnchangedFileWithPhpcsMessages() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$fixture = <<<EOF
-EOF;
+		$fixture = $this->fixture->getEmptyFileDiff();
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", '');
 		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
@@ -221,8 +160,7 @@ EOF;
 	public function testFullGitWorkflowForUnchangedFileWithoutPhpcsMessages() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$fixture = <<<EOF
-EOF;
+		$fixture = $this->fixture->getEmptyFileDiff();
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", '');
 		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
@@ -237,8 +175,7 @@ EOF;
 		$this->expectException(ShellException::class);
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$fixture = <<<EOF
-EOF;
+		$fixture = $this->fixture->getEmptyFileDiff();
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", "?? foobar.php" );
 		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", "fatal: Path 'foobar.php' exists on disk, but not in 'HEAD'.", 128);
@@ -250,22 +187,7 @@ EOF;
 	public function testFullGitWorkflowForNewFile() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$fixture = <<<EOF
-diff --git bin/foobar.php bin/foobar.php
-new file mode 100644
-index 0000000..efa970f
---- /dev/null
-+++ bin/foobar.php
-@@ -0,0 +1,8 @@
-+<?php
-+use Billing\Purchases\Order;
-+use Billing\Services;
-+use Billing\Ebanx;
-+use Foobar;
-+use Billing\Emergent;
-+use Billing\Monetary_Amount;
-+use Stripe\Error;
-EOF;
+		$fixture = $this->fixture->getNewFileDiff('foobar.php');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'",'A foobar.php');
 		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":5,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foobar."},{"line":6,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
@@ -297,22 +219,7 @@ EOF;
 	public function testFullGitWorkflowForEmptyNewFile() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$fixture = <<<EOF
-diff --git bin/foobar.php bin/foobar.php
-new file mode 100644
-index 0000000..efa970f
---- /dev/null
-+++ bin/foobar.php
-@@ -0,0 +1,8 @@
-+<?php
-+use Billing\Purchases\Order;
-+use Billing\Services;
-+use Billing\Ebanx;
-+use Foobar;
-+use Billing\Emergent;
-+use Billing\Monetary_Amount;
-+use Stripe\Error;
-EOF;
+		$fixture = $this->fixture->getNewFileDiff('foobar.php');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", 'A foobar.php');
 		$fixture ='ERROR: You must supply at least one file or directory to process.
@@ -330,20 +237,7 @@ Run "phpcs --help" for usage information
 	function testFullGitWorkflowForInterBranchDiff() {
 		$gitFile = 'bin/foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$fixture = <<<EOF
-diff --git bin/foobar.php bin/foobar.php
-index c012707..319ecf3 100644
---- bin/foobar.php
-+++ bin/foobar.php
-@@ -3,6 +3,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
+		$fixture = $this->fixture->getAltAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git merge-base 'master' HEAD", "0123456789abcdef0123456789abcdef01234567\n");
 		$shell->registerCommand("git diff '0123456789abcdef0123456789abcdef01234567'... --no-prefix 'bin/foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'bin/foobar.php'", '');
@@ -371,16 +265,7 @@ EOF;
 		$shell = new TestShell([$gitFile]);
 		$shell->registerCommand("git status --short 'test.php'", ' M test.php');
 		
-		$fixture = <<<EOF
-diff --git test.php test.php
-new file mode 100644
-index 0000000..b3d9bbc
---- /dev/null
-+++ test.php
-@@ -0,0 +1 @@
-+<?php
-
-EOF;
+		$fixture = $this->fixture->getAltNewFileDiff('test.php');
 		$shell->registerCommand("git merge-base 'master' HEAD", "0123456789abcdef0123456789abcdef01234567\n");
 		$shell->registerCommand("git diff '0123456789abcdef0123456789abcdef01234567'... --no-prefix 'test.php'", $fixture);
 		$shell->registerCommand("git cat-file -e '0123456789abcdef0123456789abcdef01234567':'test.php'", '', 128);
