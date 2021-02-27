@@ -549,12 +549,14 @@ EOF;
 		// Run once to cache results
 		$options['standard'] = 'one';
 		runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertTrue($shell->wasCommandCalled("svn cat 'foobar.php'"));
 		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
 
 		// Run again to prove results have been cached
 		$shell->resetCommandsCalled();
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("svn cat 'foobar.php'"));
 		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php'"));
 
 		// Run a third time, with the standard changed, and make sure we don't use the cache
@@ -562,6 +564,7 @@ EOF;
 		$shell->resetCommandsCalled();
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertTrue($shell->wasCommandCalled("svn cat 'foobar.php'"));
 		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
 
 		// Run a fourth time, restoring the standard, and make sure we do use the cache
@@ -569,6 +572,7 @@ EOF;
 		$shell->resetCommandsCalled();
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("svn cat 'foobar.php'"));
 		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php'"));
 	}
 
