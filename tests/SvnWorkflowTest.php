@@ -10,10 +10,16 @@ use PhpcsChanged\ShellException;
 use PhpcsChanged\CacheManager;
 use PhpcsChangedTests\TestShell;
 use PhpcsChangedTests\TestCache;
+use PhpcsChangedTests\SvnFixture;
 use function PhpcsChanged\Cli\runSvnWorkflow;
 use function PhpcsChanged\SvnWorkflow\{getSvnFileInfo, isNewSvnFile, getSvnUnifiedDiff};
 
 final class SvnWorkflowTest extends TestCase {
+	public function setUp(): void {
+		parent::setUp();
+		$this->fixture = new SvnFixture();
+	}
+
 	public function testIsNewSvnFileReturnsTrueForNewFile() {
 		$svnFile = 'foobar.php';
 		$svn = 'svn';
@@ -67,20 +73,7 @@ Checksum: abcdefg
 	public function testGetSvnUnifiedDiff() {
 		$svnFile = 'foobar.php';
 		$svn = 'svn';
-		$diff = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
+		$diff = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$executeCommand = function($command) use ($diff) {
 			if (! $command || false === strpos($command, "svn diff 'foobar.php'")) {
 				return '';
@@ -93,21 +86,7 @@ EOF;
 	public function testFullSvnWorkflowForOneFile() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$fixture = <<<EOF
 Path: foobar.php
 Name: foobar.php
@@ -147,21 +126,7 @@ EOF;
 	public function testFullSvnWorkflowForOneFileWithCachingEnabledButNoCache() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$fixture = <<<EOF
 Path: foobar.php
 Name: foobar.php
@@ -203,21 +168,7 @@ EOF;
 	public function testFullSvnWorkflowForOneFileCached() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$fixture = <<<EOF
 Path: foobar.php
 Name: foobar.php
@@ -261,21 +212,7 @@ EOF;
 	public function testFullSvnWorkflowForOneFileUncachedThenCachesBothVersionsOfTheFile() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$fixture = <<<EOF
 Path: foobar.php
 Name: foobar.php
@@ -328,21 +265,7 @@ EOF;
 	public function testFullSvnWorkflowForOneDoesNotUseNewFileCacheWhenHashChanges() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$fixture = <<<EOF
 Path: foobar.php
 Name: foobar.php
@@ -406,21 +329,7 @@ EOF;
 	public function testFullSvnWorkflowForOneClearsCacheForFileWhenHashChanges() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$fixture = <<<EOF
 Path: foobar.php
 Name: foobar.php
@@ -492,21 +401,7 @@ EOF;
 	public function testFullSvnWorkflowForOneDoesNotClearCacheWhenStandardChanges() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$fixture = <<<EOF
 Path: foobar.php
 Name: foobar.php
@@ -579,21 +474,7 @@ EOF;
 	public function testFullSvnWorkflowForOneFileUncachedWhenCachingIsDisabled() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$fixture = <<<EOF
 Path: foobar.php
 Name: foobar.php
@@ -639,21 +520,7 @@ EOF;
 	public function testFullSvnWorkflowForOneFileWithOldCacheVersion() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$fixture = <<<EOF
 Path: foobar.php
 Name: foobar.php
@@ -699,21 +566,7 @@ EOF;
 	public function testFullSvnWorkflowForOneFileWithCacheThatHasDifferentStandard() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$fixture = <<<EOF
 Path: foobar.php
 Name: foobar.php
@@ -759,21 +612,7 @@ EOF;
 	public function testFullSvnWorkflowForOneFileWithOutdatedCache() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$fixture = <<<EOF
 Path: foobar.php
 Name: foobar.php
@@ -818,9 +657,7 @@ EOF;
 	public function testFullSvnWorkflowForUnchangedFileWithCache() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
 		$fixture = <<<EOF
 Path: foobar.php
 Name: foobar.php
@@ -854,36 +691,8 @@ EOF;
 	public function testFullSvnWorkflowForMultipleFiles() {
 		$svnFiles = ['foobar.php', 'baz.php'];
 		$shell = new TestShell($svnFiles);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
-		$fixture = <<<EOF
-Index: baz.php
-===================================================================
---- bin/baz.php	(revision 183265)
-+++ bin/baz.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Baz;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
-		$shell->registerCommand("svn diff 'baz.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn diff 'baz.php'", $this->fixture->getAddedLineDiff('baz.php', 'use Baz;'));
 		$fixture = <<<EOF
 Path: foobar.php
 Name: foobar.php
@@ -956,9 +765,7 @@ EOF;
 	public function testFullSvnWorkflowForUnchangedFileWithPhpCsMessages() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
 					$fixture = <<<EOF
 Path: foobar.php
 Name: foobar.php
@@ -988,9 +795,7 @@ EOF;
 	public function testFullSvnWorkflowForUnchangedFileWithoutPhpCsMessages() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
 		$fixture = <<<EOF
 Path: foobar.php
 Name: foobar.php
@@ -1021,10 +826,7 @@ EOF;
 		$this->expectException(ShellException::class);
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-svn: E155010: The node 'foobar.php' was not found.
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture, 1);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNonSvnFileDiff('foobar.php'), 1);
 		$fixture = <<<EOF
 svn: warning: W155010: The node 'foobar.php' was not found.
 
@@ -1040,18 +842,7 @@ EOF;
 	public function testFullSvnWorkflowForNewFile() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
-
-Property changes on: foobar.php
-___________________________________________________________________
-Added: svn:eol-style
-## -0,0 +1 ##
-+native
-\ No newline at end of property
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNewFileDiff('foobar.php'));
 		$fixture = <<<EOF
 Path: foobar.php
 Name: foobar.php
@@ -1093,18 +884,7 @@ EOF;
 	public function testFullSvnWorkflowForEmptyNewFile() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
-
-Property changes on: foobar.php
-___________________________________________________________________
-Added: svn:eol-style
-## -0,0 +1 ##
-+native
-\ No newline at end of property
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNewFileDiff('foobar.php'));
 		$fixture = <<<EOF
 Path: foobar.php
 Name: foobar.php
