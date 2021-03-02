@@ -336,8 +336,16 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 			}
 		}
 
-		// TODO: cache new file output
-		$newFilePhpcsOutput = getGitNewPhpcsOutput($gitFile, $git, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
+		$newFileHash = $shell->getFileHash($gitFile); // TODO: this might not be the current file; we might need to get this from git
+		$newFilePhpcsOutput = $cache->getCacheForFile($gitFile, $newFileHash, $phpcsStandard ?? '');
+		if ($newFilePhpcsOutput) {
+			$debug("Using cache for new file '{$gitFile}' at revision '{$revisionId}', hash '{$newFileHash}', and standard '{$phpcsStandard}'");
+		}
+		if (! $newFilePhpcsOutput) {
+			$debug("Not using cache for new file '{$gitFile}' at revision '{$revisionId}', hash '{$newFileHash}', and standard '{$phpcsStandard}'");
+			$newFilePhpcsOutput = getGitNewPhpcsOutput($gitFile, $git, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
+			$cache->setCacheForFile($gitFile, $newFileHash, $phpcsStandard ?? '', $newFilePhpcsOutput);
+		}
 	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());
 		$unifiedDiff = '';
