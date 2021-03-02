@@ -209,34 +209,13 @@ function runSvnWorkflow(array $svnFiles, array $options, ShellOperator $shell, C
 		throw $err; // Just in case we do not actually exit, like in tests
 	}
 
-	if (isCachingEnabled($options)) {
-		try {
-			$cache->load();
-		} catch( \Exception $err ) {
-			$shell->printError($err->getMessage());
-			$shell->exitWithCode(1);
-			throw $err; // Just in case we do not actually exit, like in tests
-		}
-	}
-
-	if (isset($options['clear-cache'])) {
-		$cache->clearCache();
-		try {
-			$cache->save();
-		} catch( \Exception $err ) {
-			$shell->printError($err->getMessage());
-			$shell->exitWithCode(1);
-			throw $err; // Just in case we do not actually exit, like in tests
-		}
-	}
+	loadCache($cache, $shell, $options);
 
 	$phpcsMessages = array_map(function(string $svnFile) use ($options, $shell, $cache, $debug): PhpcsMessages {
 		return runSvnWorkflowForFile($svnFile, $options, $shell, $cache, $debug);
 	}, $svnFiles);
 
-	if (isCachingEnabled($options)) {
-		$cache->save();
-	}
+	saveCache($cache, $shell, $options);
 
 	return PhpcsMessages::merge($phpcsMessages);
 }
@@ -481,4 +460,39 @@ function isCachingEnabled(array $options): bool {
 		return true;
 	}
 	return false;
+}
+
+function loadCache(CacheManager $cache, ShellOperator $shell, array $options): void {
+	if (isCachingEnabled($options)) {
+		try {
+			$cache->load();
+		} catch( \Exception $err ) {
+			$shell->printError($err->getMessage());
+			$shell->exitWithCode(1);
+			throw $err; // Just in case we do not actually exit, like in tests
+		}
+	}
+
+	if (isset($options['clear-cache'])) {
+		$cache->clearCache();
+		try {
+			$cache->save();
+		} catch( \Exception $err ) {
+			$shell->printError($err->getMessage());
+			$shell->exitWithCode(1);
+			throw $err; // Just in case we do not actually exit, like in tests
+		}
+	}
+}
+
+function saveCache(CacheManager $cache, ShellOperator $shell, array $options): void {
+	if (isCachingEnabled($options)) {
+		try {
+			$cache->save();
+		} catch( \Exception $err ) {
+			$shell->printError($err->getMessage());
+			$shell->exitWithCode(1);
+			throw $err; // Just in case we do not actually exit, like in tests
+		}
+	}
 }
