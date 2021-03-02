@@ -16,7 +16,7 @@ use PhpcsChanged\XmlReporter;
 use PhpcsChanged\CacheManager;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
 use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, getSvnFileInfo, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, getSvnRevisionId};
-use function PhpcsChanged\GitWorkflow\{getGitMergeBase, getGitUnifiedDiff, isNewGitFile, getGitBasePhpcsOutput, getGitNewPhpcsOutput, validateGitFileExists};
+use function PhpcsChanged\GitWorkflow\{getGitMergeBase, getGitUnifiedDiff, isNewGitFile, getGitBasePhpcsOutput, getGitNewPhpcsOutput, validateGitFileExists, getGitRevisionId};
 
 function getDebug(bool $debugEnabled): callable {
 	return function(...$outputs) use ($debugEnabled) {
@@ -278,7 +278,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput, $fileName), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput, $fileName));
 }
 
-function runGitWorkflow(array $gitFiles, array $options, ShellOperator $shell, callable $debug): PhpcsMessages {
+function runGitWorkflow(array $gitFiles, array $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
 	$git = getenv('GIT') ?: 'git';
 	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$cat = getenv('CAT') ?: 'cat';
@@ -298,13 +298,18 @@ function runGitWorkflow(array $gitFiles, array $options, ShellOperator $shell, c
 		throw $err; // Just in case we do not actually exit
 	}
 
-	$phpcsMessages = array_map(function(string $gitFile) use ($options, $shell, $debug): PhpcsMessages {
-		return runGitWorkflowForFile($gitFile, $options, $shell, $debug);
+	loadCache($cache, $shell, $options);
+
+	$phpcsMessages = array_map(function(string $gitFile) use ($options, $shell, $cache, $debug): PhpcsMessages {
+		return runGitWorkflowForFile($gitFile, $options, $shell, $cache, $debug);
 	}, $gitFiles);
+
+	saveCache($cache, $shell, $options);
+
 	return PhpcsMessages::merge($phpcsMessages);
 }
 
-function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $shell, callable $debug): PhpcsMessages {
+function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
 	$git = getenv('GIT') ?: 'git';
 	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$cat = getenv('CAT') ?: 'cat';
@@ -314,9 +319,24 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 
 	try {
 		validateGitFileExists($gitFile, $git, [$shell, 'isReadable'], [$shell, 'executeCommand'], $debug);
+		$revisionId = getGitRevisionId($git, [$shell, 'executeCommand'], $debug);
 		$unifiedDiff = getGitUnifiedDiff($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
 		$isNewFile = isNewGitFile($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
-		$oldFilePhpcsOutput = $isNewFile ? '' : getGitBasePhpcsOutput($gitFile, $git, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
+		$oldFilePhpcsOutput = '';
+		if (! $isNewFile) {
+			$cache->setRevision($revisionId);
+			$oldFilePhpcsOutput = $cache->getCacheForFile($gitFile, '', $phpcsStandard ?? '');
+			if ($oldFilePhpcsOutput) {
+				$debug("Using cache for old file '{$gitFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
+			}
+			if (! $oldFilePhpcsOutput) {
+				$debug("Not using cache for old file '{$gitFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
+				$oldFilePhpcsOutput = getGitBasePhpcsOutput($gitFile, $git, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
+				$cache->setCacheForFile($gitFile, '', $phpcsStandard ?? '', $oldFilePhpcsOutput);
+			}
+		}
+
+		// TODO: cache new file output
 		$newFilePhpcsOutput = getGitNewPhpcsOutput($gitFile, $git, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
 	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());
