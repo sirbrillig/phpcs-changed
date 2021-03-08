@@ -47,14 +47,6 @@ function getGitUnifiedDiff(string $gitFile, string $git, callable $executeComman
 	return $unifiedDiff;
 }
 
-function getGitRevisionId(string $git, callable $executeCommand, callable $debug): string {
-	$gitStatusCommand = "${git} rev-parse HEAD"; // TODO: this should maybe query something else besides HEAD; maybe git-base?
-	$debug('checking revision id with command:', $gitStatusCommand);
-	$gitStatusOutput = $executeCommand($gitStatusCommand);
-	$debug('revision command output:', $gitStatusOutput);
-	return $gitStatusOutput;
-}
-
 function isNewGitFile(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
 	if ( isset($options['git-base']) && ! empty($options['git-base']) ) {
 		return isNewGitFileRemote( $gitFile, $git, $executeCommand, $options, $debug );
