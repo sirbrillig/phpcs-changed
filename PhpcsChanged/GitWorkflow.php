@@ -112,7 +112,6 @@ function getGitNewPhpcsOutput(string $gitFile, string $git, string $phpcs, strin
 
 function getNewGitRevisionContentsCommand(string $gitFile, string $git, string $cat, array $options): string {
 	if (isset($options['git-base']) && ! empty($options['git-base'])) {
-		return 'HEAD';
 		// for git-base mode, we get the contents of the file from the HEAD version of the file in the current branch
 		return "{$git} show HEAD:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
 	} else if (isset($options['git-unstaged'])) {
