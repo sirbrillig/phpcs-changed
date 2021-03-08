@@ -84,8 +84,4 @@ EOF;
 	public function getNonGitFileShow(string $filename): string {
 		return "fatal: Path '{$filename}' exists on disk, but not in 'HEAD'.";
 	}
-
-	public function getGitRevisionId(): string {
-		return 'abcdefg';
-	}
 }

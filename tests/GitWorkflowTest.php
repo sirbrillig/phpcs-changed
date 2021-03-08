@@ -60,7 +60,6 @@ final class GitWorkflowTest extends TestCase {
 	public function testFullGitWorkflowForOneFileStaged() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$shell->registerCommand("git rev-parse HEAD", $this->fixture->getGitRevisionId());
 		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
@@ -76,7 +75,6 @@ final class GitWorkflowTest extends TestCase {
 	public function testFullGitWorkflowForOneFileUnstaged() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$shell->registerCommand("git rev-parse HEAD", $this->fixture->getGitRevisionId());
 		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
@@ -92,12 +90,13 @@ final class GitWorkflowTest extends TestCase {
 	public function testFullGitWorkflowForOneFileUnstagedCachesDataThenUsesCache() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$shell->registerCommand("git rev-parse HEAD", $this->fixture->getGitRevisionId());
 		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
-		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", $this->phpcs->getResults('STDIN', [20], 'Found unused symbol Foobar.')->toPhpcsJson());
-		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [21, 20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs", $this->phpcs->getResults('STDIN', [20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [21, 20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | git hash-object --stdin", 'previous-file-hash');
+		$shell->registerCommand("cat 'foobar.php' | git hash-object --stdin", 'new-file-hash');
 		$options = [
 			'git-unstaged' => '1',
 			'cache' => false, // getopt is weird and sets options to false
@@ -110,14 +109,13 @@ final class GitWorkflowTest extends TestCase {
 		$shell->resetCommandsCalled();
 		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
-		$this->assertFalse($shell->wasCommandCalled("git show :0:$(git ls-files --full-name 'foobar.php')"));
-		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php'"));
+		$this->assertFalse($shell->wasCommandCalled("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs"));
+		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php' | phpcs"));
 	}
 
 	public function testFullGitWorkflowForMultipleFilesStaged() {
 		$gitFiles = ['foobar.php', 'baz.php'];
 		$shell = new TestShell($gitFiles);
-		$shell->registerCommand("git rev-parse HEAD", $this->fixture->getGitRevisionId());
 		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$fixture = $this->fixture->getAddedLineDiff('baz.php', 'use Baz;');
@@ -141,7 +139,6 @@ final class GitWorkflowTest extends TestCase {
 	public function testFullGitWorkflowForUnchangedFileWithPhpcsMessages() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$shell->registerCommand("git rev-parse HEAD", $this->fixture->getGitRevisionId());
 		$fixture = $this->fixture->getEmptyFileDiff();
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", '');
@@ -157,7 +154,6 @@ final class GitWorkflowTest extends TestCase {
 	public function testFullGitWorkflowForUnchangedFileWithoutPhpcsMessages() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$shell->registerCommand("git rev-parse HEAD", $this->fixture->getGitRevisionId());
 		$fixture = $this->fixture->getEmptyFileDiff();
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", '');
@@ -174,7 +170,6 @@ final class GitWorkflowTest extends TestCase {
 		$this->expectException(ShellException::class);
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$shell->registerCommand("git rev-parse HEAD", $this->fixture->getGitRevisionId());
 		$fixture = $this->fixture->getEmptyFileDiff();
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", "?? foobar.php" );
@@ -188,7 +183,6 @@ final class GitWorkflowTest extends TestCase {
 	public function testFullGitWorkflowForNewFile() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$shell->registerCommand("git rev-parse HEAD", $this->fixture->getGitRevisionId());
 		$fixture = $this->fixture->getNewFileDiff('foobar.php');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getNewFileInfo('foobar.php'));
@@ -203,7 +197,6 @@ final class GitWorkflowTest extends TestCase {
 	public function testFullGitWorkflowForEmptyNewFile() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$shell->registerCommand("git rev-parse HEAD", $this->fixture->getGitRevisionId());
 		$fixture = $this->fixture->getNewFileDiff('foobar.php');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getNewFileInfo('foobar.php'));
@@ -223,14 +216,15 @@ Run "phpcs --help" for usage information
 	function testFullGitWorkflowForInterBranchDiff() {
 		$gitFile = 'bin/foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$shell->registerCommand("git rev-parse HEAD", $this->fixture->getGitRevisionId());
 		$fixture = $this->fixture->getAltAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git merge-base 'master' HEAD", "0123456789abcdef0123456789abcdef01234567\n");
 		$shell->registerCommand("git diff '0123456789abcdef0123456789abcdef01234567'... --no-prefix 'bin/foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'bin/foobar.php'", '');
 		$shell->registerCommand("git cat-file -e '0123456789abcdef0123456789abcdef01234567':'bin/foobar.php'", '');
 		$shell->registerCommand("git show '0123456789abcdef0123456789abcdef01234567':$(git ls-files --full-name 'bin/foobar.php') | phpcs --report=json -q --stdin-path='bin/foobar.php' -", $this->phpcs->getResults('\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php', [6], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show '0123456789abcdef0123456789abcdef01234567':$(git ls-files --full-name 'bin/foobar.php') | git hash-object --stdin", 'previous-file-hash');
 		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'bin/foobar.php') | phpcs --report=json -q --stdin-path='bin/foobar.php' -", $this->phpcs->getResults('\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php', [6, 7], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'bin/foobar.php') | git hash-object --stdin", 'new-file-hash');
 		$options = [ 'git-base' => 'master' ];
 		$cache = new CacheManager( new TestCache() );
 		$expected = $this->phpcs->getResults('bin/foobar.php', [6], 'Found unused symbol Foobar.');
@@ -241,7 +235,6 @@ Run "phpcs --help" for usage information
 	function testNameDetectionInFullGitWorkflowForInterBranchDiff() {
 		$gitFile = 'test.php';
 		$shell = new TestShell([$gitFile]);
-		$shell->registerCommand("git rev-parse HEAD", $this->fixture->getGitRevisionId());
 		$shell->registerCommand("git status --short 'test.php'", $this->fixture->getModifiedFileInfo('test.php'));
 		
 		$fixture = $this->fixture->getAltNewFileDiff('test.php');
@@ -249,6 +242,8 @@ Run "phpcs --help" for usage information
 		$shell->registerCommand("git diff '0123456789abcdef0123456789abcdef01234567'... --no-prefix 'test.php'", $fixture);
 		$shell->registerCommand("git cat-file -e '0123456789abcdef0123456789abcdef01234567':'test.php'", '', 128);
 		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'test.php') | phpcs --report=json -q --stdin-path='test.php' -", $this->phpcs->getResults('\/srv\/www\/wordpress-default\/public_html\/test\/test.php', [6, 7, 8], "Found unused symbol 'Foobar'.")->toPhpcsJson());
+		$shell->registerCommand("git show '0123456789abcdef0123456789abcdef01234567':$(git ls-files --full-name 'test.php') | git hash-object --stdin", 'previous-file-hash');
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'test.php') | git hash-object --stdin", 'new-file-hash');
 		$options = [ 'git-base' => 'master' ];
 		$cache = new CacheManager( new TestCache() );
 		$expected = PhpcsMessages::merge([
