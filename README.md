@@ -81,9 +81,13 @@ If the file was versioned by git, we can do the same with the `--git` option:
 phpcs-changed --git --git-unstaged file.php
 ```
 
-You should specify `--git-staged` or `--git-unstaged` to tell `phpcs-changed` if you want to compare the current staged changes or the current working copy changes, respectively. The default is `--git-staged`.
+When using `--git`, you should also specify `--git-staged`, `--git-unstaged`, or `--git-base`.
 
-Alternatively, if you want to compare the current committed HEAD changes to another object (which can be a branch, a commit, or another object), you can use the `--git-base` option followed by an object name:
+`--git-staged` compares the currently staged changes (as the new version of the files) to the current HEAD (as the previous version of the files). This is the default.
+
+`--git-unstaged` compares the current (unstaged) working copy changes (as the new version of the files) to the either the currently staged changes, or if there are none, the current HEAD (as the previous version of the files).
+
+`--git-base`, followed by a git object, compares the current HEAD (as the new version of the files) to the specified [git object](https://git-scm.com/book/en/v2/Git-Internals-Git-Objects) (as the previous version of the file) which can be a branch name, a commit, or some other valid git object.
 
 ```
 git checkout add-new-feature
