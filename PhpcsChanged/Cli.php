@@ -512,6 +512,10 @@ function loadCache(CacheManager $cache, ShellOperator $shell, array $options): v
 			$cache->load();
 		} catch( \Exception $err ) {
 			$shell->printError($err->getMessage());
+			// If there is an invalid cache, we should clear it to be safe
+			$shell->printError('An error occurred reading the cache so it will now be cleared. Try running your command again.');
+			$cache->clearCache();
+			saveCache($cache, $shell, $options);
 			$shell->exitWithCode(1);
 			throw $err; // Just in case we do not actually exit, like in tests
 		}
@@ -535,6 +539,7 @@ function saveCache(CacheManager $cache, ShellOperator $shell, array $options): v
 			$cache->save();
 		} catch( \Exception $err ) {
 			$shell->printError($err->getMessage());
+			$shell->printError('An error occurred saving the cache. Try running with caching disabled.');
 			$shell->exitWithCode(1);
 			throw $err; // Just in case we do not actually exit, like in tests
 		}
