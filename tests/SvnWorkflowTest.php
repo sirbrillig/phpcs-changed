@@ -7,11 +7,21 @@ require_once __DIR__ . '/helpers/helpers.php';
 use PHPUnit\Framework\TestCase;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\ShellException;
+use PhpcsChanged\CacheManager;
 use PhpcsChangedTests\TestShell;
+use PhpcsChangedTests\TestCache;
+use PhpcsChangedTests\SvnFixture;
+use PhpcsChangedTests\PhpcsFixture;
 use function PhpcsChanged\Cli\runSvnWorkflow;
-use function PhpcsChanged\SvnWorkflow\{isNewSvnFile, getSvnUnifiedDiff};
+use function PhpcsChanged\SvnWorkflow\{getSvnFileInfo, isNewSvnFile, getSvnUnifiedDiff};
 
 final class SvnWorkflowTest extends TestCase {
+	public function setUp(): void {
+		parent::setUp();
+		$this->fixture = new SvnFixture();
+		$this->phpcs = new PhpcsFixture();
+	}
+
 	public function testIsNewSvnFileReturnsTrueForNewFile() {
 		$svnFile = 'foobar.php';
 		$svn = 'svn';
@@ -19,18 +29,10 @@ final class SvnWorkflowTest extends TestCase {
 			if (! $command || false === strpos($command, "svn info 'foobar.php'")) {
 				return '';
 			}
-			return "Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Node Kind: file
-Schedule: add
-";
+			return $this->fixture->getSvnInfoNewFile('foobar.php');
 		};
-		$this->assertTrue(isNewSvnFile($svnFile, $svn, $executeCommand, '\PhpcsChangedTests\Debug'));
+		$svnFileInfo = getSvnFileInfo($svnFile, $svn, $executeCommand, '\PhpcsChangedTests\Debug');
+		$this->assertTrue(isNewSvnFile($svnFileInfo));
 	}
 
 	public function testIsNewSvnFileReturnsFalseForOldFile() {
@@ -40,43 +42,16 @@ Schedule: add
 			if (! $command || false === strpos($command, "svn info 'foobar.php'")) {
 				return '';
 			}
-			return "Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-";
+			return $this->fixture->getSvnInfo('foobar.php');
 		};
-		$this->assertFalse(isNewSvnFile($svnFile, $svn, $executeCommand, '\PhpcsChangedTests\Debug'));
+		$svnFileInfo = getSvnFileInfo($svnFile, $svn, $executeCommand, '\PhpcsChangedTests\Debug');
+		$this->assertFalse(isNewSvnFile($svnFileInfo));
 	}
 
 	public function testGetSvnUnifiedDiff() {
 		$svnFile = 'foobar.php';
 		$svn = 'svn';
-		$diff = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
+		$diff = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$executeCommand = function($command) use ($diff) {
 			if (! $command || false === strpos($command, "svn diff 'foobar.php'")) {
 				return '';
@@ -89,220 +64,364 @@ EOF;
 	public function testFullSvnWorkflowForOneFile() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
-		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$options = [];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 20,
-				'message' => 'Found unused symbol Emergent.',
-			],
-		], 'bin/foobar.php');
-		$messages = runSvnWorkflow([$svnFile], $options, $shell, '\PhpcsChangedTests\Debug');
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	public function testFullSvnWorkflowForOneFileWithNoMessages() {
+		$svnFile = 'foobar.php';
+		$shell = new TestShell([$svnFile]);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getEmptyResults()->toPhpcsJson());
+		$options = [];
+		$expected = $this->phpcs->getEmptyResults();
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	public function testFullSvnWorkflowForOneFileWithCachingEnabledButNoCache() {
+		$svnFile = 'foobar.php';
+		$shell = new TestShell([$svnFile]);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$options = [
+			'cache' => false, // getopt is weird and sets options to false
+		];
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	public function testFullSvnWorkflowForOneFileCached() {
+		$svnFile = 'foobar.php';
+		$shell = new TestShell([$svnFile]);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$options = [
+			'cache' => false, // getopt is weird and sets options to false
+		];
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
+		$cache = new TestCache();
+		$cache->setRevision('188280');
+		$cache->setEntry('foobar.php', 'old', '', '', $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
+	}
+
+	public function testFullSvnWorkflowForOneFileUncachedThenCachesBothVersionsOfTheFile() {
+		$svnFile = 'foobar.php';
+		$shell = new TestShell([$svnFile]);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$options = [
+			'cache' => false, // getopt is weird and sets options to false
+		];
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
+
+		$cache = new TestCache();
+		$manager = new CacheManager($cache);
+		$cache->setRevision('188280');
+
+		// Run once to cache results
+		runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+
+		// Run again to prove results have been cached
+		$shell->deregisterCommand("svn cat 'foobar.php'");
+		$shell->deregisterCommand("cat 'foobar.php'");
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	public function testFullSvnWorkflowForOneDoesNotUseNewFileCacheWhenHashChanges() {
+		$svnFile = 'foobar.php';
+		$shell = new TestShell([$svnFile]);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$options = [
+			'cache' => false, // getopt is weird and sets options to false
+		];
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
+
+		$cache = new TestCache();
+		$manager = new CacheManager($cache);
+		$cache->setRevision('188280');
+
+		// Run once to cache results
+		runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
+
+		// Run again to prove results have been cached
+		$shell->deregisterCommand("svn cat 'foobar.php'");
+		$shell->deregisterCommand("cat 'foobar.php'");
+		$shell->resetCommandsCalled();
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php'"));
+
+		// Run a third time, with the file hash changed, and make sure we don't use the (new file) cache (the old file cache will still be used because it is not keyed by hash)
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$shell->setFileHash('foobar.php', 'different-hash');
+		$shell->resetCommandsCalled();
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
+	}
+
+	public function testFullSvnWorkflowForOneClearsCacheForFileWhenHashChanges() {
+		$svnFile = 'foobar.php';
+		$shell = new TestShell([$svnFile]);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$options = [
+			'cache' => false, // getopt is weird and sets options to false
+		];
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
+		$original_hash = $shell->getFileHash('foobar.php');
+
+		$cache = new TestCache();
+		$manager = new CacheManager($cache);
+		$cache->setRevision('188280');
+
+		// Run once to cache results
+		runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
+
+		// Run again to prove results have been cached
+		$shell->deregisterCommand("svn cat 'foobar.php'");
+		$shell->deregisterCommand("cat 'foobar.php'");
+		$shell->resetCommandsCalled();
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php'"));
+
+		// Run a third time, with the file hash changed, and make sure we don't use the (new file) cache (the old file cache will still be used because it is not keyed by hash)
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$shell->setFileHash('foobar.php', 'different-hash');
+		$shell->resetCommandsCalled();
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
+
+		// Run a fourth time, restoring the old hash, and make sure we still don't use the (new file) cache
+		$shell->setFileHash('foobar.php', $original_hash);
+		$shell->resetCommandsCalled();
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
+	}
+
+	public function testFullSvnWorkflowForOneDoesNotClearCacheWhenStandardChanges() {
+		$svnFile = 'foobar.php';
+		$shell = new TestShell([$svnFile]);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$options = [
+			'cache' => false, // getopt is weird and sets options to false
+		];
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
+
+		$cache = new TestCache();
+		$manager = new CacheManager($cache);
+		$cache->setRevision('188280');
+
+		// Run once to cache results
+		$options['standard'] = 'one';
+		runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertTrue($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
+
+		// Run again to prove results have been cached
+		$shell->resetCommandsCalled();
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php'"));
+
+		// Run a third time, with the standard changed, and make sure we don't use the cache
+		$options['standard'] = 'two';
+		$shell->resetCommandsCalled();
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertTrue($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
+
+		// Run a fourth time, restoring the standard, and make sure we do use the cache
+		$options['standard'] = 'one';
+		$shell->resetCommandsCalled();
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php'"));
+	}
+
+	public function testFullSvnWorkflowForOneFileUncachedWhenCachingIsDisabled() {
+		$svnFile = 'foobar.php';
+		$shell = new TestShell([$svnFile]);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$options = [
+			'no-cache' => false, // getopt is weird and sets options to false
+		];
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
+		$cache = new TestCache();
+		$cache->disabled = true;
+		$manager = new CacheManager($cache);
+		runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	public function testFullSvnWorkflowForOneFileWithOldCacheVersion() {
+		$svnFile = 'foobar.php';
+		$shell = new TestShell([$svnFile]);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$options = [
+			'cache' => false, // getopt is weird and sets options to false
+		];
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
+		$cache = new TestCache();
+		$cache->setCacheVersion('0.1-something-else');
+		$cache->setRevision('188280');
+		$cache->setEntry('foobar.php', 'old', '', '', 'blah'); // This invalid JSON will throw if the cache is used
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertTrue($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
+	}
+
+	public function testFullSvnWorkflowForOneFileWithCacheThatHasDifferentStandard() {
+		$svnFile = 'foobar.php';
+		$shell = new TestShell([$svnFile]);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
+		$oldFileOutput = $this->phpcs->getResults('STDIN', [20, 99]);
+		$newFileOutput = $this->phpcs->getResults('STDIN', [20, 21]);
+		$shell->registerCommand("svn cat 'foobar.php'", $oldFileOutput->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $newFileOutput->toPhpcsJson());
+		$options = [
+			'cache' => false, // getopt is weird and sets options to false
+			'standard' => 'TestStandard1',
+		];
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
+		$cache = new TestCache();
+		$cache->setRevision('188280');
+		$cache->setEntry('foobar.php', 'old', '', 'TestStandard2', 'blah'); // This invalid JSON will throw if the cache is used
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertTrue($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
+	}
+
+	public function testFullSvnWorkflowForOneFileWithOutdatedCache() {
+		$svnFile = 'foobar.php';
+		$shell = new TestShell([$svnFile]);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$options = [
+			'cache' => false, // getopt is weird and sets options to false
+		];
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
+		$cache = new TestCache();
+		$cache->setRevision('1000');
+		$cache->setEntry('foobar.php', 'old', '', '', 'blah'); // This invalid JSON will throw if the cache is used
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertTrue($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
+	}
+
+	public function testFullSvnWorkflowForUnchangedFileWithCache() {
+		$svnFile = 'foobar.php';
+		$shell = new TestShell([$svnFile]);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$options = [
+			'cache' => false, // getopt is weird and sets options to false
+		];
+		$expected = PhpcsMessages::fromArrays([], 'bin/foobar.php');
+		$cache = new TestCache();
+		$cache->setRevision('188280');
+		$cache->setEntry('foobar.php', 'old', '', '', $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php'"));
 	}
 
 	public function testFullSvnWorkflowForMultipleFiles() {
 		$svnFiles = ['foobar.php', 'baz.php'];
 		$shell = new TestShell($svnFiles);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
---- bin/foobar.php	(revision 183265)
-+++ bin/foobar.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
-		$fixture = <<<EOF
-Index: baz.php
-===================================================================
---- bin/baz.php	(revision 183265)
-+++ bin/baz.php	(working copy)
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Baz;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
-		$shell->registerCommand("svn diff 'baz.php'", $fixture);
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
-		$fixture = <<<EOF
-Path: baz.php
-Name: baz.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/baz.php
-Relative URL: ^/trunk/baz.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'baz.php'", $fixture);
-		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("svn cat 'baz.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."}]}}}');
-		$shell->registerCommand("cat 'baz.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."}]}}}');
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn diff 'baz.php'", $this->fixture->getAddedLineDiff('baz.php', 'use Baz;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
+		$shell->registerCommand("svn info 'baz.php'", $this->fixture->getSvnInfo('baz.php'));
+
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$shell->registerCommand("svn cat 'baz.php'", $this->phpcs->getResults('STDIN', [20, 99], 'Found unused symbol Baz.')->toPhpcsJson());
+		$shell->registerCommand("cat 'baz.php'", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Baz.')->toPhpcsJson());
+
 		$options = [];
 		$expected = PhpcsMessages::merge([
-			PhpcsMessages::fromArrays([
-				[
-					'type' => 'ERROR',
-					'severity' => 5,
-					'fixable' => false,
-					'column' => 5,
-					'source' => 'ImportDetection.Imports.RequireImports.Import',
-					'line' => 20,
-					'message' => 'Found unused symbol Emergent.',
-				],
-			], 'bin/foobar.php'),
-			PhpcsMessages::fromArrays([
-				[
-					'type' => 'ERROR',
-					'severity' => 5,
-					'fixable' => false,
-					'column' => 5,
-					'source' => 'ImportDetection.Imports.RequireImports.Import',
-					'line' => 20,
-					'message' => 'Found unused symbol Baz.',
-				],
-			], 'bin/baz.php'),
+			$this->phpcs->getResults('bin/foobar.php', [20]),
+			$this->phpcs->getResults('bin/baz.php', [20], 'Found unused symbol Baz.'),
 		]);
-		$messages = runSvnWorkflow($svnFiles, $options, $shell, '\PhpcsChangedTests\Debug');
+		$messages = runSvnWorkflow($svnFiles, $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	public function testFullSvnWorkflowForUnchangedFileWithPhpCsMessages() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
-					$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
-		$shell->registerCommand("svn cat 'foobar.php'|phpcs", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'|phpcs", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([], 'STDIN');
-		$messages = runSvnWorkflow([$svnFile], $options, $shell, '\PhpcsChangedTests\Debug');
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	public function testFullSvnWorkflowForUnchangedFileWithoutPhpCsMessages() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/wp-content/mu-plugins/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Revision: 188280
-Node Kind: file
-Schedule: normal
-Last Changed Author: me
-Last Changed Rev: 175729
-Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
-Checksum: abcdefg
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php'|phpcs", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
 		$shell->registerCommand("cat 'foobar.php'|phpcs", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([], 'STDIN');
-		$messages = runSvnWorkflow([$svnFile], $options, $shell, '\PhpcsChangedTests\Debug');
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
@@ -310,102 +429,31 @@ EOF;
 		$this->expectException(ShellException::class);
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-svn: E155010: The node 'foobar.php' was not found.
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture, 1);
-		$fixture = <<<EOF
-svn: warning: W155010: The node 'foobar.php' was not found.
-
-svn: E200009: Could not display info for all targets because some targets don't exist
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture, 1);
-		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":99,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNonSvnFileDiff('foobar.php'), 1);
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfoNonSvnFile('foobar.php'), 1);
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$options = [];
-		runSvnWorkflow([$svnFile], $options, $shell, '\PhpcsChangedTests\Debug');
+		runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\Debug');
 	}
 
 	public function testFullSvnWorkflowForNewFile() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
-
-Property changes on: foobar.php
-___________________________________________________________________
-Added: svn:eol-style
-## -0,0 +1 ##
-+native
-\ No newline at end of property
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Node Kind: file
-Schedule: add
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNewFileDiff('foobar.php'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfoNewFile('foobar.php'));
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$options = [];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 20,
-				'message' => 'Found unused symbol Emergent.',
-			],
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 21,
-				'message' => 'Found unused symbol Emergent.',
-			],
-		], 'STDIN');
-		$messages = runSvnWorkflow([$svnFile], $options, $shell, '\PhpcsChangedTests\Debug');
+		$expected = $this->phpcs->getResults('STDIN', [20, 21]);
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	public function testFullSvnWorkflowForEmptyNewFile() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
-		$fixture = <<<EOF
-Index: foobar.php
-===================================================================
-
-Property changes on: foobar.php
-___________________________________________________________________
-Added: svn:eol-style
-## -0,0 +1 ##
-+native
-\ No newline at end of property
-EOF;
-		$shell->registerCommand("svn diff 'foobar.php'", $fixture);
-		$fixture = <<<EOF
-Path: foobar.php
-Name: foobar.php
-Working Copy Root Path: /home/public_html
-URL: https://svn.localhost/trunk/foobar.php
-Relative URL: ^/trunk/foobar.php
-Repository Root: https://svn.localhost
-Repository UUID: 1111-1111-1111-1111
-Node Kind: file
-Schedule: add
-EOF;
-		$shell->registerCommand("svn info 'foobar.php'", $fixture);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNewFileDiff('foobar.php'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfoNewFile('foobar.php'));
 		$fixture = 'ERROR: You must supply at least one file or directory to process.
 
 Run "phpcs --help" for usage information
@@ -413,7 +461,7 @@ Run "phpcs --help" for usage information
 		$shell->registerCommand( "cat 'foobar.php'", $fixture);
 		$options = [];
 		$expected = PhpcsMessages::fromArrays([], 'STDIN');
-		$messages = runSvnWorkflow([$svnFile], $options, $shell, '\PhpcsChangedTests\Debug');
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 }

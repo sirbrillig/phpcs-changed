@@ -21,6 +21,8 @@ use function PhpcsChanged\Cli\{
 	printInstalledCodingStandards
 };
 use PhpcsChanged\UnixShell;
+use PhpcsChanged\CacheManager;
+use PhpcsChanged\FileCache;
 
 $optind = 0;
 $options = getopt(
@@ -41,6 +43,9 @@ $options = getopt(
 		'report:',
 		'debug',
 		'ignore:',
+		'cache',
+		'no-cache',
+		'clear-cache',
 	],
 	$optind
 );
@@ -93,6 +98,7 @@ run($options, $fileNamesExpanded, $debug);
 
 function run(array $options, array $fileNamesExpanded, callable $debug): void {
 	$debug('Running on filenames: ' . implode(', ', $fileNamesExpanded));
+	$debug('Options: ' . json_encode($options));
 	$reportType = $options['report'] ?? 'full';
 	$diffFile = $options['diff'] ?? null;
 	$phpcsOldFile = $options['phpcs-orig'] ?? null;
@@ -115,7 +121,7 @@ function run(array $options, array $fileNamesExpanded, callable $debug): void {
 	if (isset($options['svn'])) {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
-			runSvnWorkflow($fileNamesExpanded, $options, $shell, $debug),
+			runSvnWorkflow($fileNamesExpanded, $options, $shell, new CacheManager(new FileCache(), $debug), $debug),
 			$reportType,
 			$options
 		);
@@ -125,7 +131,7 @@ function run(array $options, array $fileNamesExpanded, callable $debug): void {
 	if (isset($options['git'])) {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
-			runGitWorkflow($fileNamesExpanded, $options, $shell, $debug),
+			runGitWorkflow($fileNamesExpanded, $options, $shell, new CacheManager(new FileCache(), $debug), $debug),
 			$reportType,
 			$options
 		);

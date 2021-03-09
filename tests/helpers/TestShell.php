@@ -11,6 +11,10 @@ class TestShell implements ShellOperator {
 
 	private $commands = [];
 
+	private $commandsCalled = [];
+
+	private $fileHashes = [];
+
 	public function __construct(array $readableFileNames) {
 		foreach ($readableFileNames as $fileName) {
 			$this->registerReadableFileName($fileName);
@@ -36,6 +40,18 @@ class TestShell implements ShellOperator {
 		throw new \Exception("Already registered command: {$command}");
 	}
 
+	public function deregisterCommand(string $command): bool {
+		if (isset($this->commands[$command])) {
+			unset($this->commands[$command]);
+			return true;
+		}
+		throw new \Exception("No registered command: {$command}");
+	}
+
+	public function setFileHash(string $fileName, string $hash): void {
+		$this->fileHashes[$fileName] = $hash;
+	}
+
 	public function isReadable(string $fileName): bool {
 		return isset($this->readableFileNames[$fileName]);
 	}
@@ -46,15 +62,28 @@ class TestShell implements ShellOperator {
 
 	public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
 
+	public function getFileHash(string $fileName): string {
+		return $this->fileHashes[$fileName] ?? $fileName;
+	}
+
 	public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
 		foreach ($this->commands as $registeredCommand => $return) {
-			if ( false !== strpos($command, $registeredCommand) ) {
+			if ($registeredCommand === substr($command, 0, strlen($registeredCommand)) ) {
 				$return_val = $return['return_val'];
 				$output = $return['output'];
+				$this->commandsCalled[$registeredCommand] = $command;
 				return $return['output'];
 			}
 		}
 
 		throw new \Exception("Unknown command: {$command}");
+	}
+
+	public function resetCommandsCalled(): void {
+		$this->commandsCalled = [];
+	}
+
+	public function wasCommandCalled(string $registeredCommand): bool {
+		return isset($this->commandsCalled[$registeredCommand]);
 	}
 }

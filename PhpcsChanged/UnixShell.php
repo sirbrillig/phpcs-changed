@@ -26,6 +26,14 @@ class UnixShell implements ShellOperator {
 		return is_readable($fileName);
 	}
 
+	public function getFileHash(string $fileName): string {
+		$result = md5_file($fileName);
+		if ($result === false) {
+			throw new \Exception("Cannot get hash for file '{$fileName}'.");
+		}
+		return $result;
+	}
+
 	public function exitWithCode(int $code): void {
 		exit($code);
 	}

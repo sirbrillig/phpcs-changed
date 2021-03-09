@@ -81,12 +81,9 @@ function isNewGitFileLocal(string $gitFile, string $git, callable $executeComman
 }
 
 function getGitBasePhpcsOutput(string $gitFile, string $git, string $phpcs, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
-	if ( isset($options['git-base']) && ! empty($options['git-base']) ) {
-		$rev = escapeshellarg($options['git-base']);
-	} else {
-		$rev = isset($options['git-unstaged']) ? ':0' : 'HEAD';
-	}
-	$oldFilePhpcsOutputCommand = "${git} show {$rev}:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ") | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) . ' -';
+	$oldFileContents = getOldGitRevisionContentsCommand($gitFile, $git, $options);
+
+	$oldFilePhpcsOutputCommand = "{$oldFileContents} | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) . ' -';
 	$debug('running orig phpcs command:', $oldFilePhpcsOutputCommand);
 	$oldFilePhpcsOutput = $executeCommand($oldFilePhpcsOutputCommand);
 	if (! $oldFilePhpcsOutput) {
@@ -97,16 +94,8 @@ function getGitBasePhpcsOutput(string $gitFile, string $git, string $phpcs, stri
 }
 
 function getGitNewPhpcsOutput(string $gitFile, string $git, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
-	// default mode is git-staged, so we get the contents from the staged version of the file
-	$newFileContents = "{$git} show :0:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
-	// for git-unstaged mode, we get the contents of the file from the current working copy
-	if ( isset($options['git-unstaged']) ) {
-		$newFileContents = "{$cat} " . escapeshellarg($gitFile);
-	}
-	// for git-base mode, we get the contents of the file from the HEAD version of the file in the current branch
-	if ( isset($options['git-base']) && ! empty($options['git-base']) ) {
-		$newFileContents = "{$git} show HEAD:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
-	}
+	$newFileContents = getNewGitRevisionContentsCommand($gitFile, $git, $cat, $options);
+
 	$newFilePhpcsOutputCommand = "{$newFileContents} | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) .' -';
 	$debug('running new phpcs command:', $newFilePhpcsOutputCommand);
 	$newFilePhpcsOutput = $executeCommand($newFilePhpcsOutputCommand);
@@ -119,4 +108,54 @@ function getGitNewPhpcsOutput(string $gitFile, string $git, string $phpcs, strin
 		return '';
 	}
 	return $newFilePhpcsOutput;
+}
+
+function getNewGitRevisionContentsCommand(string $gitFile, string $git, string $cat, array $options): string {
+	if (isset($options['git-base']) && ! empty($options['git-base'])) {
+		// for git-base mode, we get the contents of the file from the HEAD version of the file in the current branch
+		return "{$git} show HEAD:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
+	} else if (isset($options['git-unstaged'])) {
+		// for git-unstaged mode, we get the contents of the file from the current working copy
+		return "{$cat} " . escapeshellarg($gitFile);
+	}
+	// default mode is git-staged, so we get the contents from the staged version of the file
+	return "{$git} show :0:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
+}
+
+function getOldGitRevisionContentsCommand(string $gitFile, string $git, array $options): string {
+	if (isset($options['git-base']) && ! empty($options['git-base'])) {
+		// git-base
+		$rev = escapeshellarg($options['git-base']);
+	} else if (isset($options['git-unstaged'])) {
+		// git-unstaged
+		$rev = ':0'; // :0 in this case means "staged version or HEAD if there is no staged version"
+	} else {
+		// git-staged
+		$rev = 'HEAD';
+	}
+	return "${git} show {$rev}:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ")";
+}
+
+function getNewGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, array $options, callable $debug): string {
+	$fileContents = getNewGitRevisionContentsCommand($gitFile, $git, $cat, $options);
+	$command = "{$fileContents} | {$git} hash-object --stdin";
+	$debug('running new file git hash command:', $command);
+	$hash = $executeCommand($command);
+	if (! $hash) {
+		throw new ShellException("Cannot get new file hash for file '{$gitFile}'");
+	}
+	$debug('new file git hash command output:', $hash);
+	return $hash;
+}
+
+function getOldGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, array $options, callable $debug): string {
+	$fileContents = getOldGitRevisionContentsCommand($gitFile, $git, $options);
+	$command = "{$fileContents} | {$git} hash-object --stdin";
+	$debug('running old file git hash command:', $command);
+	$hash = $executeCommand($command);
+	if (! $hash) {
+		throw new ShellException("Cannot get old file hash for file '{$gitFile}'");
+	}
+	$debug('old file git hash command output:', $hash);
+	return $hash;
 }

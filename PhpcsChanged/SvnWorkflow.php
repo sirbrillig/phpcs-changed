@@ -6,19 +6,6 @@ namespace PhpcsChanged\SvnWorkflow;
 use PhpcsChanged\NoChangesException;
 use PhpcsChanged\ShellException;
 
-function validateSvnFileExists(string $svnFile, string $svn, callable $isReadable, callable $executeCommand, callable $debug): void {
-	if (! $isReadable($svnFile)) {
-		throw new ShellException("Cannot read file '{$svnFile}'");
-	}
-	$svnStatusCommand = "${svn} info " . escapeshellarg($svnFile);
-	$debug('checking svn existence of file with command:', $svnStatusCommand);
-	$svnStatusOutput = $executeCommand($svnStatusCommand);
-	$debug('svn status output:', $svnStatusOutput);
-	if (! $svnStatusOutput || false === strpos($svnStatusOutput, 'Schedule:')) {
-		throw new ShellException("Cannot get svn existence info for file '{$svnFile}'");
-	}
-}
-
 function getSvnUnifiedDiff(string $svnFile, string $svn, callable $executeCommand, callable $debug): string {
 	$unifiedDiffCommand = "{$svn} diff " . escapeshellarg($svnFile);
 	$debug('running diff command:', $unifiedDiffCommand);
@@ -30,7 +17,7 @@ function getSvnUnifiedDiff(string $svnFile, string $svn, callable $executeComman
 	return $unifiedDiff;
 }
 
-function isNewSvnFile(string $svnFile, string $svn, callable $executeCommand, callable $debug): bool {
+function getSvnFileInfo(string $svnFile, string $svn, callable $executeCommand, callable $debug): string {
 	$svnStatusCommand = "${svn} info " . escapeshellarg($svnFile);
 	$debug('checking svn status of file with command:', $svnStatusCommand);
 	$svnStatusOutput = $executeCommand($svnStatusCommand);
@@ -38,7 +25,21 @@ function isNewSvnFile(string $svnFile, string $svn, callable $executeCommand, ca
 	if (! $svnStatusOutput || false === strpos($svnStatusOutput, 'Schedule:')) {
 		throw new ShellException("Cannot get svn info for file '{$svnFile}'");
 	}
-	return (false !== strpos($svnStatusOutput, 'Schedule: add'));
+	return $svnStatusOutput;
+}
+
+function isNewSvnFile(string $svnFileInfo): bool {
+	return (false !== strpos($svnFileInfo, 'Schedule: add'));
+}
+
+function getSvnRevisionId(string $svnFileInfo): string {
+	preg_match('/\bRevision:\s([^\n]+)/', $svnFileInfo, $matches);
+	$version = $matches[1] ?? null;
+	if (! $version) {
+		// New files will not have a revision
+		return '';
+	}
+	return $version;
 }
 
 function getSvnBasePhpcsOutput(string $svnFile, string $svn, string $phpcs, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {

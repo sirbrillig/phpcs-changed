@@ -7,18 +7,27 @@ require_once __DIR__ . '/helpers/helpers.php';
 use PHPUnit\Framework\TestCase;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\ShellException;
+use PhpcsChanged\CacheManager;
 use PhpcsChangedTests\TestShell;
+use PhpcsChangedTests\GitFixture;
+use PhpcsChangedTests\PhpcsFixture;
+use PhpcsChangedTests\TestCache;
 use function PhpcsChanged\Cli\runGitWorkflow;
 use function PhpcsChanged\GitWorkflow\{isNewGitFile, getGitUnifiedDiff};
 
-
 final class GitWorkflowTest extends TestCase {
+	public function setUp(): void {
+		parent::setUp();
+		$this->fixture = new GitFixture();
+		$this->phpcs = new PhpcsFixture();
+	}
+
 	public function testIsNewGitFileReturnsTrueForNewFile() {
 		$gitFile = 'foobar.php';
 		$git = 'git';
 		$executeCommand = function($command) {
 			if (false !== strpos($command, "git status --short 'foobar.php'")) {
-				return 'A foobar.php';
+				return $this->fixture->getNewFileInfo('foobar.php');
 			}
 		};
 		$this->assertTrue(isNewGitFile($gitFile, $git, $executeCommand, array(), '\PhpcsChangedTests\Debug'));
@@ -29,7 +38,7 @@ final class GitWorkflowTest extends TestCase {
 		$git = 'git';
 		$executeCommand = function($command) {
 			if (false !== strpos($command, "git status --short 'foobar.php'")) {
-				return ' M foobar.php'; // note the leading space
+				return $this->fixture->getModifiedFileInfo('foobar.php');
 			}
 		};
 		$this->assertFalse(isNewGitFile($gitFile, $git, $executeCommand, array(), '\PhpcsChangedTests\Debug'));
@@ -38,20 +47,7 @@ final class GitWorkflowTest extends TestCase {
 	public function testGetGitUnifiedDiff() {
 		$gitFile = 'foobar.php';
 		$git = 'git';
-		$diff = <<<EOF
-diff --git bin/foobar.php bin/foobar.php
-index 038d718..d6c3357 100644
---- bin/foobar.php
-+++ bin/foobar.php
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
+		$diff = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$executeCommand = function($command) use ($diff) {
 			if (! $command || false === strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
 				return '';
@@ -61,175 +57,168 @@ EOF;
 		$this->assertEquals($diff, getGitUnifiedDiff($gitFile, $git, $executeCommand, [], '\PhpcsChangedTests\Debug'));
 	}
 
-	public function testFullGitWorkflowForOneFile() {
+	public function testFullGitWorkflowForOneFileStaged() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$fixture = <<<EOF
-diff --git bin/foobar.php bin/foobar.php
-index 038d718..d6c3357 100644
---- bin/foobar.php
-+++ bin/foobar.php
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
-		$shell->registerCommand("git status --short 'foobar.php'", ' M foobar.php'); // note the leading space
-		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foobar."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Foobar.')->toPhpcsJson());
 		$options = [];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 20,
-				'message' => 'Found unused symbol Foobar.',
-			],
-		], 'bin/foobar.php');
-		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
+		$cache = new CacheManager( new TestCache() );
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	public function testFullGitWorkflowForOneFileUnstaged() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$fixture = <<<EOF
-diff --git bin/foobar.php bin/foobar.php
-index 038d718..d6c3357 100644
---- bin/foobar.php
-+++ bin/foobar.php
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
-		$shell->registerCommand("git status --short 'foobar.php'", ' M foobar.php'); // note the leading space
-		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."},{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foobar."}]}}}');
+		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", $this->phpcs->getResults('STDIN', [20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [21, 20], 'Found unused symbol Foobar.')->toPhpcsJson());
 		$options = ['git-unstaged' => '1'];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 20,
-				'message' => 'Found unused symbol Foobar.',
-			],
-		], 'bin/foobar.php');
-		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
+		$cache = new CacheManager( new TestCache() );
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
-	public function testFullGitWorkflowForMultipleFiles() {
+	public function testFullGitWorkflowForOneFileUnstagedCachesDataThenUsesCache() {
+		$gitFile = 'foobar.php';
+		$shell = new TestShell([$gitFile]);
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs", $this->phpcs->getResults('STDIN', [20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [21, 20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | git hash-object --stdin", 'previous-file-hash');
+		$shell->registerCommand("cat 'foobar.php' | git hash-object --stdin", 'new-file-hash');
+		$options = [
+			'git-unstaged' => '1',
+			'cache' => false, // getopt is weird and sets options to false
+		];
+		$cache = new CacheManager( new TestCache(), '\PhpcsChangedTests\Debug' );
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
+
+		runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
+
+		$shell->resetCommandsCalled();
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs"));
+		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php' | phpcs"));
+	}
+
+	public function testFullGitWorkflowForOneFileUnstagedCachesDataThenClearsOldCacheWhenOldFileChanges() {
+		$gitFile = 'foobar.php';
+		$shell = new TestShell([$gitFile]);
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs", $this->phpcs->getResults('STDIN', [20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [21, 20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | git hash-object --stdin", 'previous-file-hash');
+		$shell->registerCommand("cat 'foobar.php' | git hash-object --stdin", 'new-file-hash');
+		$options = [
+			'git-unstaged' => '1',
+			'cache' => false, // getopt is weird and sets options to false
+		];
+		$cache = new CacheManager( new TestCache(), '\PhpcsChangedTests\Debug' );
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
+
+		runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
+
+		$shell->deregisterCommand("git show :0:$(git ls-files --full-name 'foobar.php') | git hash-object --stdin");
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | git hash-object --stdin", 'old-file-hash-2');
+		$shell->resetCommandsCalled();
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertTrue($shell->wasCommandCalled("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs"));
+		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php' | phpcs"));
+	}
+
+	public function testFullGitWorkflowForOneFileUnstagedCachesDataThenClearsNewCacheWhenFileChanges() {
+		$gitFile = 'foobar.php';
+		$shell = new TestShell([$gitFile]);
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs", $this->phpcs->getResults('STDIN', [20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [21, 20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | git hash-object --stdin", 'previous-file-hash');
+		$shell->registerCommand("cat 'foobar.php' | git hash-object --stdin", 'new-file-hash');
+		$options = [
+			'git-unstaged' => '1',
+			'cache' => false, // getopt is weird and sets options to false
+		];
+		$cache = new CacheManager( new TestCache(), '\PhpcsChangedTests\Debug' );
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
+
+		runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
+
+		$shell->deregisterCommand("cat 'foobar.php' | git hash-object --stdin");
+		$shell->registerCommand("cat 'foobar.php' | git hash-object --stdin", 'new-file-hash-2');
+		$shell->resetCommandsCalled();
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs"));
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php' | phpcs"));
+	}
+
+	public function testFullGitWorkflowForMultipleFilesStaged() {
 		$gitFiles = ['foobar.php', 'baz.php'];
 		$shell = new TestShell($gitFiles);
-		$fixture = <<<EOF
-diff --git bin/foobar.php bin/foobar.php
-index 038d718..d6c3357 100644
---- bin/foobar.php
-+++ bin/foobar.php
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
-		$fixture = <<<EOF
-diff --git bin/baz.php bin/baz.php
-index 038d718..d6c3357 100644
---- bin/baz.php
-+++ bin/baz.php
-@@ -17,6 +17,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Baz;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
+		$fixture = $this->fixture->getAddedLineDiff('baz.php', 'use Baz;');
 		$shell->registerCommand("git diff --staged --no-prefix 'baz.php'", $fixture);
-		$shell->registerCommand("git status --short 'foobar.php'", ' M foobar.php'); // note the leading space
-		$shell->registerCommand("git status --short 'baz.php'", ' M baz.php'); // note the leading space
-		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'baz.php')", '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foobar."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("git show :0:$(git ls-files --full-name 'baz.php')", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."},{"line":21,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Baz."}]}}}');
+		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git status --short 'baz.php'", $this->fixture->getModifiedFileInfo('baz.php'));
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'baz.php')", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'baz.php')", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Baz.')->toPhpcsJson());
 		$options = [];
+		$cache = new CacheManager( new TestCache() );
 		$expected = PhpcsMessages::merge([
-			PhpcsMessages::fromArrays([
-				[
-					'type' => 'ERROR',
-					'severity' => 5,
-					'fixable' => false,
-					'column' => 5,
-					'source' => 'ImportDetection.Imports.RequireImports.Import',
-					'line' => 20,
-					'message' => 'Found unused symbol Foobar.',
-				],
-			], 'bin/foobar.php'),
-			PhpcsMessages::fromArrays([
-				[
-					'type' => 'ERROR',
-					'severity' => 5,
-					'fixable' => false,
-					'column' => 5,
-					'source' => 'ImportDetection.Imports.RequireImports.Import',
-					'line' => 20,
-					'message' => 'Found unused symbol Baz.',
-				],
-			], 'bin/baz.php'),
+			$this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.'),
+			$this->phpcs->getResults('bin/baz.php', [20], 'Found unused symbol Baz.'),
 		]);
-		$messages = runGitWorkflow($gitFiles, $options, $shell, '\PhpcsChangedTests\Debug');
+		$messages = runGitWorkflow($gitFiles, $options, $shell, $cache, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	public function testFullGitWorkflowForUnchangedFileWithPhpcsMessages() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$fixture = <<<EOF
-EOF;
+		$fixture = $this->fixture->getEmptyFileDiff();
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", '');
-		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
-		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
 		$options = [];
+		$cache = new CacheManager( new TestCache() );
 		$expected = PhpcsMessages::fromArrays([], '/dev/null');
-		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	public function testFullGitWorkflowForUnchangedFileWithoutPhpcsMessages() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$fixture = <<<EOF
-EOF;
+		$fixture = $this->fixture->getEmptyFileDiff();
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", '');
-		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
-		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", $this->phpcs->getResults('STDIN', [])->toPhpcsJson());
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", $this->phpcs->getResults('STDIN', [])->toPhpcsJson());
 		$options = [];
+		$cache = new CacheManager( new TestCache() );
 		$expected = PhpcsMessages::fromArrays([], '/dev/null');
-		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
@@ -237,84 +226,36 @@ EOF;
 		$this->expectException(ShellException::class);
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$fixture = <<<EOF
-EOF;
+		$fixture = $this->fixture->getEmptyFileDiff();
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'foobar.php'", "?? foobar.php" );
-		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", "fatal: Path 'foobar.php' exists on disk, but not in 'HEAD'.", 128);
-		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":1,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":1,"warnings":0,"messages":[{"line":20,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", $this->fixture->getNonGitFileShow('foobar.php'), 128);
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", $this->phpcs->getResults('STDIN', [20], 'Found unused symbol Foobar.')->toPhpcsJson());
 		$options = [];
-		runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
+		$cache = new CacheManager( new TestCache() );
+		runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
 	}
 
 	public function testFullGitWorkflowForNewFile() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$fixture = <<<EOF
-diff --git bin/foobar.php bin/foobar.php
-new file mode 100644
-index 0000000..efa970f
---- /dev/null
-+++ bin/foobar.php
-@@ -0,0 +1,8 @@
-+<?php
-+use Billing\Purchases\Order;
-+use Billing\Services;
-+use Billing\Ebanx;
-+use Foobar;
-+use Billing\Emergent;
-+use Billing\Monetary_Amount;
-+use Stripe\Error;
-EOF;
+		$fixture = $this->fixture->getNewFileDiff('foobar.php');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
-		$shell->registerCommand("git status --short 'foobar.php'",'A foobar.php');
-		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", '{"totals":{"errors":2,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":2,"warnings":0,"messages":[{"line":5,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foobar."},{"line":6,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Emergent."}]}}}');
+		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getNewFileInfo('foobar.php'));
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", $this->phpcs->getResults('STDIN', [5, 6], 'Found unused symbol Foobar.')->toPhpcsJson());
 		$options = [];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 5,
-				'message' => 'Found unused symbol Foobar.',
-			],
-			[
-				'type' => 'ERROR',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 6,
-				'message' => 'Found unused symbol Emergent.',
-			],
-		], 'bin/foobar.php');
-		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
+		$cache = new CacheManager( new TestCache() );
+		$expected = $this->phpcs->getResults('bin/foobar.php', [5, 6], 'Found unused symbol Foobar.');
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	public function testFullGitWorkflowForEmptyNewFile() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$fixture = <<<EOF
-diff --git bin/foobar.php bin/foobar.php
-new file mode 100644
-index 0000000..efa970f
---- /dev/null
-+++ bin/foobar.php
-@@ -0,0 +1,8 @@
-+<?php
-+use Billing\Purchases\Order;
-+use Billing\Services;
-+use Billing\Ebanx;
-+use Foobar;
-+use Billing\Emergent;
-+use Billing\Monetary_Amount;
-+use Stripe\Error;
-EOF;
+		$fixture = $this->fixture->getNewFileDiff('foobar.php');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
-		$shell->registerCommand("git status --short 'foobar.php'", 'A foobar.php');
+		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getNewFileInfo('foobar.php'));
 		$fixture ='ERROR: You must supply at least one file or directory to process.
 
 Run "phpcs --help" for usage information
@@ -322,101 +263,51 @@ Run "phpcs --help" for usage information
 		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", $fixture, 1);
 
 		$options = [];
+		$cache = new CacheManager( new TestCache() );
 		$expected = PhpcsMessages::fromArrays([], '/dev/null');
-		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	function testFullGitWorkflowForInterBranchDiff() {
 		$gitFile = 'bin/foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$fixture = <<<EOF
-diff --git bin/foobar.php bin/foobar.php
-index c012707..319ecf3 100644
---- bin/foobar.php
-+++ bin/foobar.php
-@@ -3,6 +3,7 @@
- use Billing\Purchases\Order;
- use Billing\Services;
- use Billing\Ebanx;
-+use Foobar;
- use Billing\Emergent;
- use Billing\Monetary_Amount;
- use Stripe\Error;
-EOF;
+		$fixture = $this->fixture->getAltAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git merge-base 'master' HEAD", "0123456789abcdef0123456789abcdef01234567\n");
 		$shell->registerCommand("git diff '0123456789abcdef0123456789abcdef01234567'... --no-prefix 'bin/foobar.php'", $fixture);
 		$shell->registerCommand("git status --short 'bin/foobar.php'", '');
 		$shell->registerCommand("git cat-file -e '0123456789abcdef0123456789abcdef01234567':'bin/foobar.php'", '');
-		$shell->registerCommand("git show '0123456789abcdef0123456789abcdef01234567':$(git ls-files --full-name 'bin/foobar.php') | phpcs --report=json -q --stdin-path='bin/foobar.php' -", '{"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php":{"errors":0,"warnings":1,"messages":[{"message":"Found unused symbol Emergent.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5}]}}}');
-		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'bin/foobar.php') | phpcs --report=json -q --stdin-path='bin/foobar.php' -", '{"totals":{"errors":0,"warnings":2,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php":{"errors":0,"warnings":2,"messages":[{"message":"Found unused symbol Foobar.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5},{"message":"Found unused symbol Emergent.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":7,"column":5}]}}}');
+		$shell->registerCommand("git show '0123456789abcdef0123456789abcdef01234567':$(git ls-files --full-name 'bin/foobar.php') | phpcs --report=json -q --stdin-path='bin/foobar.php' -", $this->phpcs->getResults('\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php', [6], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show '0123456789abcdef0123456789abcdef01234567':$(git ls-files --full-name 'bin/foobar.php') | git hash-object --stdin", 'previous-file-hash');
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'bin/foobar.php') | phpcs --report=json -q --stdin-path='bin/foobar.php' -", $this->phpcs->getResults('\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php', [6, 7], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'bin/foobar.php') | git hash-object --stdin", 'new-file-hash');
 		$options = [ 'git-base' => 'master' ];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'WARNING',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 6,
-				'message' => "Found unused symbol Foobar.",
-			],
-		], 'bin/foobar.php');
-		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
+		$cache = new CacheManager( new TestCache() );
+		$expected = $this->phpcs->getResults('bin/foobar.php', [6], 'Found unused symbol Foobar.');
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
 	function testNameDetectionInFullGitWorkflowForInterBranchDiff() {
 		$gitFile = 'test.php';
 		$shell = new TestShell([$gitFile]);
-		$shell->registerCommand("git status --short 'test.php'", ' M test.php');
+		$shell->registerCommand("git status --short 'test.php'", $this->fixture->getModifiedFileInfo('test.php'));
 		
-		$fixture = <<<EOF
-diff --git test.php test.php
-new file mode 100644
-index 0000000..b3d9bbc
---- /dev/null
-+++ test.php
-@@ -0,0 +1 @@
-+<?php
-
-EOF;
+		$fixture = $this->fixture->getAltNewFileDiff('test.php');
 		$shell->registerCommand("git merge-base 'master' HEAD", "0123456789abcdef0123456789abcdef01234567\n");
 		$shell->registerCommand("git diff '0123456789abcdef0123456789abcdef01234567'... --no-prefix 'test.php'", $fixture);
 		$shell->registerCommand("git cat-file -e '0123456789abcdef0123456789abcdef01234567':'test.php'", '', 128);
-		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'test.php') | phpcs --report=json -q --stdin-path='test.php' -", '{"totals":{"errors":0,"warnings":3,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/test.php":{"errors":0,"warnings":3,"messages":[{"message":"Found unused symbol ' . "'Foobar'" . '.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":6,"column":5},{"message":"Found unused symbol ' . "'Foobar'" . '.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":7,"column":5},{"message":"Found unused symbol ' . "'Billing\\\\Emergent'" . '.","source":"ImportDetection.Imports.RequireImports.Import","severity":5,"fixable":false,"type":"WARNING","line":8,"column":5}]}}}');
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'test.php') | phpcs --report=json -q --stdin-path='test.php' -", $this->phpcs->getResults('\/srv\/www\/wordpress-default\/public_html\/test\/test.php', [6, 7, 8], "Found unused symbol 'Foobar'.")->toPhpcsJson());
+		$shell->registerCommand("git show '0123456789abcdef0123456789abcdef01234567':$(git ls-files --full-name 'test.php') | git hash-object --stdin", 'previous-file-hash');
+		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'test.php') | git hash-object --stdin", 'new-file-hash');
 		$options = [ 'git-base' => 'master' ];
-		$expected = PhpcsMessages::fromArrays([
-			[
-				'type' => 'WARNING',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 6,
-				'message' => "Found unused symbol 'Foobar'.",
-			],
-			[
-				'type' => 'WARNING',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 7,
-				'message' => "Found unused symbol 'Foobar'.",
-				
-			],
-			[
-				'type' => 'WARNING',
-				'severity' => 5,
-				'fixable' => false,
-				'column' => 5,
-				'source' => 'ImportDetection.Imports.RequireImports.Import',
-				'line' => 8,
-				'message' => "Found unused symbol 'Billing\Emergent'.",
-			],
-		], 'test.php');
-		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
+		$cache = new CacheManager( new TestCache() );
+		$expected = PhpcsMessages::merge([
+			$this->phpcs->getResults('test.php', [6], "Found unused symbol 'Foobar'."),
+			$this->phpcs->getResults('test.php', [7], "Found unused symbol 'Foobar'."),
+			$this->phpcs->getResults('test.php', [8], "Found unused symbol 'Foobar'."),
+		]);
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 }
