@@ -73,7 +73,7 @@ class FileCache implements CacheInterface {
 	}
 
 	private function isDecodedEntryValid(array $entry): bool {
-		if (! array_key_exists('path', $entry) || ! array_key_exists('data', $entry) || ! array_key_exists('phpcsStandard', $entry) || ! array_key_exists('hash', $entry)) {
+		if (! array_key_exists('path', $entry) || ! array_key_exists('data', $entry) || ! array_key_exists('phpcsStandard', $entry) || ! array_key_exists('hash', $entry) || ! array_key_exists('type', $entry)) {
 			return false;		
 		}
 		return true;

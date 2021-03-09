@@ -55,15 +55,16 @@ class TestCache implements CacheInterface {
 		$this->setRevision($manager->getRevision());
 		$this->savedFileData = [];
 		foreach($manager->getEntries() as $entry) {
-			$this->setEntry($entry->path, $entry->hash, $entry->phpcsStandard, $entry->data);
+			$this->setEntry($entry->path, $entry->type, $entry->hash, $entry->phpcsStandard, $entry->data);
 		}
 	}
 
-	public function setEntry(string $path, string $hash, string $phpcsStandard, string $data): void {
+	public function setEntry(string $path, string $type, string $hash, string $phpcsStandard, string $data): void {
 		$this->savedFileData[] = [
 			'path' => $path,
 			'hash' => $hash,
 			'data' => $data,
+			'type' => $type,
 			'phpcsStandard' => $phpcsStandard,
 		];
 	}

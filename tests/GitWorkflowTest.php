@@ -101,7 +101,7 @@ final class GitWorkflowTest extends TestCase {
 			'git-unstaged' => '1',
 			'cache' => false, // getopt is weird and sets options to false
 		];
-		$cache = new CacheManager( new TestCache() );
+		$cache = new CacheManager( new TestCache(), '\PhpcsChangedTests\Debug' );
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
 
 		runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');

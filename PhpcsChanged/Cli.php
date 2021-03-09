@@ -241,26 +241,26 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		if ( ! $isNewFile ) {
 			$cache->setRevision($revisionId);
 
-			$oldFilePhpcsOutput = $cache->getCacheForFile($svnFile, '', $phpcsStandard ?? '');
+			$oldFilePhpcsOutput = $cache->getCacheForFile($svnFile, 'old', '', $phpcsStandard ?? '');
 			if ($oldFilePhpcsOutput) {
 				$debug("Using cache for old file '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
 			}
 			if (! $oldFilePhpcsOutput) {
 				$debug("Not using cache for old file '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
 				$oldFilePhpcsOutput = getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
-				$cache->setCacheForFile($svnFile, '', $phpcsStandard ?? '', $oldFilePhpcsOutput);
+				$cache->setCacheForFile($svnFile, 'old', '', $phpcsStandard ?? '', $oldFilePhpcsOutput);
 			}
 		}
 
 		$newFileHash = $shell->getFileHash($svnFile);
-		$newFilePhpcsOutput = $cache->getCacheForFile($svnFile, $newFileHash, $phpcsStandard ?? '');
+		$newFilePhpcsOutput = $cache->getCacheForFile($svnFile, 'new', $newFileHash, $phpcsStandard ?? '');
 		if ($newFilePhpcsOutput) {
 			$debug("Using cache for new file '{$svnFile}' at revision '{$revisionId}', hash '{$newFileHash}', and standard '{$phpcsStandard}'");
 		}
 		if (! $newFilePhpcsOutput) {
 			$debug("Not using cache for new file '{$svnFile}' at revision '{$revisionId}', hash '{$newFileHash}', and standard '{$phpcsStandard}'");
 			$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
-			$cache->setCacheForFile($svnFile, $newFileHash, $phpcsStandard ?? '', $newFilePhpcsOutput);
+			$cache->setCacheForFile($svnFile, 'new', $newFileHash, $phpcsStandard ?? '', $newFilePhpcsOutput);
 		}
 	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());
@@ -325,26 +325,26 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 		if (! $isNewFile) {
 			$cache->setRevision(''); // git files are all protected by a hash key; there is no need to invalidate the cache if the version changes
 			$oldFileHash = getOldGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
-			$oldFilePhpcsOutput = $cache->getCacheForFile($gitFile, $oldFileHash, $phpcsStandard ?? '');
+			$oldFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'old', $oldFileHash, $phpcsStandard ?? '');
 			if ($oldFilePhpcsOutput) {
-				$debug("Using cache for old file '{$gitFile}' with standard '{$phpcsStandard}'");
+				$debug("Using cache for old file '{$gitFile}' at hash '{$oldFileHash}' with standard '{$phpcsStandard}'");
 			}
 			if (! $oldFilePhpcsOutput) {
-				$debug("Not using cache for old file '{$gitFile}' with standard '{$phpcsStandard}'");
+				$debug("Not using cache for old file '{$gitFile}' at hash '{$oldFileHash}' with standard '{$phpcsStandard}'");
 				$oldFilePhpcsOutput = getGitBasePhpcsOutput($gitFile, $git, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
-				$cache->setCacheForFile($gitFile, '', $phpcsStandard ?? '', $oldFilePhpcsOutput);
+				$cache->setCacheForFile($gitFile, 'old', $oldFileHash, $phpcsStandard ?? '', $oldFilePhpcsOutput);
 			}
 		}
 
 		$newFileHash = getNewGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
-		$newFilePhpcsOutput = $cache->getCacheForFile($gitFile, $newFileHash, $phpcsStandard ?? '');
+		$newFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'new', $newFileHash, $phpcsStandard ?? '');
 		if ($newFilePhpcsOutput) {
 			$debug("Using cache for new file '{$gitFile}' at hash '{$newFileHash}', and standard '{$phpcsStandard}'");
 		}
 		if (! $newFilePhpcsOutput) {
 			$debug("Not using cache for new file '{$gitFile}' at hash '{$newFileHash}', and standard '{$phpcsStandard}'");
 			$newFilePhpcsOutput = getGitNewPhpcsOutput($gitFile, $git, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
-			$cache->setCacheForFile($gitFile, $newFileHash, $phpcsStandard ?? '', $newFilePhpcsOutput);
+			$cache->setCacheForFile($gitFile, 'new', $newFileHash, $phpcsStandard ?? '', $newFilePhpcsOutput);
 		}
 	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());

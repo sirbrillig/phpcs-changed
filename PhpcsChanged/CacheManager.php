@@ -9,13 +9,14 @@ use function PhpcsChanged\getVersion;
 
 class CacheManager {
 	/**
-	 * A cache map with three levels of keys:
+	 * A cache map with four levels of keys:
 	 *
 	 * 1. The file path
-	 * 2. The file hash (if needed; this is not used for old files)
-	 * 3. The phpcs standard
+	 * 2. The cache type; either 'new' (new version of a file) or 'old' (old version of a file)
+	 * 3. The file hash (if needed; this is not used for old files)
+	 * 4. The phpcs standard
 	 *
-	 * @var array<string, array<string, array<string, CacheEntry>>>
+	 * @var array<string, array<string, array<string, array<string, CacheEntry>>>>
 	 */
 	private $fileDataByPath = [];
 
@@ -39,9 +40,16 @@ class CacheManager {
 	 */
 	private $cache;
 
-	public function __construct(CacheInterface $cache) {
+	/**
+	 * @var callable
+	 */
+	private $debug;
+
+	public function __construct(CacheInterface $cache, callable $debug = null) {
 		$this->cache = $cache;
 		$this->cacheVersion = getVersion();
+		$noopDebug = function(...$output) {}; // phpcs:ignore VariableAnalysis
+		$this->debug = $debug ?? $noopDebug;
 	}
 
 	public function load(): void {
@@ -103,6 +111,7 @@ class CacheManager {
 		if ($this->cacheVersion === $cacheVersion) {
 			return;
 		}
+		($this->debug)("Cache version has changed ('{$this->cacheVersion}' -> '{$cacheVersion}'). Clearing cache.");
 		$this->hasBeenModified = true;
 		$this->clearCache();
 		$this->cacheVersion = $cacheVersion;
@@ -112,54 +121,72 @@ class CacheManager {
 		if ($this->revisionId === $revisionId) {
 			return;
 		}
+		($this->debug)("Revision has changed ('{$this->revisionId}' -> '{$revisionId}'). Clearing cache.");
 		$this->hasBeenModified = true;
 		$this->clearCache();
 		$this->revisionId = $revisionId;
 	}
 
-	public function getCacheForFile(string $filePath, string $hash, string $phpcsStandard): ?string {
-		$entry = $this->fileDataByPath[$filePath][$hash][$phpcsStandard] ?? null;
-		return $entry->data ?? null;
+	public function getCacheForFile(string $filePath, string $type, string $hash, string $phpcsStandard): ?string {
+		$entry = $this->fileDataByPath[$filePath][$type][$hash][$phpcsStandard] ?? null;
+		if (! $entry) {
+			($this->debug)("Cache miss: file '{$filePath}', hash '{$hash}', standard '{$phpcsStandard}'");
+			return null;
+		}
+		return $entry->data;
 	}
 
-	public function setCacheForFile(string $filePath, string $hash, string $phpcsStandard, string $data): void {
+	public function setCacheForFile(string $filePath, string $type, string $hash, string $phpcsStandard, string $data): void {
 		$this->hasBeenModified = true;
 		$entry = new CacheEntry();
 		$entry->phpcsStandard = $phpcsStandard;
 		$entry->hash = $hash;
 		$entry->data = $data;
 		$entry->path = $filePath;
+		$entry->type = $type;
 		$this->addCacheEntry($entry);
 	}
 
 	public function addCacheEntry(CacheEntry $entry): void {
 		$this->hasBeenModified = true;
+		$this->pruneOldEntriesForFile($entry);
 		if (! isset($this->fileDataByPath[$entry->path])) {
 			$this->fileDataByPath[$entry->path] = [];
 		}
-		if (! isset($this->fileDataByPath[$entry->path][$entry->hash])) {
-			$this->fileDataByPath[$entry->path][$entry->hash] = [];
+		if (! isset($this->fileDataByPath[$entry->path][$entry->type])) {
+			$this->fileDataByPath[$entry->path][$entry->type] = [];
 		}
-		$this->fileDataByPath[$entry->path][$entry->hash][$entry->phpcsStandard] = $entry;
-		$this->pruneOldEntriesForFile($entry);
+		if (! isset($this->fileDataByPath[$entry->path][$entry->type][$entry->hash])) {
+			$this->fileDataByPath[$entry->path][$entry->type][$entry->hash] = [];
+		}
+		$this->fileDataByPath[$entry->path][$entry->type][$entry->hash][$entry->phpcsStandard] = $entry;
+		($this->debug)("Cache add: file '{$entry->path}', type '{$entry->type}', hash '{$entry->hash}', standard '{$entry->phpcsStandard}'");
 	}
 
-	// Keep only one actual hash key (a new file) and one empty hash key (an old file) per file path
-	private function pruneOldEntriesForFile(CacheEntry $entry): void {
-		if ($entry->hash === '') {
-			return;
-		}
-		$hashKeysForFile = array_keys($this->fileDataByPath[$entry->path]);
-		foreach($hashKeysForFile as $hash) {
-			if ($hash === '' || $hash === $entry->hash) {
-				continue;
+	private function pruneOldEntriesForFile(CacheEntry $newEntry): void {
+		foreach ($this->getEntries() as $oldEntry) {
+			if ($this->shouldEntryBeRemoved($oldEntry, $newEntry)) {
+				$this->removeCacheEntry($oldEntry);
 			}
-			$this->hasBeenModified = true;
-			unset($this->fileDataByPath[$entry->path][$hash]);
+		}
+	}
+
+	private function shouldEntryBeRemoved(CacheEntry $oldEntry, CacheEntry $newEntry): bool {
+		if ($oldEntry->path === $newEntry->path && $oldEntry->type === $newEntry->type && $oldEntry->phpcsStandard === $newEntry->phpcsStandard) {
+			return true;
+		}
+		return false;
+	}
+
+	public function removeCacheEntry(CacheEntry $entry): void {
+		if (isset($this->fileDataByPath[$entry->path][$entry->type][$entry->hash][$entry->phpcsStandard])) {
+			($this->debug)("Cache remove: file '{$entry->path}', type '{$entry->type}', hash '{$entry->hash}', standard '{$entry->phpcsStandard}'");
+			unset($this->fileDataByPath[$entry->path][$entry->type][$entry->hash][$entry->phpcsStandard]);
 		}
 	}
 
 	public function clearCache(): void {
+		($this->debug)("Cache cleared");
 		$this->hasBeenModified = true;
 		$this->revisionId = '';
 		$this->fileDataByPath = [];

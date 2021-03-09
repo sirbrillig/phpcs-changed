@@ -12,6 +12,11 @@ class CacheEntry implements \JsonSerializable {
 	/**
 	 * @var string
 	 */
+	public $type;
+
+	/**
+	 * @var string
+	 */
 	public $hash;
 
 	/**
@@ -28,6 +33,7 @@ class CacheEntry implements \JsonSerializable {
 		return [
 			'path' => $this->path,
 			'hash' => $this->hash,
+			'type' => $this->type,
 			'phpcsStandard' => $this->phpcsStandard,
 			'data' => $this->data,
 		];
@@ -37,8 +43,13 @@ class CacheEntry implements \JsonSerializable {
 		$entry = new CacheEntry();
 		$entry->path = $deserializedJson['path'];
 		$entry->hash = $deserializedJson['hash'];
+		$entry->type = $deserializedJson['type'];
 		$entry->phpcsStandard = $deserializedJson['phpcsStandard'];
 		$entry->data = $deserializedJson['data'];
 		return $entry;
+	}
+
+	public function __toString(): string {
+		return "Cache entry for file '{$this->path}', type '{$this->type}', hash '{$this->hash}', standard '{$this->phpcsStandard}': {$this->data}";
 	}
 }
