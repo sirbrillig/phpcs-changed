@@ -53,19 +53,25 @@ class CacheManager {
 	}
 
 	public function load(): void {
+		($this->debug)("Loading cache...");
 		$this->cache->load($this);
 		// Don't try to use old cache versions
-		if ($this->cacheVersion !== getVersion()) {
+		$version = getVersion();
+		if ($this->cacheVersion !== $version) {
+			($this->debug)("Cache version has changed ({$this->cacheVersion} -> {$version}). Clearing cache.");
 			$this->clearCache();
-			$this->cacheVersion = getVersion();
+			$this->cacheVersion = $version;
 		}
 		$this->hasBeenModified = false;
+		($this->debug)("Cache loaded.");
 	}
 
 	public function save(): void {
 		if (! $this->hasBeenModified) {
+			($this->debug)("Not saving cache. It is unchanged.");
 			return;
 		}
+		($this->debug)("Saving cache.");
 		$this->cache->save($this);
 		$this->hasBeenModified = false;
 	}
@@ -108,7 +114,8 @@ class CacheManager {
 	}
 
 	public function setCacheVersion(string $cacheVersion): void {
-		if ($this->cacheVersion === $cacheVersion) {
+		if (! $this->cacheVersion || $this->cacheVersion === $cacheVersion) {
+			$this->cacheVersion = $cacheVersion;
 			return;
 		}
 		($this->debug)("Cache version has changed ('{$this->cacheVersion}' -> '{$cacheVersion}'). Clearing cache.");
@@ -118,7 +125,8 @@ class CacheManager {
 	}
 
 	public function setRevision(string $revisionId): void {
-		if ($this->revisionId === $revisionId) {
+		if (! $this->revisionId || $this->revisionId === $revisionId) {
+			$this->revisionId = $revisionId;
 			return;
 		}
 		($this->debug)("Revision has changed ('{$this->revisionId}' -> '{$revisionId}'). Clearing cache.");
