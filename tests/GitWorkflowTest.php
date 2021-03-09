@@ -113,6 +113,62 @@ final class GitWorkflowTest extends TestCase {
 		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php' | phpcs"));
 	}
 
+	public function testFullGitWorkflowForOneFileUnstagedCachesDataThenClearsOldCacheWhenOldFileChanges() {
+		$gitFile = 'foobar.php';
+		$shell = new TestShell([$gitFile]);
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs", $this->phpcs->getResults('STDIN', [20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [21, 20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | git hash-object --stdin", 'previous-file-hash');
+		$shell->registerCommand("cat 'foobar.php' | git hash-object --stdin", 'new-file-hash');
+		$options = [
+			'git-unstaged' => '1',
+			'cache' => false, // getopt is weird and sets options to false
+		];
+		$cache = new CacheManager( new TestCache(), '\PhpcsChangedTests\Debug' );
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
+
+		runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
+
+		$shell->deregisterCommand("git show :0:$(git ls-files --full-name 'foobar.php') | git hash-object --stdin");
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | git hash-object --stdin", 'old-file-hash-2');
+		$shell->resetCommandsCalled();
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertTrue($shell->wasCommandCalled("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs"));
+		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php' | phpcs"));
+	}
+
+	public function testFullGitWorkflowForOneFileUnstagedCachesDataThenClearsNewCacheWhenFileChanges() {
+		$gitFile = 'foobar.php';
+		$shell = new TestShell([$gitFile]);
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --short 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs", $this->phpcs->getResults('STDIN', [20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [21, 20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | git hash-object --stdin", 'previous-file-hash');
+		$shell->registerCommand("cat 'foobar.php' | git hash-object --stdin", 'new-file-hash');
+		$options = [
+			'git-unstaged' => '1',
+			'cache' => false, // getopt is weird and sets options to false
+		];
+		$cache = new CacheManager( new TestCache(), '\PhpcsChangedTests\Debug' );
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
+
+		runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
+
+		$shell->deregisterCommand("cat 'foobar.php' | git hash-object --stdin");
+		$shell->registerCommand("cat 'foobar.php' | git hash-object --stdin", 'new-file-hash-2');
+		$shell->resetCommandsCalled();
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs"));
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php' | phpcs"));
+	}
+
 	public function testFullGitWorkflowForMultipleFilesStaged() {
 		$gitFiles = ['foobar.php', 'baz.php'];
 		$shell = new TestShell($gitFiles);
