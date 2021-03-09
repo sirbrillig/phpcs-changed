@@ -19,4 +19,8 @@ class PhpcsFixture {
 		}, $lineNumbers);
 		return PhpcsMessages::fromArrays($arrays, $filename);
 	}
+
+	public function getEmptyResults(): PhpcsMessages {
+		return PhpcsMessages::fromPhpcsJson('{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{}}');
+	}
 }

@@ -74,6 +74,19 @@ final class SvnWorkflowTest extends TestCase {
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
+	public function testFullSvnWorkflowForOneFileWithNoMessages() {
+		$svnFile = 'foobar.php';
+		$shell = new TestShell([$svnFile]);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getEmptyResults()->toPhpcsJson());
+		$options = [];
+		$expected = $this->phpcs->getEmptyResults();
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
 	public function testFullSvnWorkflowForOneFileWithCachingEnabledButNoCache() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);

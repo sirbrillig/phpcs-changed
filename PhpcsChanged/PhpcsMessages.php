@@ -54,7 +54,7 @@ class PhpcsMessages {
 			return $fileName;
 		}, array_keys($parsed['files']));
 		if (count($fileNames) < 1) {
-			throw new \Exception('Failed to find file names in phpcs JSON: ' . var_export($messages, true));
+			return self::fromArrays([]);
 		}
 		$fileName = $fileNames[0];
 		if (! isset($parsed['files'][$fileName]['messages'])) {
