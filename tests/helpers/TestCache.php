@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace PhpcsChangedTests;
 
 use PhpcsChanged\CacheInterface;
-use PhpcsChanged\CacheManager;
+use PhpcsChanged\CacheObject;
 use PhpcsChanged\CacheEntry;
 use function PhpcsChanged\getVersion;
 
@@ -34,27 +34,29 @@ class TestCache implements CacheInterface {
 	 */
 	public $disabled = false;
 
-	public function load(CacheManager $manager): void {
+	public function load(): CacheObject {
 		if ($this->disabled) {
-			return;
+			return new CacheObject();
 		}
 		$this->didSave = false;
-		$manager->setCacheVersion($this->cacheVersion ?? getVersion());
-		$manager->setRevision($this->revisionId);
+		$cacheObject = new CacheObject();
+		$cacheObject->cacheVersion = $this->cacheVersion ?? getVersion();
+		$cacheObject->revisionId = $this->revisionId;
 		foreach(array_values($this->savedFileData) as $entry) {
-			$manager->addCacheEntry(CacheEntry::fromJson($entry));
+			$cacheObject->entries[] = CacheEntry::fromJson($entry);
 		}
+		return $cacheObject;
 	}
 
-	public function save(CacheManager $manager): void {
+	public function save(CacheObject $cacheObject): void {
 		if ($this->disabled) {
 			return;
 		}
 		$this->didSave = true;
-		$this->setCacheVersion($manager->getCacheVersion());
-		$this->setRevision($manager->getRevision());
+		$this->setCacheVersion($cacheObject->cacheVersion);
+		$this->setRevision($cacheObject->revisionId);
 		$this->savedFileData = [];
-		foreach($manager->getEntries() as $entry) {
+		foreach($cacheObject->entries as $entry) {
 			$this->setEntry($entry->path, $entry->type, $entry->hash, $entry->phpcsStandard, $entry->data);
 		}
 	}
