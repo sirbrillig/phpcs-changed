@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace PhpcsChanged;
 
 use PhpcsChanged\CacheInterface;
-use PhpcsChanged\CacheManager;
+use PhpcsChanged\CacheObject;
 use PhpcsChanged\CacheEntry;
 
 define('DEFAULT_CACHE_FILE', '.phpcs-changed-cache');
@@ -15,9 +15,9 @@ class FileCache implements CacheInterface {
 	 */
 	public $cacheFilePath = DEFAULT_CACHE_FILE; // phpcs:ignore ImportDetection -- apparently ImportDetection does not understand constants
 
-	public function load(CacheManager $manager): void {
+	public function load(): CacheObject {
 		if (! file_exists($this->cacheFilePath)) {
-			return;
+			return new CacheObject();
 		}
 		$contents = file_get_contents($this->cacheFilePath);
 		if ($contents === false) {
@@ -27,21 +27,23 @@ class FileCache implements CacheInterface {
 		if (! $this->isDecodedDataValid($decoded)) {
 			throw new \Exception('Invalid cache file');
 		}
-		$manager->setCacheVersion($decoded['cacheVersion']);
-		$manager->setRevision($decoded['revisionId']);
+		$cacheObject = new CacheObject();
+		$cacheObject->cacheVersion = $decoded['cacheVersion'];
+		$cacheObject->revisionId = $decoded['revisionId'];
 		foreach($decoded['entries'] as $entry) {
 			if (! $this->isDecodedEntryValid($entry)) {
 				throw new \Exception('Invalid cache file entry: ' . $entry);
 			}
-			$manager->addCacheEntry(CacheEntry::fromJson($entry));
+			$cacheObject->entries[] = CacheEntry::fromJson($entry);
 		}
+		return $cacheObject;
 	}
 
-	public function save(CacheManager $manager): void {
+	public function save(CacheObject $cacheObject): void {
 		$data = [
-			'cacheVersion' => $manager->getCacheVersion(),
-			'revisionId' => $manager->getRevision(),
-			'entries' => $manager->getEntries(),
+			'cacheVersion' => $cacheObject->cacheVersion,
+			'revisionId' => $cacheObject->revisionId,
+			'entries' => $cacheObject->entries,
 		];
 		$result = file_put_contents($this->cacheFilePath, json_encode($data));
 		if ($result === false) {

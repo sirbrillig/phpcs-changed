@@ -21,16 +21,6 @@ class CacheManager {
 	private $fileDataByPath = [];
 
 	/**
-	 * @var string
-	 */
-	private $revisionId;
-
-	/**
-	 * @var string
-	 */
-	private $cacheVersion;
-
-	/**
 	 * @var bool
 	 */
 	private $hasBeenModified = false;
@@ -41,27 +31,41 @@ class CacheManager {
 	private $cache;
 
 	/**
+	 * @var CacheObject
+	 */
+	private $cacheObject;
+
+	/**
 	 * @var callable
 	 */
 	private $debug;
 
 	public function __construct(CacheInterface $cache, callable $debug = null) {
 		$this->cache = $cache;
-		$this->cacheVersion = getVersion();
 		$noopDebug = function(...$output) {}; // phpcs:ignore VariableAnalysis
 		$this->debug = $debug ?? $noopDebug;
 	}
 
 	public function load(): void {
 		($this->debug)("Loading cache...");
-		$this->cache->load($this);
+		$this->cacheObject = $this->cache->load();
+
 		// Don't try to use old cache versions
 		$version = getVersion();
-		if ($this->cacheVersion !== $version) {
-			($this->debug)("Cache version has changed ({$this->cacheVersion} -> {$version}). Clearing cache.");
-			$this->clearCache();
-			$this->cacheVersion = $version;
+		if (! $this->cacheObject->cacheVersion) {
+			$this->cacheObject->cacheVersion = $version;
 		}
+		if ($this->cacheObject->cacheVersion !== $version) {
+			($this->debug)("Cache version has changed ({$this->cacheObject->cacheVersion} -> {$version}). Clearing cache.");
+			$this->clearCache();
+			$this->cacheObject->cacheVersion = $version;
+		}
+
+		// Keep a map of cache data so it's faster to access
+		foreach($this->cacheObject->entries as $entry) {
+			$this->addCacheEntry($entry);
+		}
+
 		$this->hasBeenModified = false;
 		($this->debug)("Cache loaded.");
 	}
@@ -72,16 +76,20 @@ class CacheManager {
 			return;
 		}
 		($this->debug)("Saving cache.");
-		$this->cache->save($this);
+
+		// Copy cache data map back to object
+		$this->cacheObject->entries = $this->getEntries();
+
+		$this->cache->save($this->cacheObject);
 		$this->hasBeenModified = false;
 	}
 
 	public function getRevision(): ?string {
-		return $this->revisionId;
+		return $this->cacheObject->revisionId;
 	}
 
 	public function getCacheVersion(): string {
-		return $this->cacheVersion;
+		return $this->cacheObject->cacheVersion;
 	}
 
 	/**
@@ -114,25 +122,24 @@ class CacheManager {
 	}
 
 	public function setCacheVersion(string $cacheVersion): void {
-		if (! $this->cacheVersion || $this->cacheVersion === $cacheVersion) {
-			$this->cacheVersion = $cacheVersion;
+		if ($this->cacheObject->cacheVersion === $cacheVersion) {
 			return;
 		}
-		($this->debug)("Cache version has changed ('{$this->cacheVersion}' -> '{$cacheVersion}'). Clearing cache.");
+		($this->debug)("Cache version has changed ('{$this->cacheObject->cacheVersion}' -> '{$cacheVersion}'). Clearing cache.");
 		$this->hasBeenModified = true;
 		$this->clearCache();
-		$this->cacheVersion = $cacheVersion;
+		$this->cacheObject->cacheVersion = $cacheVersion;
 	}
 
 	public function setRevision(string $revisionId): void {
-		if (! $this->revisionId || $this->revisionId === $revisionId) {
-			$this->revisionId = $revisionId;
+		if (! $this->cacheObject->revisionId || $this->cacheObject->revisionId === $revisionId) {
+			$this->cacheObject->revisionId = $revisionId;
 			return;
 		}
-		($this->debug)("Revision has changed ('{$this->revisionId}' -> '{$revisionId}'). Clearing cache.");
+		($this->debug)("Revision has changed ('{$this->cacheObject->revisionId}' -> '{$revisionId}'). Clearing cache.");
 		$this->hasBeenModified = true;
 		$this->clearCache();
-		$this->revisionId = $revisionId;
+		$this->cacheObject->revisionId = $revisionId;
 	}
 
 	public function getCacheForFile(string $filePath, string $type, string $hash, string $phpcsStandard): ?string {
@@ -196,7 +203,8 @@ class CacheManager {
 	public function clearCache(): void {
 		($this->debug)("Cache cleared");
 		$this->hasBeenModified = true;
-		$this->revisionId = '';
+		$this->cacheObject->revisionId = '';
 		$this->fileDataByPath = [];
+		$this->cacheObject->entries = [];
 	}
 }
