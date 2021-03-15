@@ -8,7 +8,7 @@ use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\ShellException;
 
 function getVersion(): string {
-	return '2.8.0-beta.2';
+	return '2.8.0';
 }
 
 function getNewPhpcsMessages(string $unifiedDiff, PhpcsMessages $oldPhpcsMessages, PhpcsMessages $newPhpcsMessages): PhpcsMessages {
