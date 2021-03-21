@@ -12,11 +12,6 @@ class CacheObject {
 	/**
 	 * @var string
 	 */
-	public $revisionId;
-
-	/**
-	 * @var string
-	 */
 	public $cacheVersion;
 }
 

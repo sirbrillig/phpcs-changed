@@ -84,10 +84,6 @@ class CacheManager {
 		$this->hasBeenModified = false;
 	}
 
-	public function getRevision(): ?string {
-		return $this->cacheObject->revisionId;
-	}
-
 	public function getCacheVersion(): string {
 		return $this->cacheObject->cacheVersion;
 	}
@@ -129,17 +125,6 @@ class CacheManager {
 		$this->hasBeenModified = true;
 		$this->clearCache();
 		$this->cacheObject->cacheVersion = $cacheVersion;
-	}
-
-	public function setRevision(string $revisionId): void {
-		if (! $this->cacheObject->revisionId || $this->cacheObject->revisionId === $revisionId) {
-			$this->cacheObject->revisionId = $revisionId;
-			return;
-		}
-		($this->debug)("Revision has changed ('{$this->cacheObject->revisionId}' -> '{$revisionId}'). Clearing cache.");
-		$this->hasBeenModified = true;
-		$this->clearCache();
-		$this->cacheObject->revisionId = $revisionId;
 	}
 
 	public function getCacheForFile(string $filePath, string $type, string $hash, string $phpcsStandard): ?string {
@@ -203,7 +188,6 @@ class CacheManager {
 	public function clearCache(): void {
 		($this->debug)("Cache cleared");
 		$this->hasBeenModified = true;
-		$this->cacheObject->revisionId = '';
 		$this->fileDataByPath = [];
 		$this->cacheObject->entries = [];
 	}

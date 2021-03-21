@@ -29,7 +29,6 @@ class FileCache implements CacheInterface {
 		}
 		$cacheObject = new CacheObject();
 		$cacheObject->cacheVersion = $decoded['cacheVersion'];
-		$cacheObject->revisionId = $decoded['revisionId'];
 		foreach($decoded['entries'] as $entry) {
 			if (! $this->isDecodedEntryValid($entry)) {
 				throw new \Exception('Invalid cache file entry: ' . $entry);
@@ -42,7 +41,6 @@ class FileCache implements CacheInterface {
 	public function save(CacheObject $cacheObject): void {
 		$data = [
 			'cacheVersion' => $cacheObject->cacheVersion,
-			'revisionId' => $cacheObject->revisionId,
 			'entries' => $cacheObject->entries,
 		];
 		$result = file_put_contents($this->cacheFilePath, json_encode($data));
@@ -57,16 +55,12 @@ class FileCache implements CacheInterface {
 	private function isDecodedDataValid($decoded): bool {
 		if (! is_array($decoded) ||
 			! array_key_exists('cacheVersion', $decoded) ||
-			! array_key_exists('revisionId', $decoded) ||
 			! array_key_exists('entries', $decoded) ||
 			! is_array($decoded['entries'])
 		) {
 			return false;
 		}
 		if (! is_string($decoded['cacheVersion'])) {
-			return false;
-		}
-		if (! is_string($decoded['revisionId'])) {
 			return false;
 		}
 		// Note that this does not validate the entries to avoid iterating over

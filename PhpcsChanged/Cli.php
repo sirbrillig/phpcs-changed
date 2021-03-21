@@ -329,9 +329,6 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 		$isNewFile = isNewGitFile($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
 		$oldFilePhpcsOutput = '';
 		if (! $isNewFile) {
-			if (isCachingEnabled($options)) {
-				$cache->setRevision(''); // git files are all protected by a hash key; there is no need to invalidate the cache if the version changes
-			}
 			$oldFileHash = getOldGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
 			$oldFilePhpcsOutput = isCachingEnabled($options) ? $cache->getCacheForFile($gitFile, 'old', $oldFileHash, $phpcsStandard ?? '') : null;
 			if ($oldFilePhpcsOutput) {
