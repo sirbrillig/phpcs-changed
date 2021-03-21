@@ -239,11 +239,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 
 		$oldFilePhpcsOutput = '';
 		if ( ! $isNewFile ) {
-			if (isCachingEnabled($options)) {
-				$cache->setRevision($revisionId);
-			}
-
-			$oldFilePhpcsOutput = isCachingEnabled($options) ? $cache->getCacheForFile($svnFile, 'old', '', $phpcsStandard ?? '') : null;
+			$oldFilePhpcsOutput = isCachingEnabled($options) ? $cache->getCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '') : null;
 			if ($oldFilePhpcsOutput) {
 				$debug("Using cache for old file '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
 			}
@@ -251,7 +247,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 				$debug("Not using cache for old file '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
 				$oldFilePhpcsOutput = getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
 				if (isCachingEnabled($options)) {
-					$cache->setCacheForFile($svnFile, 'old', '', $phpcsStandard ?? '', $oldFilePhpcsOutput);
+					$cache->setCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '', $oldFilePhpcsOutput);
 				}
 			}
 		}
