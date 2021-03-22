@@ -44,7 +44,8 @@ Added: svn:eol-style
 EOF;
 	}
 
-	public function getSvnInfo(string $filename, string $revision = '188280'): string {
+	public function getSvnInfo(string $filename, string $revision = '188280', string $lastChangedRevision = null): string {
+		$lastChangedRevision = $lastChangedRevision ?? $revision;
 		return <<<EOF
 Path: {$filename}
 Name: {$filename}
@@ -57,7 +58,7 @@ Revision: {$revision}
 Node Kind: file
 Schedule: normal
 Last Changed Author: me
-Last Changed Rev: 175729
+Last Changed Rev: {$lastChangedRevision}
 Last Changed Date: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
 Text Last Updated: 2018-05-22 17:34:00 +0000 (Tue, 22 May 2018)
 Checksum: abcdefg

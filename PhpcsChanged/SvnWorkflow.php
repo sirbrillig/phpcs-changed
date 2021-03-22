@@ -33,7 +33,7 @@ function isNewSvnFile(string $svnFileInfo): bool {
 }
 
 function getSvnRevisionId(string $svnFileInfo): string {
-	preg_match('/\bRevision:\s([^\n]+)/', $svnFileInfo, $matches);
+	preg_match('/\bLast Changed Rev:\s([^\n]+)/', $svnFileInfo, $matches);
 	$version = $matches[1] ?? null;
 	if (! $version) {
 		// New files will not have a revision

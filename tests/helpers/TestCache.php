@@ -20,11 +20,6 @@ class TestCache implements CacheInterface {
 	private $cacheVersion;
 
 	/**
-	 * @var string
-	 */
-	private $revisionId = '';
-
-	/**
 	 * @var bool
 	 */
 	public $didSave = false;
@@ -41,7 +36,6 @@ class TestCache implements CacheInterface {
 		$this->didSave = false;
 		$cacheObject = new CacheObject();
 		$cacheObject->cacheVersion = $this->cacheVersion ?? getVersion();
-		$cacheObject->revisionId = $this->revisionId;
 		foreach(array_values($this->savedFileData) as $entry) {
 			$cacheObject->entries[] = CacheEntry::fromJson($entry);
 		}
@@ -54,7 +48,6 @@ class TestCache implements CacheInterface {
 		}
 		$this->didSave = true;
 		$this->setCacheVersion($cacheObject->cacheVersion);
-		$this->setRevision($cacheObject->revisionId);
 		$this->savedFileData = [];
 		foreach($cacheObject->entries as $entry) {
 			$this->setEntry($entry->path, $entry->type, $entry->hash, $entry->phpcsStandard, $entry->data);
@@ -69,10 +62,6 @@ class TestCache implements CacheInterface {
 			'type' => $type,
 			'phpcsStandard' => $phpcsStandard,
 		];
-	}
-
-	public function setRevision(string $revisionId): void {
-		$this->revisionId = $revisionId;
 	}
 
 	public function setCacheVersion(string $cacheVersion): void {
