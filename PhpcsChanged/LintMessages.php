@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace PhpcsChanged;
 
 use PhpcsChanged\LintMessage;
+use PhpcsChanged\DiffLineMap;
 
 class LintMessages {
 	private $messages = [];
@@ -47,4 +48,21 @@ class LintMessages {
 			return $message->getLineNumber();
 		}, $this->messages);
 	}
+
+	public static function getNewMessages(string $unifiedDiff, self $oldMessages, self $newMessages): self {
+		$map = DiffLineMap::fromUnifiedDiff($unifiedDiff);
+		$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
+		return self::fromLintMessages(array_values(array_filter($newMessages->getMessages(), function($newMessage) use ($oldMessages, $map) {
+			$lineNumber = $newMessage->getLineNumber();
+			if (! $lineNumber) {
+				return true;
+			}
+			$oldLineNumber = $map->getOldLineNumberForLine($lineNumber);
+			$oldMessagesContainingOldLineNumber = array_values(array_filter($oldMessages->getMessages(), function($oldMessage) use ($oldLineNumber) {
+				return $oldMessage->getLineNumber() === $oldLineNumber;
+			}));
+			return ! count($oldMessagesContainingOldLineNumber) > 0;
+		})), $fileName);
+	}
+
 }

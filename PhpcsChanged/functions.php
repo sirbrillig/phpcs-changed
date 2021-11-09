@@ -12,19 +12,7 @@ function getVersion(): string {
 }
 
 function getNewPhpcsMessages(string $unifiedDiff, PhpcsMessages $oldPhpcsMessages, PhpcsMessages $newPhpcsMessages): PhpcsMessages {
-	$map = DiffLineMap::fromUnifiedDiff($unifiedDiff);
-	$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
-	return PhpcsMessages::fromPhpcsMessages(array_values(array_filter($newPhpcsMessages->getMessages(), function($newMessage) use ($oldPhpcsMessages, $map) {
-		$lineNumber = $newMessage->getLineNumber();
-		if (! $lineNumber) {
-			return true;
-		}
-		$oldLineNumber = $map->getOldLineNumberForLine($lineNumber);
-		$oldMessagesContainingOldLineNumber = array_values(array_filter($oldPhpcsMessages->getMessages(), function($oldMessage) use ($oldLineNumber) {
-			return $oldMessage->getLineNumber() === $oldLineNumber;
-		}));
-		return ! count($oldMessagesContainingOldLineNumber) > 0;
-	})), $fileName);
+	return PhpcsMessages::getNewMessages($unifiedDiff, $oldPhpcsMessages, $newPhpcsMessages);
 }
 
 function getNewPhpcsMessagesFromFiles(string $diffFile, string $phpcsOldFile, string $phpcsNewFile): PhpcsMessages {
