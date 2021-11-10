@@ -19,7 +19,7 @@ class LintMessages {
 	}
 
 	public static function merge(array $messages): self {
-		return self::fromLintMessages(array_merge(...array_map(function(LintMessages $message) {
+		return self::fromLintMessages(array_merge(...array_map(function(self $message) {
 			return $message->getMessages();
 		}, $messages)));
 	}
