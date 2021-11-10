@@ -44,7 +44,7 @@ class XmlReporter implements Reporter {
 			return $message->getType() === 'WARNING';
 		})));
 		$fixableCount = count(array_values(array_filter($messages, function(LintMessage $message) {
-			return $message->getProperty('fixable');
+			return (bool)$message->getProperty('fixable');
 		})));
 		$xmlOutputForFile = "\t<file name=\"{$file}\" errors=\"{$errorCount}\" warnings=\"{$warningCount}\" fixable=\"{$fixableCount}\">\n";
 		$xmlOutputForFile .= array_reduce($messages, function(string $output, LintMessage  $message): string{
