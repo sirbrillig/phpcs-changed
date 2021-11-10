@@ -10,6 +10,7 @@ require_once __DIR__ . '/PhpcsChanged/DiffLineMap.php';
 require_once __DIR__ . '/PhpcsChanged/LintMessage.php';
 require_once __DIR__ . '/PhpcsChanged/LintMessages.php';
 require_once __DIR__ . '/PhpcsChanged/PhpcsMessages.php';
+require_once __DIR__ . '/PhpcsChanged/PhpcsMessagesHelpers.php';
 require_once __DIR__ . '/PhpcsChanged/Reporter.php';
 require_once __DIR__ . '/PhpcsChanged/JsonReporter.php';
 require_once __DIR__ . '/PhpcsChanged/FullReporter.php';
