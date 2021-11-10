@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace PhpcsChanged;
 
-use PhpcsChanged\DiffLineMap;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\ShellException;
 

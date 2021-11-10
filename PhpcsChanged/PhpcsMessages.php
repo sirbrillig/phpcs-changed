@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace PhpcsChanged;
 
-use PhpcsChanged\LintMessage;
 use PhpcsChanged\LintMessages;
 use PhpcsChanged\JsonReporter;
 
