@@ -33,12 +33,6 @@ class LintMessages {
 		}, $messages));
 	}
 
-	public static function fromArrays(array $messages, string $fileName = null): self {
-		return new self(array_map(function(array $messageArray) use ($fileName) {
-			return new LintMessage($messageArray['line'] ?? null, $fileName, $messageArray['type'] ?? 'ERROR', $messageArray);
-		}, $messages));
-	}
-
 	public function getMessages(): array {
 		return $this->messages;
 	}
