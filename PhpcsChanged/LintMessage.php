@@ -49,7 +49,7 @@ class LintMessage {
 	}
 
 	/**
- 	 * @return string|int|bool|float|null
+	 * @return string|int|bool|float|null
 	 */
 	public function getProperty( string $key ) {
 		return $this->otherProperties[$key];

@@ -7,9 +7,15 @@ use PhpcsChanged\LintMessage;
 use PhpcsChanged\DiffLineMap;
 
 class LintMessages {
+	/**
+	 * @var LintMessage[]
+	 */
 	private $messages = [];
 
-	public function __construct(array $messages) {
+	/**
+	 * @var LintMessage[]
+	 */
+	final public function __construct(array $messages) {
 		foreach($messages as $message) {
 			if (! $message instanceof LintMessage) {
 				throw new \Exception('Each message in a LintMessages object must be a LintMessage; found ' . var_export($message, true));
@@ -18,14 +24,20 @@ class LintMessages {
 		$this->messages = $messages;
 	}
 
-	public static function merge(array $messages): self {
+	/**
+	 * @return static
+	 */
+	public static function merge(array $messages) {
 		return self::fromLintMessages(array_merge(...array_map(function(self $message) {
 			return $message->getMessages();
 		}, $messages)));
 	}
 
-	public static function fromLintMessages(array $messages, string $fileName = null): self {
-		return new self(array_map(function(LintMessage $message) use ($fileName) {
+	/**
+	 * @return static
+	 */
+	public static function fromLintMessages(array $messages, string $fileName = null) {
+		return new static(array_map(function(LintMessage $message) use ($fileName) {
 			if ($fileName) {
 				$message->setFile($fileName);
 			}
@@ -33,17 +45,26 @@ class LintMessages {
 		}, $messages));
 	}
 
+	/**
+	 * @return LintMessage[]
+	 */
 	public function getMessages(): array {
 		return $this->messages;
 	}
 
+	/**
+	 * @return int[]
+	 */
 	public function getLineNumbers(): array {
 		return array_map(function($message) {
 			return $message->getLineNumber();
 		}, $this->messages);
 	}
 
-	public static function getNewMessages(string $unifiedDiff, self $oldMessages, self $newMessages): self {
+	/**
+	 * @return static
+	 */
+	public static function getNewMessages(string $unifiedDiff, self $oldMessages, self $newMessages) {
 		$map = DiffLineMap::fromUnifiedDiff($unifiedDiff);
 		$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
 		return self::fromLintMessages(array_values(array_filter($newMessages->getMessages(), function($newMessage) use ($oldMessages, $map) {
@@ -58,5 +79,4 @@ class LintMessages {
 			return ! count($oldMessagesContainingOldLineNumber) > 0;
 		})), $fileName);
 	}
-
 }
