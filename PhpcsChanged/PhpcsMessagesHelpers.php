@@ -45,4 +45,10 @@ class PhpcsMessagesHelpers {
 			return new LintMessage($messageArray['line'] ?? null, $fileName, $messageArray['type'] ?? 'ERROR', $messageArray);
 		}, $messages));
 	}
+
+	public static function messageToPhpcsArray(LintMessage $message): array {
+		return array_merge([
+			'line' => $message->getLineNumber(),
+		], $message->getOtherProperties());
+	}
 }
