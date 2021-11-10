@@ -12,9 +12,6 @@ class LintMessages {
 	 */
 	private $messages = [];
 
-	/**
-	 * @var LintMessage[]
-	 */
 	final public function __construct(array $messages) {
 		foreach($messages as $message) {
 			if (! $message instanceof LintMessage) {
