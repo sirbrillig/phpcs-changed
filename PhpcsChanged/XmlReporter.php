@@ -5,13 +5,13 @@ namespace PhpcsChanged;
 
 use PhpcsChanged\Reporter;
 use PhpcsChanged\PhpcsMessages;
-use PhpcsChanged\PhpcsMessage;
+use PhpcsChanged\LintMessage;
 use PhpcsChanged\UnixShell;
 use PhpcsChanged\ShellException;
 
 class XmlReporter implements Reporter {
 	public function getFormattedMessages(PhpcsMessages $messages, array $options): string { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		$files = array_unique(array_map(function(PhpcsMessage $message): string {
+		$files = array_unique(array_map(function(LintMessage $message): string {
 			return $message->getFile() ?? 'STDIN';
 		}, $messages->getMessages()));
 		if (empty($files)) {
@@ -19,7 +19,7 @@ class XmlReporter implements Reporter {
 		}
 
 		$outputByFile = array_reduce($files,function(string $output, string $file) use ($messages): string {
-			$messagesForFile = array_values(array_filter($messages->getMessages(), static function(PhpcsMessage $message) use ($file): bool {
+			$messagesForFile = array_values(array_filter($messages->getMessages(), static function(LintMessage $message) use ($file): bool {
 				return ($message->getFile() ?? 'STDIN') === $file;
 			}));
 			$output .= $this->getFormattedMessagesForFile($messagesForFile, $file);
@@ -37,23 +37,23 @@ class XmlReporter implements Reporter {
 	}
 
 	private function getFormattedMessagesForFile(array $messages, string $file): string {
-		$errorCount = count( array_values(array_filter($messages, function($message) {
+		$errorCount = count( array_values(array_filter($messages, function(LintMessage $message) {
 			return $message->getType() === 'ERROR';
 		})));
-		$warningCount = count(array_values(array_filter($messages, function($message) {
+		$warningCount = count(array_values(array_filter($messages, function(LintMessage $message) {
 			return $message->getType() === 'WARNING';
 		})));
-		$fixableCount = count(array_values(array_filter($messages, function($message) {
-			return $message->getFixable();
+		$fixableCount = count(array_values(array_filter($messages, function(LintMessage $message) {
+			return $message->getProperty('fixable');
 		})));
 		$xmlOutputForFile = "\t<file name=\"{$file}\" errors=\"{$errorCount}\" warnings=\"{$warningCount}\" fixable=\"{$fixableCount}\">\n";
-		$xmlOutputForFile .= array_reduce($messages, function(string $output, PhpcsMessage  $message): string{
+		$xmlOutputForFile .= array_reduce($messages, function(string $output, LintMessage  $message): string{
 			$type = strtolower( $message->getType() );
 			$line = $message->getLineNumber();
 			$column = $message->getColumn();
 			$source = $message->getSource();
 			$severity = $message->getSeverity();
-			$fixable = $message->getFixable() ? "1" : "0";
+			$fixable = $message->getProperty('fixable') ? "1" : "0";
 			$messageString = $message->getMessage();
 			$output .= "\t\t<{$type} line=\"{$line}\" column=\"{$column}\" source=\"{$source}\" severity=\"{$severity}\" fixable=\"{$fixable}\">{$messageString}</{$type}>\n";
 			return $output;
