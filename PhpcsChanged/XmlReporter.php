@@ -8,9 +8,10 @@ use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\LintMessage;
 use PhpcsChanged\UnixShell;
 use PhpcsChanged\ShellException;
+use PhpcsChanged\CliOptions;
 
 class XmlReporter implements Reporter {
-	public function getFormattedMessages(PhpcsMessages $messages, array $options): string { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
+	public function getFormattedMessages(PhpcsMessages $messages, ?CliOptions $options): string { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
 		$files = array_unique(array_map(function(LintMessage $message): string {
 			return $message->getFile() ?? 'STDIN';
 		}, $messages->getMessages()));

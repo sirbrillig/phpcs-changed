@@ -6,6 +6,7 @@ require_once dirname(__DIR__) . '/index.php';
 use PHPUnit\Framework\TestCase;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\FullReporter;
+use PhpcsChanged\CliOptions;
 
 final class FullReporterTest extends TestCase {
 	public function testSingleWarning() {
@@ -31,7 +32,7 @@ FOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE
 
 EOF;
 		$reporter = new FullReporter();
-		$result = $reporter->getFormattedMessages($messages, []);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['svn' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -58,7 +59,7 @@ FOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE
 
 EOF;
 		$reporter = new FullReporter();
-		$result = $reporter->getFormattedMessages($messages, ['s' => 1]);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['s' => true, 'svn' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -84,7 +85,7 @@ FOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE
 
 EOF;
 		$reporter = new FullReporter();
-		$result = $reporter->getFormattedMessages($messages, ['s' => 1]);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['s' => true, 'svn' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -121,7 +122,7 @@ FOUND 0 ERRORS AND 2 WARNINGS AFFECTING 2 LINES
 
 EOF;
 		$reporter = new FullReporter();
-		$result = $reporter->getFormattedMessages($messages, []);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['svn' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -198,7 +199,7 @@ FOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE
 
 EOF;
 		$reporter = new FullReporter();
-		$result = $reporter->getFormattedMessages($messages, ['s' => 1]);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['s' => 1, 'svn' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -208,7 +209,7 @@ EOF;
 
 EOF;
 		$reporter = new FullReporter();
-		$result = $reporter->getFormattedMessages($messages, []);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['svn' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -235,7 +236,7 @@ FOUND 0 ERRORS AND 1 WARNING AFFECTING 1 LINE
 
 EOF;
 		$reporter = new FullReporter();
-		$result = $reporter->getFormattedMessages($messages, []);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['svn' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 

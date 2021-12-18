@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/index.php';
 
 use PHPUnit\Framework\TestCase;
+use PhpcsChanged\CliOptions;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\JsonReporter;
 
@@ -24,7 +25,7 @@ final class JsonReporterTest extends TestCase {
 {"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"fileA.php":{"errors":0,"warnings":1,"messages":[{"line":15,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foo."}]}}}
 EOF;
 		$reporter = new JsonReporter();
-		$result = $reporter->getFormattedMessages($messages, []);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['git' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -44,7 +45,7 @@ EOF;
 {"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"fileA.php":{"errors":0,"warnings":1,"messages":[{"line":15,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foo."}]}}}
 EOF;
 		$reporter = new JsonReporter();
-		$result = $reporter->getFormattedMessages($messages, ['s' => 1]);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['s' => 1, 'git' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -63,7 +64,7 @@ EOF;
 {"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"fileA.php":{"errors":0,"warnings":1,"messages":[{"line":15,"type":"WARNING","severity":5,"fixable":false,"column":5,"message":"Found unused symbol Foo."}]}}}
 EOF;
 		$reporter = new JsonReporter();
-		$result = $reporter->getFormattedMessages($messages, ['s' => 1]);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['s' => 1, 'git' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -92,7 +93,7 @@ EOF;
 {"totals":{"errors":0,"warnings":2,"fixable":0},"files":{"fileA.php":{"errors":0,"warnings":2,"messages":[{"line":133825,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foo."},{"line":15,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Bar."}]}}}
 EOF;
 		$reporter = new JsonReporter();
-		$result = $reporter->getFormattedMessages($messages, []);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['git' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -151,7 +152,7 @@ EOF;
 {"totals":{"errors":2,"warnings":3,"fixable":0},"files":{"fileA.php":{"errors":2,"warnings":2,"messages":[{"line":12,"type":"ERROR","severity":5,"fixable":true,"column":2,"source":"ImportDetection.Imports.RequireImports.Something","message":"Found unused symbol Faa."},{"line":15,"type":"ERROR","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foo."},{"line":18,"type":"WARNING","severity":5,"fixable":false,"column":8,"source":"ImportDetection.Imports.RequireImports.Boom","message":"Found unused symbol Bar."},{"line":22,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foo."}]},"fileB.php":{"errors":0,"warnings":1,"messages":[{"line":30,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Zoop","message":"Found unused symbol Hi."}]}}}
 EOF;
 		$reporter = new JsonReporter();
-		$result = $reporter->getFormattedMessages($messages, ['s' => 1]);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['s' => 1, 'git' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -161,7 +162,7 @@ EOF;
 {"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}
 EOF;
 		$reporter = new JsonReporter();
-		$result = $reporter->getFormattedMessages($messages, []);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['git' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -181,7 +182,7 @@ EOF;
 {"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":1,"messages":[{"line":15,"type":"WARNING","severity":5,"fixable":false,"column":5,"source":"ImportDetection.Imports.RequireImports.Import","message":"Found unused symbol Foo."}]}}}
 EOF;
 		$reporter = new JsonReporter();
-		$result = $reporter->getFormattedMessages($messages, []);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['git' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 

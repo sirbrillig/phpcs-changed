@@ -6,6 +6,7 @@ require_once __DIR__ . '/helpers/helpers.php';
 
 use PHPUnit\Framework\TestCase;
 use PhpcsChanged\PhpcsMessages;
+use PhpcsChanged\CliOptions;
 use PhpcsChangedTests\TestXmlReporter;
 
 final class XmlReporterTest extends TestCase {
@@ -31,7 +32,7 @@ final class XmlReporterTest extends TestCase {
 
 EOF;
 		$reporter = new TestXmlReporter();
-		$result = $reporter->getFormattedMessages($messages, []);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['svn' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -57,7 +58,7 @@ EOF;
 
 EOF;
 		$reporter = new TestXmlReporter();
-		$result = $reporter->getFormattedMessages($messages, ['s' => 1]);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['s' => true, 'svn' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -82,7 +83,7 @@ EOF;
 
 EOF;
 		$reporter = new TestXmlReporter();
-		$result = $reporter->getFormattedMessages($messages, ['s' => 1]);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['s' => true, 'svn' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -118,7 +119,7 @@ EOF;
 
 EOF;
 		$reporter = new TestXmlReporter();
-		$result = $reporter->getFormattedMessages($messages, []);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['svn' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -189,7 +190,7 @@ EOF;
 
 EOF;
 		$reporter = new TestXmlReporter();
-		$result = $reporter->getFormattedMessages($messages, ['s' => 1]);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['s' => true, 'svn' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -204,7 +205,7 @@ EOF;
 
 EOF;
 		$reporter = new TestXmlReporter();
-		$result = $reporter->getFormattedMessages($messages, []);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['svn' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 
@@ -230,7 +231,7 @@ EOF;
 
 EOF;
 		$reporter = new TestXmlReporter();
-		$result = $reporter->getFormattedMessages($messages, []);
+		$result = $reporter->getFormattedMessages($messages, CliOptions::fromArray(['svn' => true, 'files' => ['test']]));
 		$this->assertEquals($expected, $result);
 	}
 

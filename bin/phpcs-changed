@@ -23,6 +23,8 @@ use function PhpcsChanged\Cli\{
 use PhpcsChanged\UnixShell;
 use PhpcsChanged\CacheManager;
 use PhpcsChanged\FileCache;
+use PhpcsChanged\CliOptions;
+use PhpcsChanged\InvalidOptionException;
 
 $optind = 0;
 $options = getopt(
@@ -65,7 +67,7 @@ foreach( $fileNames as $file ) {
 		if ( shouldIgnorePath($file, $options['ignore'] ?? null, '') ) {
 			continue;
 		}
-		$iterator = new RecursiveIteratorIterator(new RecursiveCallbackFilterIterator(new RecursiveDirectoryIterator($file, (RecursiveDirectoryIterator::SKIP_DOTS | FilesystemIterator::FOLLOW_SYMLINKS)), function($file, $key, $iterator){
+		$iterator = new \RecursiveIteratorIterator(new \RecursiveCallbackFilterIterator(new \RecursiveDirectoryIterator($file, (\RecursiveDirectoryIterator::SKIP_DOTS | \FilesystemIterator::FOLLOW_SYMLINKS)), function($file, $key, $iterator){
 			if ($file->isFile() && !fileHasValidExtension($file)) {
 				return false;
 			}
@@ -117,55 +119,52 @@ if (isset($options['phpcs-new'])) {
 	unset($options['phpcs-new']);
 }
 
+if (count($options) === 0) {
+	printHelp();
+	exit(1);
+}
+
+$options['files'] = $fileNamesExpanded;
 $debug = getDebug(isset($options['debug']));
-run($options, $fileNamesExpanded, $debug);
 
-function run(array $options, array $fileNamesExpanded, callable $debug): void {
-	$debug('Running on filenames: ' . implode(', ', $fileNamesExpanded));
-	$debug('Options: ' . json_encode($options));
-	$reportType = $options['report'] ?? 'full';
-	$diffFile = $options['diff'] ?? null;
-	$phpcsUnmodifiedFile = $options['phpcs-unmodified'] ?? null;
-	$phpcsModifiedFile = $options['phpcs-modified'] ?? null;
+run($options, $debug);
 
-	if ($diffFile && $phpcsUnmodifiedFile && $phpcsModifiedFile) {
+function run(array $rawOptions, callable $debug): void {
+	$debug('Options: ' . json_encode($rawOptions));
+
+	try {
+		$options = CliOptions::fromArray($rawOptions);
+	} catch ( InvalidOptionException $err ) {
+		printErrorAndExit($err->getMessage());
+		exit(1);
+	}
+
+	if ($options->mode === 'manual') {
 		reportMessagesAndExit(
-			runManualWorkflow($diffFile, $phpcsUnmodifiedFile, $phpcsModifiedFile),
-			$reportType,
+			runManualWorkflow($options->diffFile, $options->phpcsOldFile, $options->phpcsNewFile),
 			$options
 		);
 		return;
 	}
 
-	if ((isset($options['svn']) || isset($options['git'])) && empty($fileNamesExpanded)) {
-		printErrorAndExit('You must supply at least one file or directory to process.');
-		return;
-	}
-
-	if (isset($options['svn'])) {
+	if ($options->mode === 'svn') {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
-			runSvnWorkflow($fileNamesExpanded, $options, $shell, new CacheManager(new FileCache(), $debug), $debug),
-			$reportType,
+			runSvnWorkflow($options, $shell, new CacheManager(new FileCache(), $debug), $debug),
 			$options
 		);
 		return;
 	}
 
-	if (isset($options['git'])) {
+	if ($options->isGitMode()) {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
-			runGitWorkflow($fileNamesExpanded, $options, $shell, new CacheManager(new FileCache(), $debug), $debug),
-			$reportType,
+			runGitWorkflow($options, $shell, new CacheManager(new FileCache(), $debug), $debug),
 			$options
 		);
 		return;
 	}
 
-	if (count($options) > 0) {
-		printErrorAndExit('You must use either manual or automatic mode.');
-		return;
-	}
 	printHelp();
 	exit(1);
 }

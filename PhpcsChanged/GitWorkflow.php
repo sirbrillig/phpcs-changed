@@ -5,8 +5,9 @@ namespace PhpcsChanged\GitWorkflow;
 
 use PhpcsChanged\NoChangesException;
 use PhpcsChanged\ShellException;
+use PhpcsChanged\CliOptions;
 
-function validateGitFileExists(string $gitFile, string $git, callable $isReadable, callable $executeCommand, callable $debug, array $options): void {
+function validateGitFileExists(string $gitFile, string $git, callable $isReadable, callable $executeCommand, callable $debug, CliOptions $options): void {
 	if (isset($options['no-verify-git-file'])) {
 		$debug('skipping Git file exists check.');
 		return;
@@ -23,7 +24,7 @@ function validateGitFileExists(string $gitFile, string $git, callable $isReadabl
 	}
 }
 
-function isRunFromGitRoot(string $git, callable $executeCommand, array $options, callable $debug): bool {
+function isRunFromGitRoot(string $git, callable $executeCommand, CliOptions $options, callable $debug): bool {
 	static $isRunFromGitRoot;
 	if (isset($options['no-cache-git-root'])) {
 		$isRunFromGitRoot = null;
@@ -42,24 +43,24 @@ function isRunFromGitRoot(string $git, callable $executeCommand, array $options,
 	return $isRunFromGitRoot;
 }
 
-function getGitMergeBase(string $git, callable $executeCommand, array $options, callable $debug): string {
-	if ( empty($options['git-base']) ) {
+function getGitMergeBase(string $git, callable $executeCommand, CliOptions $options, callable $debug): string {
+	if ( empty($options->gitBase) ) {
 		return '';
 	}
-	$mergeBaseCommand = "{$git} merge-base " . escapeshellarg($options['git-base']) . ' HEAD';
+	$mergeBaseCommand = "{$git} merge-base " . escapeshellarg($options->gitBase) . ' HEAD';
 	$debug('running merge-base command:', $mergeBaseCommand);
 	$mergeBase = $executeCommand($mergeBaseCommand);
 	if (! $mergeBase) {
 		$debug('merge-base command produced no output');
-		return $options['git-base'];
+		return $options->gitBase;
 	}
 	$debug('merge-base command output:', $mergeBase);
 	return trim($mergeBase);
 }
 
-function getGitUnifiedDiff(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): string {
-	$objectOption = isset($options['git-base']) && ! empty($options['git-base']) ? ' ' . escapeshellarg($options['git-base']) . '...' : '';
-	$stagedOption = empty( $objectOption ) && ! isset($options['git-unstaged']) ? ' --staged' : '';
+function getGitUnifiedDiff(string $gitFile, string $git, callable $executeCommand, CliOptions $options, callable $debug): string {
+	$objectOption = $options->mode === 'git-base' && ! empty($options->gitBase) ? ' ' . escapeshellarg($options->gitBase) . '...' : '';
+	$stagedOption = empty( $objectOption ) && $options->mode !== 'git-unstaged' ? ' --staged' : '';
 	$unifiedDiffCommand = "{$git} diff{$stagedOption}{$objectOption} --no-prefix " . escapeshellarg($gitFile);
 	$debug('running diff command:', $unifiedDiffCommand);
 	$unifiedDiff = $executeCommand($unifiedDiffCommand);
@@ -70,16 +71,16 @@ function getGitUnifiedDiff(string $gitFile, string $git, callable $executeComman
 	return $unifiedDiff;
 }
 
-function isNewGitFile(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
-	if ( isset($options['git-base']) && ! empty($options['git-base']) ) {
+function isNewGitFile(string $gitFile, string $git, callable $executeCommand, CliOptions $options, callable $debug): bool {
+	if ( $options->mode === 'git-base' && ! empty($options->gitBase) ) {
 		return isNewGitFileRemote( $gitFile, $git, $executeCommand, $options, $debug );
 	} else {
 		return isNewGitFileLocal( $gitFile, $git, $executeCommand, $options, $debug );
 	}
 }
 
-function isNewGitFileRemote(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
-	$gitStatusCommand = "${git} cat-file -e " . escapeshellarg($options['git-base']) . ':' . escapeshellarg($gitFile) . ' 2>/dev/null';
+function isNewGitFileRemote(string $gitFile, string $git, callable $executeCommand, CliOptions $options, callable $debug): bool {
+	$gitStatusCommand = "${git} cat-file -e " . escapeshellarg($options->gitBase) . ':' . escapeshellarg($gitFile) . ' 2>/dev/null';
 	$debug('checking status of file with command:', $gitStatusCommand);
 	/** @var int */
 	$return_val = 1;
@@ -90,7 +91,7 @@ function isNewGitFileRemote(string $gitFile, string $git, callable $executeComma
 	return 0 !== $return_val;
 }
 
-function isNewGitFileLocal(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
+function isNewGitFileLocal(string $gitFile, string $git, callable $executeCommand, CliOptions $options, callable $debug): bool {
 	$gitStatusCommand = "${git} status --porcelain " . escapeshellarg($gitFile);
 	$debug('checking git status of file with command:', $gitStatusCommand);
 	$gitStatusOutput = $executeCommand($gitStatusCommand);
@@ -104,7 +105,7 @@ function isNewGitFileLocal(string $gitFile, string $git, callable $executeComman
 	return isset($gitStatusOutput[0]) && $gitStatusOutput[0] === 'A';
 }
 
-function getGitUnmodifiedPhpcsOutput(string $gitFile, string $git, string $phpcs, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
+function getGitUnmodifiedPhpcsOutput(string $gitFile, string $git, string $phpcs, string $phpcsStandardOption, callable $executeCommand, CliOptions $options, callable $debug): string {
 	$unmodifiedFileContents = getUnmodifiedGitRevisionContentsCommand($gitFile, $git, $options, $executeCommand, $debug);
 
 	$unmodifiedFilePhpcsOutputCommand = "{$unmodifiedFileContents} | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) . ' -';
@@ -117,7 +118,7 @@ function getGitUnmodifiedPhpcsOutput(string $gitFile, string $git, string $phpcs
 	return $unmodifiedFilePhpcsOutput;
 }
 
-function getGitModifiedPhpcsOutput(string $gitFile, string $git, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
+function getGitModifiedPhpcsOutput(string $gitFile, string $git, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, CliOptions $options, callable $debug): string {
 	$modifiedFileContents = getModifiedGitRevisionContentsCommand($gitFile, $git, $cat, $options, $executeCommand, $debug);
 
 	$modifiedFilePhpcsOutputCommand = "{$modifiedFileContents} | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) .' -';
@@ -134,14 +135,14 @@ function getGitModifiedPhpcsOutput(string $gitFile, string $git, string $phpcs, 
 	return $modifiedFilePhpcsOutput;
 }
 
-function getModifiedGitRevisionContentsCommand(string $gitFile, string $git, string $cat, array $options, callable $executeCommand, callable $debug): string {
-	if (isset($options['git-base']) && ! empty($options['git-base'])) {
+function getModifiedGitRevisionContentsCommand(string $gitFile, string $git, string $cat, CliOptions $options, callable $executeCommand, callable $debug): string {
+	if ($options->mode === 'git-base'] && ! empty($options->getBase)) {
 		// for git-base mode, we get the contents of the file from the HEAD version of the file in the current branch
 		if (isRunFromGitRoot($git, $executeCommand, $options, $debug)) {
 			return "{$git} show HEAD:" . escapeshellarg($gitFile);
 		}
 		return "{$git} show HEAD:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
-	} else if (isset($options['git-unstaged'])) {
+	} else if ($options->mode === 'git-unstaged') {
 		// for git-unstaged mode, we get the contents of the file from the current working copy
 		return "{$cat} " . escapeshellarg($gitFile);
 	}
@@ -152,11 +153,11 @@ function getModifiedGitRevisionContentsCommand(string $gitFile, string $git, str
 	return "{$git} show :0:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
 }
 
-function getUnmodifiedGitRevisionContentsCommand(string $gitFile, string $git, array $options, callable $executeCommand, callable $debug): string {
-	if (isset($options['git-base']) && ! empty($options['git-base'])) {
+function getUnmodifiedGitRevisionContentsCommand(string $gitFile, string $git, CliOptions $options, callable $executeCommand, callable $debug): string {
+	if ($options->mode === 'git-base' && ! empty($options->gitBase)) {
 		// git-base
-		$rev = escapeshellarg($options['git-base']);
-	} else if (isset($options['git-unstaged'])) {
+		$rev = escapeshellarg($options->gitBase);
+	} else if ($options->mode === 'git-unstaged') {
 		// git-unstaged
 		$rev = ':0'; // :0 in this case means "staged version or HEAD if there is no staged version"
 	} else {
@@ -169,7 +170,7 @@ function getUnmodifiedGitRevisionContentsCommand(string $gitFile, string $git, a
 	return "${git} show {$rev}:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ")";
 }
 
-function getModifiedGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, array $options, callable $debug): string {
+function getModifiedGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, CliOptions $options, callable $debug): string {
 	$fileContents = getModifiedGitRevisionContentsCommand($gitFile, $git, $cat, $options, $executeCommand, $debug);
 	$command = "{$fileContents} | {$git} hash-object --stdin";
 	$debug('running modified file git hash command:', $command);
@@ -181,7 +182,7 @@ function getModifiedGitFileHash(string $gitFile, string $git, string $cat, calla
 	return $hash;
 }
 
-function getUnmodifiedGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, array $options, callable $debug): string {
+function getUnmodifiedGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, CliOptions $options, callable $debug): string {
 	$fileContents = getUnmodifiedGitRevisionContentsCommand($gitFile, $git, $options, $executeCommand, $debug);
 	$command = "{$fileContents} | {$git} hash-object --stdin";
 	$debug('running unmodified file git hash command:', $command);

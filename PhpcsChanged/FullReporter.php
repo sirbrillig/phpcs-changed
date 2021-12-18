@@ -6,10 +6,11 @@ namespace PhpcsChanged;
 use PhpcsChanged\Reporter;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\LintMessage;
+use PhpcsChanged\CliOptions;
 use function PhpcsChanged\Cli\getLongestString;
 
 class FullReporter implements Reporter {
-	public function getFormattedMessages(PhpcsMessages $messages, array $options): string {
+	public function getFormattedMessages(PhpcsMessages $messages, ?CliOptions $options): string {
 		$files = array_unique(array_map(function(LintMessage $message): string {
 			return $message->getFile() ?? 'STDIN';
 		}, $messages->getMessages()));
@@ -30,7 +31,7 @@ class FullReporter implements Reporter {
 		}, $files)));
 	}
 
-	private function getFormattedMessagesForFile(array $messages, string $file, array $options): ?string {
+	private function getFormattedMessagesForFile(array $messages, string $file, ?CliOptions $options): ?string {
 		$lineCount = count($messages);
 		if ($lineCount < 1) {
 			return null;
@@ -52,7 +53,7 @@ class FullReporter implements Reporter {
 
 		$formattedLines = implode("\n", array_map(function(LintMessage $message) use ($longestNumber, $options): string {
 			$source = $message->getSource() ?: 'Unknown';
-			$sourceString = isset($options['s']) ? " ({$source})" : '';
+			$sourceString = !empty($options->showMessageCodes) ? " ({$source})" : '';
 			return sprintf(" %{$longestNumber}d | %s | %s%s", $message->getLineNumber(), $message->getType(), $message->getMessage(), $sourceString);
 		}, $messages));
 

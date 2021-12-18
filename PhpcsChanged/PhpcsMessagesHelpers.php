@@ -40,7 +40,7 @@ class PhpcsMessagesHelpers {
 
 	public static function toPhpcsJson(PhpcsMessages $messages): string {
 		$reporter = new JsonReporter();
-		return $reporter->getFormattedMessages($messages, []);
+		return $reporter->getFormattedMessages($messages, null);
 	}
 
 	public static function fromArrays(array $messages, string $fileName = null): PhpcsMessages {
