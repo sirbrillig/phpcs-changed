@@ -44,7 +44,7 @@ class XmlReporter implements Reporter {
 			return $message->getType() === 'WARNING';
 		})));
 		$fixableCount = count(array_values(array_filter($messages, function(LintMessage $message) {
-			return (bool)$message->getProperty('fixable');
+			return $message->getFixable();
 		})));
 		$xmlOutputForFile = "\t<file name=\"{$file}\" errors=\"{$errorCount}\" warnings=\"{$warningCount}\" fixable=\"{$fixableCount}\">\n";
 		$xmlOutputForFile .= array_reduce($messages, function(string $output, LintMessage  $message): string{
@@ -53,7 +53,7 @@ class XmlReporter implements Reporter {
 			$column = $message->getColumn();
 			$source = $message->getSource();
 			$severity = $message->getSeverity();
-			$fixable = $message->getProperty('fixable') ? "1" : "0";
+			$fixable = $message->getFixable() ? "1" : "0";
 			$messageString = $message->getMessage();
 			$output .= "\t\t<{$type} line=\"{$line}\" column=\"{$column}\" source=\"{$source}\" severity=\"{$severity}\" fixable=\"{$fixable}\">{$messageString}</{$type}>\n";
 			return $output;
