@@ -5,11 +5,12 @@ namespace PhpcsChanged;
 
 use PhpcsChanged\Reporter;
 use PhpcsChanged\PhpcsMessages;
-use PhpcsChanged\PhpcsMessage;
+use PhpcsChanged\PhpcsMessagesHelpers;
+use PhpcsChanged\LintMessage;
 
 class JsonReporter implements Reporter {
 	public function getFormattedMessages(PhpcsMessages $messages, array $options): string { //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
-		$files = array_unique(array_map(function(PhpcsMessage $message): string {
+		$files = array_unique(array_map(function(LintMessage $message): string {
 			return $message->getFile() ?? 'STDIN';
 		}, $messages->getMessages()));
 		if (empty($files)) {
@@ -17,7 +18,7 @@ class JsonReporter implements Reporter {
 		}
 
 		$outputByFile = array_map(function(string $file) use ($messages): array {
-			$messagesForFile = array_values(array_filter($messages->getMessages(), function(PhpcsMessage $message) use ($file): bool {
+			$messagesForFile = array_values(array_filter($messages->getMessages(), function(LintMessage $message) use ($file): bool {
 				return ($message->getFile() ?? 'STDIN') === $file;
 			}));
 			return $this->getFormattedMessagesForFile($messagesForFile, $file);
@@ -30,7 +31,7 @@ class JsonReporter implements Reporter {
 			return $message->getType() === 'WARNING';
 		}));
 		$messages = array_map(function($message) {
-			return $message->toPhpcsArray();
+			return PhpcsMessagesHelpers::messageToPhpcsArray($message);
 		}, $messages->getMessages());
 		$dataForJson = [
 			'totals' => [
@@ -54,8 +55,8 @@ class JsonReporter implements Reporter {
 		$warnings = array_values(array_filter($messages, function($message) {
 			return $message->getType() === 'WARNING';
 		}));
-		$messageArrays = array_map(function(PhpcsMessage $message): array {
-			return $message->toPhpcsArray();
+		$messageArrays = array_map(function(LintMessage $message): array {
+			return PhpcsMessagesHelpers::messageToPhpcsArray($message);
 		}, $messages);
 		$dataForJson = [
 				$file => [

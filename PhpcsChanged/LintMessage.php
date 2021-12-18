@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace PhpcsChanged;
 
-class PhpcsMessage {
+class LintMessage {
 	private $line;
 	private $file;
 	private $type;
@@ -40,10 +40,6 @@ class PhpcsMessage {
 		return $this->otherProperties['source'] ?? '';
 	}
 
-	public function getFixable(): bool {
-		return $this->otherProperties['fixable'] ?? false;
-	}
-
 	public function getColumn(): int {
 		return $this->otherProperties['column'] ?? 0;
 	}
@@ -52,9 +48,18 @@ class PhpcsMessage {
 		return $this->otherProperties['severity'] ?? 5;
 	}
 
-	public function toPhpcsArray(): array {
-		return array_merge([
-			'line' => $this->line,
-		], $this->otherProperties);
+	public function getFixable(): bool {
+		return $this->otherProperties['fixable'] ?? false;
+	}
+
+	/**
+	 * @return string|int|bool|float|null
+	 */
+	public function getProperty( string $key ) {
+		return $this->otherProperties[$key];
+	}
+
+	public function getOtherProperties(): array {
+		return $this->otherProperties;
 	}
 }
