@@ -48,6 +48,10 @@ class LintMessage {
 		return $this->otherProperties['severity'] ?? 5;
 	}
 
+	public function getFixable(): bool {
+		return $this->otherProperties['fixable'] ?? false;
+	}
+
 	/**
 	 * @return string|int|bool|float|null
 	 */
