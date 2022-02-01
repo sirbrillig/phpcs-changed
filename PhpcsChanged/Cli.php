@@ -329,8 +329,11 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 		$isNewFile = isNewGitFile($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
 		$oldFilePhpcsOutput = '';
 		if (! $isNewFile) {
-			$oldFileHash = getOldGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
-			$oldFilePhpcsOutput = isCachingEnabled($options) ? $cache->getCacheForFile($gitFile, 'old', $oldFileHash, $phpcsStandard ?? '') : null;
+			$oldFilePhpcsOutput = null;
+			if (isCachingEnabled($options)) {
+				$oldFileHash = getOldGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
+				$oldFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'old', $oldFileHash, $phpcsStandard ?? '');
+			}
 			if ($oldFilePhpcsOutput) {
 				$debug("Using cache for old file '{$gitFile}' at hash '{$oldFileHash}' with standard '{$phpcsStandard}'");
 			}
@@ -343,8 +346,11 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 			}
 		}
 
-		$newFileHash = getNewGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
-		$newFilePhpcsOutput = isCachingEnabled($options) ? $cache->getCacheForFile($gitFile, 'new', $newFileHash, $phpcsStandard ?? '') : null;
+		$newFilePhpcsOutput = null;
+		if (isCachingEnabled($options)) {
+			$newFileHash = getNewGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
+			$newFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'new', $newFileHash, $phpcsStandard ?? '');
+		}
 		if ($newFilePhpcsOutput) {
 			$debug("Using cache for new file '{$gitFile}' at hash '{$newFileHash}', and standard '{$phpcsStandard}'");
 		}
