@@ -88,7 +88,7 @@ function isNewGitFileRemote(string $gitFile, string $git, callable $executeComma
 }
 
 function isNewGitFileLocal(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
-	$gitStatusCommand = "${git} status --short " . escapeshellarg($gitFile);
+	$gitStatusCommand = "${git} status --porcelain " . escapeshellarg($gitFile);
 	$debug('checking git status of file with command:', $gitStatusCommand);
 	$gitStatusOutput = $executeCommand($gitStatusCommand);
 	$debug('git status output:', $gitStatusOutput);
