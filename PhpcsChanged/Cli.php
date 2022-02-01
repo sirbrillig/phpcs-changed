@@ -331,6 +331,7 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 		$oldFilePhpcsOutput = '';
 		if (! $isNewFile) {
 			$oldFilePhpcsOutput = null;
+			$oldFileHash = '';
 			if (isCachingEnabled($options)) {
 				$oldFileHash = getOldGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
 				$oldFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'old', $oldFileHash, $phpcsStandard ?? '');
@@ -339,7 +340,7 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 				$debug("Using cache for old file '{$gitFile}' at hash '{$oldFileHash}' with standard '{$phpcsStandard}'");
 			}
 			if (! $oldFilePhpcsOutput) {
-				$debugMessage = (isset($oldFileHash)) ? "Not using cache for new file '{$gitFile}' at hash '{$oldFileHash}', and standard '{$phpcsStandard}'" : "Not using cache for new file '{$gitFile}' with standard '{$phpcsStandard}. No hash was calculated.'";
+				$debugMessage = (!empty($oldFileHash)) ? "Not using cache for new file '{$gitFile}' at hash '{$oldFileHash}', and standard '{$phpcsStandard}'" : "Not using cache for new file '{$gitFile}' with standard '{$phpcsStandard}. No hash was calculated.'";
 				$debug($debugMessage);
 				$oldFilePhpcsOutput = getGitBasePhpcsOutput($gitFile, $git, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
 				if (isCachingEnabled($options)) {
@@ -349,6 +350,7 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 		}
 
 		$newFilePhpcsOutput = null;
+		$newFileHash = '';
 		if (isCachingEnabled($options)) {
 			$newFileHash = getNewGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
 			$newFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'new', $newFileHash, $phpcsStandard ?? '');
@@ -357,7 +359,7 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 			$debug("Using cache for new file '{$gitFile}' at hash '{$newFileHash}', and standard '{$phpcsStandard}'");
 		}
 		if (! $newFilePhpcsOutput) {
-			$debugMessage = (isset($newFileHash)) ? "Not using cache for new file '{$gitFile}' at hash '{$newFileHash}', and standard '{$phpcsStandard}'" : "Not using cache for new file '{$gitFile}' with standard '{$phpcsStandard}. No hash was calculated.'";
+			$debugMessage = (!empty($newFileHash)) ? "Not using cache for new file '{$gitFile}' at hash '{$newFileHash}', and standard '{$phpcsStandard}'" : "Not using cache for new file '{$gitFile}' with standard '{$phpcsStandard}. No hash was calculated.'";
 			$debug($debugMessage);
 			$newFilePhpcsOutput = getGitNewPhpcsOutput($gitFile, $git, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
 			if (isCachingEnabled($options)) {
