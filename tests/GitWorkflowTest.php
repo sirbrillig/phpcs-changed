@@ -26,7 +26,7 @@ final class GitWorkflowTest extends TestCase {
 		$gitFile = 'foobar.php';
 		$git = 'git';
 		$executeCommand = function($command) {
-			if (false !== strpos($command, "git status --porelain 'foobar.php'")) {
+			if (false !== strpos($command, "git status --porcelain 'foobar.php'")) {
 				return $this->fixture->getNewFileInfo('foobar.php');
 			}
 		};
