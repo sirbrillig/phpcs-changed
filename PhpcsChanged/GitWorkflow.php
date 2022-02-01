@@ -15,7 +15,7 @@ function validateGitFileExists(string $gitFile, string $git, callable $isReadabl
 	if (! $isReadable($gitFile)) {
 		throw new ShellException("Cannot read file '{$gitFile}'");
 	}
-	$gitStatusCommand = "${git} status --short " . escapeshellarg($gitFile);
+	$gitStatusCommand = "${git} status --porcelain " . escapeshellarg($gitFile);
 	$debug('checking git existence of file with command:', $gitStatusCommand);
 	$gitStatusOutput = $executeCommand($gitStatusCommand);
 	$debug('git status output:', $gitStatusOutput);
