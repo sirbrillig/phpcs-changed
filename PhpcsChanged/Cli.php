@@ -153,6 +153,7 @@ EOF;
 		'--no-cache' => 'Disable caching of phpcs output (does not remove existing cache).',
 		'--clear-cache' => 'Clear the cache before running.',
 		'-i' => 'Show a list of installed coding standards',
+		'--arc-lint' => 'The command is being run from within the "arc lint" command. Employ some performance improvements.',
 	], "	");
 	echo <<<EOF
 Overrides:
@@ -324,7 +325,7 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 	$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
 
 	try {
-		validateGitFileExists($gitFile, $git, [$shell, 'isReadable'], [$shell, 'executeCommand'], $debug);
+		validateGitFileExists($gitFile, $git, [$shell, 'isReadable'], [$shell, 'executeCommand'], $debug, $options);
 		$unifiedDiff = getGitUnifiedDiff($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
 		$isNewFile = isNewGitFile($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
 		$oldFilePhpcsOutput = '';

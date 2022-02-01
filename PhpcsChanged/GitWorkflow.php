@@ -7,7 +7,11 @@ namespace PhpcsChanged\GitWorkflow;
 use PhpcsChanged\NoChangesException;
 use PhpcsChanged\ShellException;
 
-function validateGitFileExists(string $gitFile, string $git, callable $isReadable, callable $executeCommand, callable $debug): void {
+function validateGitFileExists(string $gitFile, string $git, callable $isReadable, callable $executeCommand, callable $debug, array $options): void {
+	if (isset($options['arc-lint'])) {
+		$debug('Skipping Git file exists check, as it has been performed by arc-lint already.');
+		return;
+	}
 	if (! $isReadable($gitFile)) {
 		throw new ShellException("Cannot read file '{$gitFile}'");
 	}
