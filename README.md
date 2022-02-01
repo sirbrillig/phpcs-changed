@@ -112,6 +112,8 @@ The `--no-cache` option will disable the cache if it's been enabled. (This may a
 
 The `--clear-cache` option will clear the cache before running. This works with or without caching enabled.
 
+THE `--arc-lint` option can be used when the phpcs-changed is run via arcanist, as it skips some checks, which are performed by arcanist itself. It leads to better performance when used with arcanist.
+
 ## PHP Library
 
 🐘🐘🐘
