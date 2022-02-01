@@ -46,6 +46,7 @@ $options = getopt(
 		'cache',
 		'no-cache',
 		'clear-cache',
+		'arc-lint',
 	],
 	$optind
 );
