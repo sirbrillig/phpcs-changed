@@ -279,7 +279,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		$unifiedDiff = '';
 		$oldFilePhpcsOutput = '';
 		$newFilePhpcsOutput = '';
-		$newFilePhpcsMessages = [];
+		$newFilePhpcsMessages = PhpcsMessages::fromArrays([]);
 	} catch( \Exception $err ) {
 		$shell->printError($err->getMessage());
 		$shell->exitWithCode(1);
@@ -392,7 +392,7 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 		$unifiedDiff = '';
 		$oldFilePhpcsOutput = '';
 		$newFilePhpcsOutput = '';
-		$newFilePhpcsMessages = [];
+		$newFilePhpcsMessages = PhpcsMessages::fromArrays([]);
 	} catch(\Exception $err) {
 		$shell->printError($err->getMessage());
 		$shell->exitWithCode(1);
