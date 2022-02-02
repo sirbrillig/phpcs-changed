@@ -238,21 +238,6 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		$revisionId = getSvnRevisionId($svnFileInfo);
 		$isNewFile = isNewSvnFile($svnFileInfo);
 
-		$oldFilePhpcsOutput = '';
-		if ( ! $isNewFile ) {
-			$oldFilePhpcsOutput = isCachingEnabled($options) ? $cache->getCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '') : null;
-			if ($oldFilePhpcsOutput) {
-				$debug("Using cache for old file '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
-			}
-			if (! $oldFilePhpcsOutput) {
-				$debug("Not using cache for old file '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
-				$oldFilePhpcsOutput = getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
-				if (isCachingEnabled($options)) {
-					$cache->setCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '', $oldFilePhpcsOutput);
-				}
-			}
-		}
-
 		$newFileHash = $shell->getFileHash($svnFile);
 		$newFilePhpcsOutput = isCachingEnabled($options) ? $cache->getCacheForFile($svnFile, 'new', $newFileHash, $phpcsStandard ?? '') : null;
 		if ($newFilePhpcsOutput) {
@@ -265,11 +250,36 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 				$cache->setCacheForFile($svnFile, 'new', $newFileHash, $phpcsStandard ?? '', $newFilePhpcsOutput);
 			}
 		}
+		$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
+		$newFilePhpcsMessages = PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput, $fileName);
+		$hasNewFilePhpcsIssues = !empty($newFilePhpcsMessages->getMessages());
+
+		$oldFilePhpcsOutput = '';
+		if ( ! $isNewFile && $hasNewFilePhpcsIssues) {
+			$oldFilePhpcsOutput = isCachingEnabled($options) ? $cache->getCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '') : null;
+			if ($oldFilePhpcsOutput) {
+				$debug("Using cache for old file '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
+			}
+			if (! $oldFilePhpcsOutput) {
+				$debug("Not using cache for old file '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
+				$oldFilePhpcsOutput = getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+				if (isCachingEnabled($options)) {
+					$cache->setCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '', $oldFilePhpcsOutput);
+				}
+			}
+		} else {
+			if ($isNewFile) {
+				$debug('Skipping the linting of the orig file version as it is a new file.');
+			} else {
+				$debug('Skipping the linting of the orig file version as the new version of the file contains no lint errors.');
+			}
+		}
 	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());
 		$unifiedDiff = '';
 		$oldFilePhpcsOutput = '';
 		$newFilePhpcsOutput = '';
+		$newFilePhpcsMessages = [];
 	} catch( \Exception $err ) {
 		$shell->printError($err->getMessage());
 		$shell->exitWithCode(1);
@@ -277,11 +287,11 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 	}
 
 	$debug('processing data...');
-	$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
+	$fileName = $fileName ?? DiffLineMap::getFileNameFromDiff($unifiedDiff);
 	return getNewPhpcsMessages(
 		$unifiedDiff,
 		PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput, $fileName),
-		PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput, $fileName)
+		$newFilePhpcsMessages
 	);
 }
 
