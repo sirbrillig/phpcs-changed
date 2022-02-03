@@ -278,8 +278,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		$debug($err->getMessage());
 		$unifiedDiff = '';
 		$oldFilePhpcsOutput = '';
-		$newFilePhpcsOutput = '';
-		$newFilePhpcsMessages = PhpcsMessages::fromArrays([]);
+		$newFilePhpcsMessages = PhpcsMessages::fromPhpcsJson('');
 	} catch( \Exception $err ) {
 		$shell->printError($err->getMessage());
 		$shell->exitWithCode(1);
@@ -391,8 +390,7 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 		$debug($err->getMessage());
 		$unifiedDiff = '';
 		$oldFilePhpcsOutput = '';
-		$newFilePhpcsOutput = '';
-		$newFilePhpcsMessages = PhpcsMessages::fromArrays([]);
+		$newFilePhpcsMessages = PhpcsMessages::fromPhpcsJson('');
 	} catch(\Exception $err) {
 		$shell->printError($err->getMessage());
 		$shell->exitWithCode(1);
