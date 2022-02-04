@@ -156,6 +156,7 @@ EOF;
 		'--arc-lint' => 'The command is being run from within the "arc lint" command. Employ some performance improvements.',
 		'--always-exit-zero' => 'Always exit the script with a 0 return code. Otherwise, a 1 return code indicates phpcs messages.',
 		'--no-cache-git-root' => 'Prevent caching the git root used by the git workflow.',
+		'--no-verify-git-file' => 'Prevent checking if a file is tracked by git in the git workflow.',
 	], "	");
 	echo <<<EOF
 Overrides:
