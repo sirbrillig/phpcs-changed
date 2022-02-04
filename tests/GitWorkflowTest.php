@@ -225,6 +225,7 @@ final class GitWorkflowTest extends TestCase {
 		$shell->registerCommand("git status --porcelain 'foobar.php'", '');
 		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'foobar.php')", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
 		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php')", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
 		$options = [];
 		$cache = new CacheManager( new TestCache() );
 		$expected = PhpcsMessages::fromArrays([], '/dev/null');
