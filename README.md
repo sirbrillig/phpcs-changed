@@ -116,6 +116,8 @@ The `--always-exit-zero` option will make sure the run will always exit with `0`
 
 THE `--arc-lint` option can be used when the phpcs-changed is run via arcanist, as it skips some checks, which are performed by arcanist itself. It leads to better performance when used with arcanist.
 
+The `--no-cache-git-root` option will prevent caching the check used by the git workflow to determine the git root within a single execution. This is probably only useful for automated tests.
+
 ## PHP Library
 
 🐘🐘🐘
