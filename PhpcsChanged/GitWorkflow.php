@@ -165,8 +165,6 @@ function getOldGitRevisionContentsCommand(string $gitFile, string $git, array $o
 	return "${git} show {$rev}:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ")";
 }
 
-
-
 function getNewGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, array $options, callable $debug): string {
 	$fileContents = getNewGitRevisionContentsCommand($gitFile, $git, $cat, $options, $executeCommand, $debug);
 	$command = "{$fileContents} | {$git} hash-object --stdin";

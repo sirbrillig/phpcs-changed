@@ -86,4 +86,9 @@ class TestShell implements ShellOperator {
 	public function wasCommandCalled(string $registeredCommand): bool {
 		return isset($this->commandsCalled[$registeredCommand]);
 	}
+
+	public function getFileNameFromPath(string $path): string {
+		$parts = explode('/', $path);
+		return end($parts);
+	}
 }

@@ -89,11 +89,9 @@ final class GitWorkflowTest extends TestCase {
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
-	public function testFullGitWorkflowForOneFileUnstagedLintOnlyPhpcsNewFile() {
+	public function testFullGitWorkflowForOneChangedFileWithoutPhpcsMessagesLintsOnlyNewFile() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
-		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
-		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
 		$shell->registerCommand("cat 'foobar.php' | phpcs", $this->phpcs->getEmptyResults()->toPhpcsJson());
 
@@ -106,6 +104,7 @@ final class GitWorkflowTest extends TestCase {
 		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
 
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("git diff --no-prefix 'foobar.php'"));
 		$this->assertFalse($shell->wasCommandCalled("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs"));
 	}
 

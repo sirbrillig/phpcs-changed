@@ -41,4 +41,9 @@ class UnixShell implements ShellOperator {
 	public function printError(string $output): void {
 		printError($output);
 	}
+
+	public function getFileNameFromPath(string $path): string {
+		$parts = explode('/', $path);
+		return end($parts);
+	}
 }
