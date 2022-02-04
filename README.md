@@ -112,6 +112,8 @@ The `--no-cache` option will disable the cache if it's been enabled. (This may a
 
 The `--clear-cache` option will clear the cache before running. This works with or without caching enabled.
 
+The `--always-exit-zero` option will make sure the run will always exit with `0` return code, no matter if there are lint issues or not. When not set, `1` is returned in case there are some lint issues, `0` if no lint issues were found. The flag makes the phpcs-changed working with other scripts which could detect `1` as failure in the script run (eg.: arcanist). 
+
 THE `--arc-lint` option can be used when the phpcs-changed is run via arcanist, as it skips some checks, which are performed by arcanist itself. It leads to better performance when used with arcanist.
 
 ## PHP Library

@@ -385,7 +385,7 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 function reportMessagesAndExit(PhpcsMessages $messages, string $reportType, array $options): void {
 	$reporter = getReporter($reportType);
 	echo $reporter->getFormattedMessages($messages, $options);
-	if ( isset($options['arc-lint']) ) {
+	if ( isset($options['always-exit-zero']) ) {
 		exit(0);
 	}
 	exit($reporter->getExitCode($messages));
