@@ -238,21 +238,6 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		$revisionId = getSvnRevisionId($svnFileInfo);
 		$isNewFile = isNewSvnFile($svnFileInfo);
 
-		$oldFilePhpcsOutput = '';
-		if ( ! $isNewFile ) {
-			$oldFilePhpcsOutput = isCachingEnabled($options) ? $cache->getCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '') : null;
-			if ($oldFilePhpcsOutput) {
-				$debug("Using cache for old file '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
-			}
-			if (! $oldFilePhpcsOutput) {
-				$debug("Not using cache for old file '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
-				$oldFilePhpcsOutput = getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
-				if (isCachingEnabled($options)) {
-					$cache->setCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '', $oldFilePhpcsOutput);
-				}
-			}
-		}
-
 		$newFileHash = $shell->getFileHash($svnFile);
 		$newFilePhpcsOutput = isCachingEnabled($options) ? $cache->getCacheForFile($svnFile, 'new', $newFileHash, $phpcsStandard ?? '') : null;
 		if ($newFilePhpcsOutput) {
@@ -265,11 +250,35 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 				$cache->setCacheForFile($svnFile, 'new', $newFileHash, $phpcsStandard ?? '', $newFilePhpcsOutput);
 			}
 		}
+		$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
+		$newFilePhpcsMessages = PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput, $fileName);
+		$hasNewFilePhpcsIssues = !empty($newFilePhpcsMessages->getMessages());
+
+		$oldFilePhpcsOutput = '';
+		if ( ! $isNewFile && $hasNewFilePhpcsIssues) {
+			$oldFilePhpcsOutput = isCachingEnabled($options) ? $cache->getCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '') : null;
+			if ($oldFilePhpcsOutput) {
+				$debug("Using cache for old file '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
+			}
+			if (! $oldFilePhpcsOutput) {
+				$debug("Not using cache for old file '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
+				$oldFilePhpcsOutput = getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+				if (isCachingEnabled($options)) {
+					$cache->setCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '', $oldFilePhpcsOutput);
+				}
+			}
+		} else {
+			if ($isNewFile) {
+				$debug('Skipping the linting of the orig file version as it is a new file.');
+			} else {
+				$debug('Skipping the linting of the orig file version as the new version of the file contains no lint errors.');
+			}
+		}
 	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());
 		$unifiedDiff = '';
 		$oldFilePhpcsOutput = '';
-		$newFilePhpcsOutput = '';
+		$newFilePhpcsMessages = PhpcsMessages::fromPhpcsJson('');
 	} catch( \Exception $err ) {
 		$shell->printError($err->getMessage());
 		$shell->exitWithCode(1);
@@ -277,11 +286,11 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 	}
 
 	$debug('processing data...');
-	$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
+	$fileName = $fileName ?? DiffLineMap::getFileNameFromDiff($unifiedDiff);
 	return getNewPhpcsMessages(
 		$unifiedDiff,
 		PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput, $fileName),
-		PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput, $fileName)
+		$newFilePhpcsMessages
 	);
 }
 
@@ -328,26 +337,6 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 		validateGitFileExists($gitFile, $git, [$shell, 'isReadable'], [$shell, 'executeCommand'], $debug, $options);
 		$unifiedDiff = getGitUnifiedDiff($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
 		$isNewFile = isNewGitFile($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
-		$oldFilePhpcsOutput = '';
-		if (! $isNewFile) {
-			$oldFilePhpcsOutput = null;
-			$oldFileHash = '';
-			if (isCachingEnabled($options)) {
-				$oldFileHash = getOldGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
-				$oldFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'old', $oldFileHash, $phpcsStandard ?? '');
-			}
-			if ($oldFilePhpcsOutput) {
-				$debug("Using cache for old file '{$gitFile}' at hash '{$oldFileHash}' with standard '{$phpcsStandard}'");
-			}
-			if (! $oldFilePhpcsOutput) {
-				$debugMessage = (!empty($oldFileHash)) ? "Not using cache for new file '{$gitFile}' at hash '{$oldFileHash}', and standard '{$phpcsStandard}'" : "Not using cache for new file '{$gitFile}' with standard '{$phpcsStandard}'. No hash was calculated.";
-				$debug($debugMessage);
-				$oldFilePhpcsOutput = getGitBasePhpcsOutput($gitFile, $git, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
-				if (isCachingEnabled($options)) {
-					$cache->setCacheForFile($gitFile, 'old', $oldFileHash, $phpcsStandard ?? '', $oldFilePhpcsOutput);
-				}
-			}
-		}
 
 		$newFilePhpcsOutput = null;
 		$newFileHash = '';
@@ -366,11 +355,42 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 				$cache->setCacheForFile($gitFile, 'new', $newFileHash, $phpcsStandard ?? '', $newFilePhpcsOutput);
 			}
 		}
+		$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
+		$newFilePhpcsMessages = PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput, $fileName);
+		$hasNewFilePhpcsIssues = !empty($newFilePhpcsMessages->getMessages());
+
+		$oldFilePhpcsOutput = '';
+		if (! $isNewFile && $hasNewFilePhpcsIssues) {
+			$debug('Checking the orig file version for PHPCS issues since the file is not new and contains some linting issues.');
+			$oldFilePhpcsOutput = null;
+			$oldFileHash = '';
+			if (isCachingEnabled($options)) {
+				$oldFileHash = getOldGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
+				$oldFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'old', $oldFileHash, $phpcsStandard ?? '');
+			}
+			if ($oldFilePhpcsOutput) {
+				$debug("Using cache for old file '{$gitFile}' at hash '{$oldFileHash}' with standard '{$phpcsStandard}'");
+			}
+			if (! $oldFilePhpcsOutput) {
+				$debugMessage = (!empty($oldFileHash)) ? "Not using cache for new file '{$gitFile}' at hash '{$oldFileHash}', and standard '{$phpcsStandard}'" : "Not using cache for new file '{$gitFile}' with standard '{$phpcsStandard}'. No hash was calculated.";
+				$debug($debugMessage);
+				$oldFilePhpcsOutput = getGitBasePhpcsOutput($gitFile, $git, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
+				if (isCachingEnabled($options)) {
+					$cache->setCacheForFile($gitFile, 'old', $oldFileHash, $phpcsStandard ?? '', $oldFilePhpcsOutput);
+				}
+			}
+		} else {
+			if ($isNewFile) {
+				$debug('Skipping the linting of the orig file version as it is a new file.');
+			} else {
+				$debug('Skipping the linting of the orig file version as the new version of the file contains no lint errors.');
+			}
+		}
 	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());
 		$unifiedDiff = '';
 		$oldFilePhpcsOutput = '';
-		$newFilePhpcsOutput = '';
+		$newFilePhpcsMessages = PhpcsMessages::fromPhpcsJson('');
 	} catch(\Exception $err) {
 		$shell->printError($err->getMessage());
 		$shell->exitWithCode(1);
@@ -378,8 +398,8 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 	}
 
 	$debug('processing data...');
-	$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
-	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput, $fileName), PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput, $fileName));
+	$fileName = $fileName ?? DiffLineMap::getFileNameFromDiff($unifiedDiff);
+	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput, $fileName), $newFilePhpcsMessages);
 }
 
 function reportMessagesAndExit(PhpcsMessages $messages, string $reportType, array $options): void {
