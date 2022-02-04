@@ -92,7 +92,7 @@ function isNewGitFileLocal(string $gitFile, string $git, callable $executeComman
 	$gitStatusOutput = $executeCommand($gitStatusCommand);
 	$debug('git status output:', $gitStatusOutput);
 	if (! $gitStatusOutput || false === strpos($gitStatusOutput, $gitFile)) {
-		throw new ShellException("Cannot get git status for file '{$gitFile}'");
+		return false;
 	}
 	if (isset($gitStatusOutput[0]) && $gitStatusOutput[0] === '?') {
 		throw new ShellException("File does not appear to be tracked by git: '{$gitFile}'");
