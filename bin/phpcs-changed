@@ -47,7 +47,9 @@ $options = getopt(
 		'no-cache',
 		'clear-cache',
 		'arc-lint',
-		'always-exit-zero'
+		'always-exit-zero',
+		'no-cache-git-root',
+		'no-verify-git-file',
 	],
 	$optind
 );
@@ -89,10 +91,16 @@ if (isset($options['i'])) {
 	printInstalledCodingStandards();
 }
 
-// --git-branch exists for compatibility, --git-bases supports branches
+// --git-branch exists for compatibility, --git-base supports branches
 if (isset($options['git-branch'])) {
 	$options['git-base'] = $options['git-branch'];
 	unset($options['git-branch']);
+}
+
+// --arc-lint is a shorthand for several other options
+if (isset($options['arc-lint'])) {
+	$options['no-verify-git-file'] = 1;
+	$options['always-exit-zero'] = 1;
 }
 
 $debug = getDebug(isset($options['debug']));

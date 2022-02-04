@@ -7,8 +7,8 @@ use PhpcsChanged\NoChangesException;
 use PhpcsChanged\ShellException;
 
 function validateGitFileExists(string $gitFile, string $git, callable $isReadable, callable $executeCommand, callable $debug, array $options): void {
-	if (isset($options['arc-lint'])) {
-		$debug('Skipping Git file exists check, as it has been performed by arc-lint already.');
+	if (isset($options['no-verify-git-file'])) {
+		$debug('skipping Git file exists check.');
 		return;
 	}
 	if (! $isReadable($gitFile)) {
