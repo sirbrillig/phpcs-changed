@@ -270,7 +270,7 @@ final class GitWorkflowTest extends TestCase {
 		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
 		$options = [];
 		$cache = new CacheManager( new TestCache() );
-		$expected = $this->phpcs->getResults('bin/foobar.php', [5, 6], 'Found unused symbol Foobar.');
+		$expected = $this->phpcs->getResults('foobar.php', [5, 6], 'Found unused symbol Foobar.');
 		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
