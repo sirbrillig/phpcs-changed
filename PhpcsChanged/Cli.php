@@ -154,6 +154,7 @@ EOF;
 		'--clear-cache' => 'Clear the cache before running.',
 		'-i' => 'Show a list of installed coding standards',
 		'--arc-lint' => 'The command is being run from within the "arc lint" command. Employ some performance improvements.',
+		'--always-exit-zero' => 'Always exit the script with a 0 return code. Otherwise, a 1 return code indicates phpcs messages.',
 		'--no-cache-git-root' => 'Prevent caching the git root used by the git workflow.',
 	], "	");
 	echo <<<EOF
