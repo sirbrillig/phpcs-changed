@@ -101,6 +101,7 @@ if (isset($options['git-branch'])) {
 if (isset($options['arc-lint'])) {
 	$options['no-verify-git-file'] = 1;
 	$options['always-exit-zero'] = 1;
+	unset($options['arc-lint']);
 }
 
 $debug = getDebug(isset($options['debug']));
