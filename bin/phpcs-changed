@@ -112,12 +112,12 @@ function run(array $options, array $fileNamesExpanded, callable $debug): void {
 	$debug('Options: ' . json_encode($options));
 	$reportType = $options['report'] ?? 'full';
 	$diffFile = $options['diff'] ?? null;
-	$phpcsOldFile = $options['phpcs-orig'] ?? null;
-	$phpcsNewFile = $options['phpcs-new'] ?? null;
+	$phpcsPreviousFile = $options['phpcs-orig'] ?? null;
+	$phpcsChangedFile = $options['phpcs-new'] ?? null;
 
-	if ($diffFile && $phpcsOldFile && $phpcsNewFile) {
+	if ($diffFile && $phpcsPreviousFile && $phpcsChangedFile) {
 		reportMessagesAndExit(
-			runManualWorkflow($diffFile, $phpcsOldFile, $phpcsNewFile),
+			runManualWorkflow($diffFile, $phpcsPreviousFile, $phpcsChangedFile),
 			$reportType,
 			$options
 		);
