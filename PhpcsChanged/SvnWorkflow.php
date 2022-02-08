@@ -42,7 +42,7 @@ function getSvnRevisionId(string $svnFileInfo): string {
 	return $version;
 }
 
-function getSvnBasePhpcsOutput(string $svnFile, string $svn, string $phpcs, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
+function getSvnPreviousPhpcsOutput(string $svnFile, string $svn, string $phpcs, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
 	$previousFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($svnFile) . ' -';
 	$debug('running previous file phpcs command:', $previousFilePhpcsOutputCommand);
 	$previousFilePhpcsOutput = $executeCommand($previousFilePhpcsOutputCommand);
@@ -53,7 +53,7 @@ function getSvnBasePhpcsOutput(string $svnFile, string $svn, string $phpcs, stri
 	return $previousFilePhpcsOutput;
 }
 
-function getSvnNewPhpcsOutput(string $svnFile, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
+function getSvnChangedPhpcsOutput(string $svnFile, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
 	$changedFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($svnFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($svnFile) . ' -';
 	$debug('running changed file phpcs command:', $changedFilePhpcsOutputCommand);
 	$changedFilePhpcsOutput = $executeCommand($changedFilePhpcsOutputCommand);

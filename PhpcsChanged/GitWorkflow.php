@@ -103,8 +103,8 @@ function isNewGitFileLocal(string $gitFile, string $git, callable $executeComman
 	return isset($gitStatusOutput[0]) && $gitStatusOutput[0] === 'A';
 }
 
-function getGitBasePhpcsOutput(string $gitFile, string $git, string $phpcs, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
-	$previousFileContents = getOldGitRevisionContentsCommand($gitFile, $git, $options, $executeCommand, $debug);
+function getGitPreviousPhpcsOutput(string $gitFile, string $git, string $phpcs, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
+	$previousFileContents = getPerviousGitRevisionContentsCommand($gitFile, $git, $options, $executeCommand, $debug);
 
 	$previousFilePhpcsOutputCommand = "{$previousFileContents} | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) . ' -';
 	$debug('running previous file phpcs command:', $previousFilePhpcsOutputCommand);
@@ -116,8 +116,8 @@ function getGitBasePhpcsOutput(string $gitFile, string $git, string $phpcs, stri
 	return $previousFilePhpcsOutput;
 }
 
-function getGitNewPhpcsOutput(string $gitFile, string $git, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
-	$changedFileContents = getNewGitRevisionContentsCommand($gitFile, $git, $cat, $options, $executeCommand, $debug);
+function getGitChangedPhpcsOutput(string $gitFile, string $git, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
+	$changedFileContents = getChangedGitRevisionContentsCommand($gitFile, $git, $cat, $options, $executeCommand, $debug);
 
 	$changedFilePhpcsOutputCommand = "{$changedFileContents} | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) .' -';
 	$debug('running changed file phpcs command:', $changedFilePhpcsOutputCommand);
@@ -133,7 +133,7 @@ function getGitNewPhpcsOutput(string $gitFile, string $git, string $phpcs, strin
 	return $changedFilePhpcsOutput;
 }
 
-function getNewGitRevisionContentsCommand(string $gitFile, string $git, string $cat, array $options, callable $executeCommand, callable $debug): string {
+function getChangedGitRevisionContentsCommand(string $gitFile, string $git, string $cat, array $options, callable $executeCommand, callable $debug): string {
 	if (isset($options['git-base']) && ! empty($options['git-base'])) {
 		// for git-base mode, we get the contents of the file from the HEAD version of the file in the current branch
 		if (isRunFromGitRoot($git, $executeCommand, $options, $debug)) {
@@ -151,7 +151,7 @@ function getNewGitRevisionContentsCommand(string $gitFile, string $git, string $
 	return "{$git} show :0:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
 }
 
-function getOldGitRevisionContentsCommand(string $gitFile, string $git, array $options, callable $executeCommand, callable $debug): string {
+function getPerviousGitRevisionContentsCommand(string $gitFile, string $git, array $options, callable $executeCommand, callable $debug): string {
 	if (isset($options['git-base']) && ! empty($options['git-base'])) {
 		// git-base
 		$rev = escapeshellarg($options['git-base']);
@@ -168,8 +168,8 @@ function getOldGitRevisionContentsCommand(string $gitFile, string $git, array $o
 	return "${git} show {$rev}:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ")";
 }
 
-function getNewGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, array $options, callable $debug): string {
-	$fileContents = getNewGitRevisionContentsCommand($gitFile, $git, $cat, $options, $executeCommand, $debug);
+function getChangedGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, array $options, callable $debug): string {
+	$fileContents = getChangedGitRevisionContentsCommand($gitFile, $git, $cat, $options, $executeCommand, $debug);
 	$command = "{$fileContents} | {$git} hash-object --stdin";
 	$debug('running changed file git hash command:', $command);
 	$hash = $executeCommand($command);
@@ -180,8 +180,8 @@ function getNewGitFileHash(string $gitFile, string $git, string $cat, callable $
 	return $hash;
 }
 
-function getOldGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, array $options, callable $debug): string {
-	$fileContents = getOldGitRevisionContentsCommand($gitFile, $git, $options, $executeCommand, $debug);
+function getPreviousGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, array $options, callable $debug): string {
+	$fileContents = getPerviousGitRevisionContentsCommand($gitFile, $git, $options, $executeCommand, $debug);
 	$command = "{$fileContents} | {$git} hash-object --stdin";
 	$debug('running previous file git hash command:', $command);
 	$hash = $executeCommand($command);

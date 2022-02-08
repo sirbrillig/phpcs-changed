@@ -15,8 +15,8 @@ use PhpcsChanged\UnixShell;
 use PhpcsChanged\XmlReporter;
 use PhpcsChanged\CacheManager;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
-use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, getSvnFileInfo, isNewSvnFile, getSvnBasePhpcsOutput, getSvnNewPhpcsOutput, getSvnRevisionId};
-use function PhpcsChanged\GitWorkflow\{getGitMergeBase, getGitUnifiedDiff, isNewGitFile, getGitBasePhpcsOutput, getGitNewPhpcsOutput, validateGitFileExists, getNewGitFileHash, getOldGitFileHash};
+use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, getSvnFileInfo, isNewSvnFile, getSvnPreviousPhpcsOutput, getSvnChangedPhpcsOutput, getSvnRevisionId};
+use function PhpcsChanged\GitWorkflow\{getGitMergeBase, getGitUnifiedDiff, isNewGitFile, getGitPreviousPhpcsOutput, getGitChangedPhpcsOutput, validateGitFileExists, getChangedGitFileHash, getPreviousGitFileHash};
 
 function getDebug(bool $debugEnabled): callable {
 	return function(...$outputs) use ($debugEnabled) {
@@ -248,7 +248,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		}
 		if (! $changedFilePhpcsOutput) {
 			$debug("Not using cache for changed file '{$svnFile}', hash '{$changedFileHash}', and standard '{$phpcsStandard}'");
-			$changedFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+			$changedFilePhpcsOutput = getSvnChangedPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
 			if (isCachingEnabled($options)) {
 				$cache->setCacheForFile($svnFile, 'new', $changedFileHash, $phpcsStandard ?? '', $changedFilePhpcsOutput);
 			}
@@ -278,7 +278,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 			}
 			if (! $previousFilePhpcsOutput) {
 				$debug("Not using cache for previous file '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
-				$previousFilePhpcsOutput = getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+				$previousFilePhpcsOutput = getSvnPreviousPhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
 				if (isCachingEnabled($options)) {
 					$cache->setCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '', $previousFilePhpcsOutput);
 				}
@@ -349,7 +349,7 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 		$changedFilePhpcsOutput = null;
 		$changedFileHash = '';
 		if (isCachingEnabled($options)) {
-			$changedFileHash = getNewGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
+			$changedFileHash = getChangedGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
 			$changedFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'new', $changedFileHash, $phpcsStandard ?? '');
 		}
 		if ($changedFilePhpcsOutput) {
@@ -358,7 +358,7 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 		if (! $changedFilePhpcsOutput) {
 			$debugMessage = (!empty($changedFileHash)) ? "Not using cache for changed file '{$gitFile}' at hash '{$changedFileHash}', and standard '{$phpcsStandard}'" : "Not using cache for changed file '{$gitFile}' with standard '{$phpcsStandard}'. No hash was calculated.";
 			$debug($debugMessage);
-			$changedFilePhpcsOutput = getGitNewPhpcsOutput($gitFile, $git, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
+			$changedFilePhpcsOutput = getGitChangedPhpcsOutput($gitFile, $git, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
 			if (isCachingEnabled($options)) {
 				$cache->setCacheForFile($gitFile, 'new', $changedFileHash, $phpcsStandard ?? '', $changedFilePhpcsOutput);
 			}
@@ -384,7 +384,7 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 			$previousFilePhpcsOutput = null;
 			$previousFileHash = '';
 			if (isCachingEnabled($options)) {
-				$previousFileHash = getOldGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
+				$previousFileHash = getPreviousGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
 				$previousFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'old', $previousFileHash, $phpcsStandard ?? '');
 			}
 			if ($previousFilePhpcsOutput) {
@@ -393,7 +393,7 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 			if (! $previousFilePhpcsOutput) {
 				$debugMessage = (!empty($previousFileHash)) ? "Not using cache for changed file '{$gitFile}' at hash '{$previousFileHash}', and standard '{$phpcsStandard}'" : "Not using cache for changed file '{$gitFile}' with standard '{$phpcsStandard}'. No hash was calculated.";
 				$debug($debugMessage);
-				$previousFilePhpcsOutput = getGitBasePhpcsOutput($gitFile, $git, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
+				$previousFilePhpcsOutput = getGitPreviousPhpcsOutput($gitFile, $git, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
 				if (isCachingEnabled($options)) {
 					$cache->setCacheForFile($gitFile, 'old', $previousFileHash, $phpcsStandard ?? '', $previousFilePhpcsOutput);
 				}
