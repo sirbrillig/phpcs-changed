@@ -43,27 +43,27 @@ function getSvnRevisionId(string $svnFileInfo): string {
 }
 
 function getSvnBasePhpcsOutput(string $svnFile, string $svn, string $phpcs, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
-	$oldFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($svnFile) . ' -';
-	$debug('running orig phpcs command:', $oldFilePhpcsOutputCommand);
-	$oldFilePhpcsOutput = $executeCommand($oldFilePhpcsOutputCommand);
-	if (! $oldFilePhpcsOutput) {
-		throw new ShellException("Cannot get old phpcs output for file '{$svnFile}'");
+	$previousFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($svnFile) . ' -';
+	$debug('running previous file phpcs command:', $previousFilePhpcsOutputCommand);
+	$previousFilePhpcsOutput = $executeCommand($previousFilePhpcsOutputCommand);
+	if (! $previousFilePhpcsOutput) {
+		throw new ShellException("Cannot get previous file phpcs output for file '{$svnFile}'");
 	}
-	$debug('orig phpcs command output:', $oldFilePhpcsOutput);
-	return $oldFilePhpcsOutput;
+	$debug('previous file phpcs command output:', $previousFilePhpcsOutput);
+	return $previousFilePhpcsOutput;
 }
 
 function getSvnNewPhpcsOutput(string $svnFile, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
-	$newFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($svnFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($svnFile) . ' -';
-	$debug('running new phpcs command:', $newFilePhpcsOutputCommand);
-	$newFilePhpcsOutput = $executeCommand($newFilePhpcsOutputCommand);
-	if (! $newFilePhpcsOutput) {
-		throw new ShellException("Cannot get new phpcs output for file '{$svnFile}'");
+	$changedFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($svnFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($svnFile) . ' -';
+	$debug('running changed file phpcs command:', $changedFilePhpcsOutputCommand);
+	$changedFilePhpcsOutput = $executeCommand($changedFilePhpcsOutputCommand);
+	if (! $changedFilePhpcsOutput) {
+		throw new ShellException("Cannot get changed file phpcs output for file '{$svnFile}'");
 	}
-	$debug('new phpcs command output:', $newFilePhpcsOutput);
-	if (false !== strpos($newFilePhpcsOutput, 'You must supply at least one file or directory to process')) {
-		$debug('phpcs output implies file is empty');
+	$debug('changed file phpcs command output:', $changedFilePhpcsOutput);
+	if (false !== strpos($changedFilePhpcsOutput, 'You must supply at least one file or directory to process')) {
+		$debug('phpcs output implies changed file is empty');
 		return '';
 	}
-	return $newFilePhpcsOutput;
+	return $changedFilePhpcsOutput;
 }
