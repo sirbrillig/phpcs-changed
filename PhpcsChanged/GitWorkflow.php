@@ -7,8 +7,8 @@ use PhpcsChanged\NoChangesException;
 use PhpcsChanged\ShellException;
 
 function validateGitFileExists(string $gitFile, string $git, callable $isReadable, callable $executeCommand, callable $debug, array $options): void {
-	if (isset($options['arc-lint'])) {
-		$debug('Skipping Git file exists check, as it has been performed by arc-lint already.');
+	if (isset($options['no-verify-git-file'])) {
+		$debug('skipping Git file exists check.');
 		return;
 	}
 	if (! $isReadable($gitFile)) {
@@ -23,8 +23,11 @@ function validateGitFileExists(string $gitFile, string $git, callable $isReadabl
 	}
 }
 
-function isRunFromGitRoot( string $git, callable $executeCommand, callable $debug ): bool {
+function isRunFromGitRoot(string $git, callable $executeCommand, array $options, callable $debug): bool {
 	static $isRunFromGitRoot;
+	if (isset($options['no-cache-git-root'])) {
+		$isRunFromGitRoot = null;
+	}
 	if (null !== $isRunFromGitRoot) {
 		return $isRunFromGitRoot;
 	}
@@ -92,7 +95,7 @@ function isNewGitFileLocal(string $gitFile, string $git, callable $executeComman
 	$gitStatusOutput = $executeCommand($gitStatusCommand);
 	$debug('git status output:', $gitStatusOutput);
 	if (! $gitStatusOutput || false === strpos($gitStatusOutput, $gitFile)) {
-		throw new ShellException("Cannot get git status for file '{$gitFile}'");
+		return false;
 	}
 	if (isset($gitStatusOutput[0]) && $gitStatusOutput[0] === '?') {
 		throw new ShellException("File does not appear to be tracked by git: '{$gitFile}'");
@@ -133,7 +136,7 @@ function getGitNewPhpcsOutput(string $gitFile, string $git, string $phpcs, strin
 function getNewGitRevisionContentsCommand(string $gitFile, string $git, string $cat, array $options, callable $executeCommand, callable $debug): string {
 	if (isset($options['git-base']) && ! empty($options['git-base'])) {
 		// for git-base mode, we get the contents of the file from the HEAD version of the file in the current branch
-		if (isRunFromGitRoot($git, $executeCommand, $debug)) {
+		if (isRunFromGitRoot($git, $executeCommand, $options, $debug)) {
 			return "{$git} show HEAD:" . escapeshellarg($gitFile);
 		}
 		return "{$git} show HEAD:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
@@ -142,7 +145,7 @@ function getNewGitRevisionContentsCommand(string $gitFile, string $git, string $
 		return "{$cat} " . escapeshellarg($gitFile);
 	}
 	// default mode is git-staged, so we get the contents from the staged version of the file
-	if (isRunFromGitRoot($git, $executeCommand, $debug)) {
+	if (isRunFromGitRoot($git, $executeCommand, $options, $debug)) {
 		return "{$git} show :0:" . escapeshellarg($gitFile);
 	}
 	return "{$git} show :0:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
@@ -159,13 +162,11 @@ function getOldGitRevisionContentsCommand(string $gitFile, string $git, array $o
 		// git-staged
 		$rev = 'HEAD';
 	}
-	if (isRunFromGitRoot($git, $executeCommand, $debug)) {
+	if (isRunFromGitRoot($git, $executeCommand, $options, $debug)) {
 		return "${git} show {$rev}:" . escapeshellarg($gitFile);
 	}
 	return "${git} show {$rev}:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ")";
 }
-
-
 
 function getNewGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, array $options, callable $debug): string {
 	$fileContents = getNewGitRevisionContentsCommand($gitFile, $git, $cat, $options, $executeCommand, $debug);

@@ -18,4 +18,6 @@ interface ShellOperator {
 	public function exitWithCode(int $code): void;
 
 	public function printError(string $message): void;
+
+	public function getFileNameFromPath(string $path): string;
 }
