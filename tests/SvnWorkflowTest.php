@@ -102,7 +102,7 @@ final class SvnWorkflowTest extends TestCase {
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
-	public function testFullSvnWorkflowForOneFileCached() {
+	public function testFullSvnWorkflowForOneFileWithOldFileCached() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
@@ -357,7 +357,7 @@ final class SvnWorkflowTest extends TestCase {
 		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php'"));
 	}
 
-	public function testFullSvnWorkflowForUnchangedFileWithCache() {
+	public function testFullSvnWorkflowForUnchangedFileWithBothFilesCached() {
 		$svnFile = 'foobar.php';
 		$shell = new TestShell([$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
@@ -374,6 +374,24 @@ final class SvnWorkflowTest extends TestCase {
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 		$this->assertFalse($shell->wasCommandCalled("svn cat 'foobar.php'"));
 		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php'"));
+	}
+
+	public function testFullSvnWorkflowForUnchangedFileWithOldFileCached() {
+		$svnFile = 'foobar.php';
+		$shell = new TestShell([$svnFile]);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$options = [
+			'cache' => false, // getopt is weird and sets options to false
+		];
+		$expected = PhpcsMessages::fromArrays([], 'bin/foobar.php');
+		$cache = new TestCache();
+		$cache->setEntry('foobar.php', 'old', '188280', '', $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager($cache), '\PhpcsChangedTests\debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
 	}
 
 	public function testFullSvnWorkflowForMultipleFiles() {
