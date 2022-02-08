@@ -453,6 +453,7 @@ final class SvnWorkflowTest extends TestCase {
 		runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertFalse($shell->wasCommandCalled("svn diff 'foobar.php'"));
 		$this->assertFalse($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		$this->assertFalse($shell->wasCommandCalled("svn info 'foobar.php'"));
 	}
 
 	public function testFullSvnWorkflowForNonSvnFile() {

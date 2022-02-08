@@ -236,9 +236,6 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		if (! $shell->isReadable($svnFile)) {
 			throw new ShellException("Cannot read file '{$svnFile}'");
 		}
-		$svnFileInfo = getSvnFileInfo($svnFile, $svn, [$shell, 'executeCommand'], $debug);
-		$revisionId = getSvnRevisionId($svnFileInfo);
-		$isNewFile = isNewSvnFile($svnFileInfo);
 
 		$newFileHash = '';
 		$newFilePhpcsOutput = null;
@@ -247,10 +244,10 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 			$newFilePhpcsOutput = $cache->getCacheForFile($svnFile, 'new', $newFileHash, $phpcsStandard ?? '');
 		}
 		if ($newFilePhpcsOutput) {
-			$debug("Using cache for new file '{$svnFile}' at revision '{$revisionId}', hash '{$newFileHash}', and standard '{$phpcsStandard}'");
+			$debug("Using cache for new file '{$svnFile}', hash '{$newFileHash}', and standard '{$phpcsStandard}'");
 		}
 		if (! $newFilePhpcsOutput) {
-			$debug("Not using cache for new file '{$svnFile}' at revision '{$revisionId}', hash '{$newFileHash}', and standard '{$phpcsStandard}'");
+			$debug("Not using cache for new file '{$svnFile}', hash '{$newFileHash}', and standard '{$phpcsStandard}'");
 			$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
 			if (isCachingEnabled($options)) {
 				$cache->setCacheForFile($svnFile, 'new', $newFileHash, $phpcsStandard ?? '', $newFilePhpcsOutput);
@@ -267,6 +264,9 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 
 		$unifiedDiff = getSvnUnifiedDiff($svnFile, $svn, [$shell, 'executeCommand'], $debug);
 
+		$svnFileInfo = getSvnFileInfo($svnFile, $svn, [$shell, 'executeCommand'], $debug);
+		$revisionId = getSvnRevisionId($svnFileInfo);
+		$isNewFile = isNewSvnFile($svnFileInfo);
 		$oldFilePhpcsOutput = '';
 		if (! $isNewFile) {
 			$oldFilePhpcsOutput = isCachingEnabled($options) ? $cache->getCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '') : null;
