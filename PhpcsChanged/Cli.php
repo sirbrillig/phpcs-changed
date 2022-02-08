@@ -267,6 +267,9 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		$svnFileInfo = getSvnFileInfo($svnFile, $svn, [$shell, 'executeCommand'], $debug);
 		$revisionId = getSvnRevisionId($svnFileInfo);
 		$isNewFile = isNewSvnFile($svnFileInfo);
+		if ($isNewFile) {
+			$debug('Skipping the linting of the old file version as it is a new file.');
+		}
 		$oldFilePhpcsOutput = '';
 		if (! $isNewFile) {
 			$oldFilePhpcsOutput = isCachingEnabled($options) ? $cache->getCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '') : null;
@@ -372,6 +375,9 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 		}
 
 		$isNewFile = isNewGitFile($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
+		if ($isNewFile) {
+			$debug('Skipping the linting of the old file version as it is a new file.');
+		}
 		if (! $isNewFile) {
 			$debug('Checking the orig file version with PHPCS since the file is not new and contains some messages.');
 			$unifiedDiff = getGitUnifiedDiff($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
