@@ -127,7 +127,12 @@ class CacheManager {
 		$this->cacheObject->cacheVersion = $cacheVersion;
 	}
 
-	public function getCacheForFile(string $filePath, string $type, string $hash, string $phpcsStandard): ?string {
+	public function getCacheForFile(string $filePath, string $type, string $hash, string $phpcsStandard, string $warningSeverity, string $errorSeverity): ?string {
+		$warningSeverity = '' === $warningSeverity ? '5' : $warningSeverity;
+		$errorSeverity = '' === $errorSeverity ? '5' : $errorSeverity;
+		if ('5' !== $warningSeverity || '5' !==$errorSeverity) {
+			$phpcsStandard .= $warningSeverity . $errorSeverity;
+		}
 		$entry = $this->fileDataByPath[$filePath][$type][$hash][$phpcsStandard] ?? null;
 		if (! $entry) {
 			($this->debug)("Cache miss: file '{$filePath}', hash '{$hash}', standard '{$phpcsStandard}'");
@@ -136,7 +141,12 @@ class CacheManager {
 		return $entry->data;
 	}
 
-	public function setCacheForFile(string $filePath, string $type, string $hash, string $phpcsStandard, string $data): void {
+	public function setCacheForFile(string $filePath, string $type, string $hash, string $phpcsStandard, string $warningSeverity, string $errorSeverity, string $data): void {
+		$warningSeverity = '' === $warningSeverity ? '5' : $warningSeverity;
+		$errorSeverity = '' === $errorSeverity ? '5' : $errorSeverity;
+		if ('5' !== $warningSeverity || '5' !==$errorSeverity) {
+			$phpcsStandard .= $warningSeverity . $errorSeverity;
+		}
 		$this->hasBeenModified = true;
 		$entry = new CacheEntry();
 		$entry->phpcsStandard = $phpcsStandard;

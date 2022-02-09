@@ -52,6 +52,8 @@ $options = getopt(
 		'always-exit-zero',
 		'no-cache-git-root',
 		'no-verify-git-file',
+		'warning-severity:'
+		'error-severity:'
 	],
 	$optind
 );

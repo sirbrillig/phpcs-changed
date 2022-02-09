@@ -106,6 +106,8 @@ You can use `--standard` to specify a specific phpcs standard to run. This match
 
 You can also use the `-s` option to Always show sniff codes after each error in the full reporter. This matches the phpcs option of the same name.
 
+The `--error-severity` and `--warning-severity` options can be used for instructing the `phpcs` command on what error and warning severity to report. Those values are being passed through to `phpcs` itself. Consult `phpcs` documentation for severity settings.
+
 The `--cache` option will enable caching of phpcs output and can significantly improve performance for slow phpcs standards or when running with high frequency. There are actually two caches: one for the phpcs scan of the unmodified version of the file and one for the phpcs scan of the modified version. The unmodified version phpcs output cache is invalidated when the version control revision changes or when the phpcs standard changes. The modified version phpcs output cache is invalidated when the file hash changes or when the phpcs standard changes.
 
 The `--no-cache` option will disable the cache if it's been enabled. (This may also be useful in the future if caching is made the default.)
