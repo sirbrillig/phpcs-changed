@@ -103,37 +103,37 @@ function isNewGitFileLocal(string $gitFile, string $git, callable $executeComman
 	return isset($gitStatusOutput[0]) && $gitStatusOutput[0] === 'A';
 }
 
-function getGitPreviousPhpcsOutput(string $gitFile, string $git, string $phpcs, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
-	$previousFileContents = getPerviousGitRevisionContentsCommand($gitFile, $git, $options, $executeCommand, $debug);
+function getGitUnmodifiedPhpcsOutput(string $gitFile, string $git, string $phpcs, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
+	$unmodifiedFileContents = getPerviousGitRevisionContentsCommand($gitFile, $git, $options, $executeCommand, $debug);
 
-	$previousFilePhpcsOutputCommand = "{$previousFileContents} | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) . ' -';
-	$debug('running previous file phpcs command:', $previousFilePhpcsOutputCommand);
-	$previousFilePhpcsOutput = $executeCommand($previousFilePhpcsOutputCommand);
-	if (! $previousFilePhpcsOutput) {
-		throw new ShellException("Cannot get previous file phpcs output for file '{$gitFile}'");
+	$unmodifiedFilePhpcsOutputCommand = "{$unmodifiedFileContents} | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) . ' -';
+	$debug('running unmodified file phpcs command:', $unmodifiedFilePhpcsOutputCommand);
+	$unmodifiedFilePhpcsOutput = $executeCommand($unmodifiedFilePhpcsOutputCommand);
+	if (! $unmodifiedFilePhpcsOutput) {
+		throw new ShellException("Cannot get unmodified file phpcs output for file '{$gitFile}'");
 	}
-	$debug('previous file phpcs command output:', $previousFilePhpcsOutput);
-	return $previousFilePhpcsOutput;
+	$debug('unmodified file phpcs command output:', $unmodifiedFilePhpcsOutput);
+	return $unmodifiedFilePhpcsOutput;
 }
 
-function getGitChangedPhpcsOutput(string $gitFile, string $git, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
-	$changedFileContents = getChangedGitRevisionContentsCommand($gitFile, $git, $cat, $options, $executeCommand, $debug);
+function getGitModifiedPhpcsOutput(string $gitFile, string $git, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
+	$modifiedFileContents = getModifiedGitRevisionContentsCommand($gitFile, $git, $cat, $options, $executeCommand, $debug);
 
-	$changedFilePhpcsOutputCommand = "{$changedFileContents} | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) .' -';
-	$debug('running changed file phpcs command:', $changedFilePhpcsOutputCommand);
-	$changedFilePhpcsOutput = $executeCommand($changedFilePhpcsOutputCommand);
-	if (! $changedFilePhpcsOutput) {
-		throw new ShellException("Cannot get changed file phpcs output for file '{$gitFile}'");
+	$modifiedFilePhpcsOutputCommand = "{$modifiedFileContents} | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) .' -';
+	$debug('running modified file phpcs command:', $modifiedFilePhpcsOutputCommand);
+	$modifiedFilePhpcsOutput = $executeCommand($modifiedFilePhpcsOutputCommand);
+	if (! $modifiedFilePhpcsOutput) {
+		throw new ShellException("Cannot get modified file phpcs output for file '{$gitFile}'");
 	}
-	$debug('changed file phpcs command output:', $changedFilePhpcsOutput);
-	if (false !== strpos($changedFilePhpcsOutput, 'You must supply at least one file or directory to process')) {
-		$debug('phpcs output implies changed file is empty');
+	$debug('modified file phpcs command output:', $modifiedFilePhpcsOutput);
+	if (false !== strpos($modifiedFilePhpcsOutput, 'You must supply at least one file or directory to process')) {
+		$debug('phpcs output implies modified file is empty');
 		return '';
 	}
-	return $changedFilePhpcsOutput;
+	return $modifiedFilePhpcsOutput;
 }
 
-function getChangedGitRevisionContentsCommand(string $gitFile, string $git, string $cat, array $options, callable $executeCommand, callable $debug): string {
+function getModifiedGitRevisionContentsCommand(string $gitFile, string $git, string $cat, array $options, callable $executeCommand, callable $debug): string {
 	if (isset($options['git-base']) && ! empty($options['git-base'])) {
 		// for git-base mode, we get the contents of the file from the HEAD version of the file in the current branch
 		if (isRunFromGitRoot($git, $executeCommand, $options, $debug)) {
@@ -168,26 +168,26 @@ function getPerviousGitRevisionContentsCommand(string $gitFile, string $git, arr
 	return "${git} show {$rev}:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ")";
 }
 
-function getChangedGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, array $options, callable $debug): string {
-	$fileContents = getChangedGitRevisionContentsCommand($gitFile, $git, $cat, $options, $executeCommand, $debug);
+function getModifiedGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, array $options, callable $debug): string {
+	$fileContents = getModifiedGitRevisionContentsCommand($gitFile, $git, $cat, $options, $executeCommand, $debug);
 	$command = "{$fileContents} | {$git} hash-object --stdin";
-	$debug('running changed file git hash command:', $command);
+	$debug('running modified file git hash command:', $command);
 	$hash = $executeCommand($command);
 	if (! $hash) {
-		throw new ShellException("Cannot get changed file hash for file '{$gitFile}'");
+		throw new ShellException("Cannot get modified file hash for file '{$gitFile}'");
 	}
-	$debug('changed file git hash command output:', $hash);
+	$debug('modified file git hash command output:', $hash);
 	return $hash;
 }
 
-function getPreviousGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, array $options, callable $debug): string {
+function getUnmodifiedGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, array $options, callable $debug): string {
 	$fileContents = getPerviousGitRevisionContentsCommand($gitFile, $git, $options, $executeCommand, $debug);
 	$command = "{$fileContents} | {$git} hash-object --stdin";
-	$debug('running previous file git hash command:', $command);
+	$debug('running unmodified file git hash command:', $command);
 	$hash = $executeCommand($command);
 	if (! $hash) {
-		throw new ShellException("Cannot get previous file hash for file '{$gitFile}'");
+		throw new ShellException("Cannot get unmodified file hash for file '{$gitFile}'");
 	}
-	$debug('previous file git hash command output:', $hash);
+	$debug('unmodified file git hash command output:', $hash);
 	return $hash;
 }
