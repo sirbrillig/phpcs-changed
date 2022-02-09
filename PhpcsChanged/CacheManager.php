@@ -12,7 +12,7 @@ class CacheManager {
 	 * A cache map with four levels of keys:
 	 *
 	 * 1. The file path
-	 * 2. The cache type; either 'new' (new version of a file) or 'old' (old version of a file)
+	 * 2. The cache type; either 'new' (modified version of a file) or 'old' (unmodified version of a file)
 	 * 3. The file hash (if needed; this is not used for old files)
 	 * 4. The phpcs standard
 	 *

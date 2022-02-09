@@ -83,11 +83,11 @@ phpcs-changed --git --git-unstaged file.php
 
 When using `--git`, you should also specify `--git-staged`, `--git-unstaged`, or `--git-base`.
 
-`--git-staged` compares the currently staged changes (as the new version of the files) to the current HEAD (as the unmodified version of the files). This is the default.
+`--git-staged` compares the currently staged changes (as the modified version of the files) to the current HEAD (as the unmodified version of the files). This is the default.
 
-`--git-unstaged` compares the current (unstaged) working copy changes (as the new version of the files) to the either the currently staged changes, or if there are none, the current HEAD (as the unmodified version of the files).
+`--git-unstaged` compares the current (unstaged) working copy changes (as the modified version of the files) to the either the currently staged changes, or if there are none, the current HEAD (as the unmodified version of the files).
 
-`--git-base`, followed by a git object, compares the current HEAD (as the new version of the files) to the specified [git object](https://git-scm.com/book/en/v2/Git-Internals-Git-Objects) (as the unmodified version of the file) which can be a branch name, a commit, or some other valid git object.
+`--git-base`, followed by a git object, compares the current HEAD (as the modified version of the files) to the specified [git object](https://git-scm.com/book/en/v2/Git-Internals-Git-Objects) (as the unmodified version of the file) which can be a branch name, a commit, or some other valid git object.
 
 ```
 git checkout add-new-feature
@@ -106,7 +106,7 @@ You can use `--standard` to specify a specific phpcs standard to run. This match
 
 You can also use the `-s` option to Always show sniff codes after each error in the full reporter. This matches the phpcs option of the same name.
 
-The `--cache` option will enable caching of phpcs output and can significantly improve performance for slow phpcs standards or when running with high frequency. There are actually two caches: one for the phpcs scan of the unmodified version of the file and one for the phpcs scan of the modified version. The unmodified version phpcs output cache is invalidated when the version control revision changes or when the phpcs standard changes. The new version phpcs output cache is invalidated when the file hash changes or when the phpcs standard changes.
+The `--cache` option will enable caching of phpcs output and can significantly improve performance for slow phpcs standards or when running with high frequency. There are actually two caches: one for the phpcs scan of the unmodified version of the file and one for the phpcs scan of the modified version. The unmodified version phpcs output cache is invalidated when the version control revision changes or when the phpcs standard changes. The modified version phpcs output cache is invalidated when the file hash changes or when the phpcs standard changes.
 
 The `--no-cache` option will disable the cache if it's been enabled. (This may also be useful in the future if caching is made the default.)
 
