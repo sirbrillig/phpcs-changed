@@ -270,7 +270,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		$revisionId = getSvnRevisionId($svnFileInfo);
 		$isNewFile = isNewSvnFile($svnFileInfo);
 		if ($isNewFile) {
-			$debug('Skipping the linting of the unmodified file version as it is a new file.');
+			$debug('Skipping the linting of the unmodified file as it is a new file.');
 		}
 		$unmodifiedFilePhpcsOutput = '';
 		if (! $isNewFile) {
@@ -378,10 +378,10 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 
 		$isNewFile = isNewGitFile($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
 		if ($isNewFile) {
-			$debug('Skipping the linting of the unmodified file version as it is a new file.');
+			$debug('Skipping the linting of the unmodified file as it is a new file.');
 		}
 		if (! $isNewFile) {
-			$debug('Checking the unmodified file version with PHPCS since the file is not new and contains some messages.');
+			$debug('Checking the unmodified file with PHPCS since the file is not new and contains some messages.');
 			$unifiedDiff = getGitUnifiedDiff($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
 			$unmodifiedFilePhpcsOutput = null;
 			$unmodifiedFileHash = '';
