@@ -104,7 +104,7 @@ function isNewGitFileLocal(string $gitFile, string $git, callable $executeComman
 }
 
 function getGitUnmodifiedPhpcsOutput(string $gitFile, string $git, string $phpcs, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
-	$unmodifiedFileContents = getPerviousGitRevisionContentsCommand($gitFile, $git, $options, $executeCommand, $debug);
+	$unmodifiedFileContents = getUnmodifiedGitRevisionContentsCommand($gitFile, $git, $options, $executeCommand, $debug);
 
 	$unmodifiedFilePhpcsOutputCommand = "{$unmodifiedFileContents} | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) . ' -';
 	$debug('running unmodified file phpcs command:', $unmodifiedFilePhpcsOutputCommand);
@@ -151,7 +151,7 @@ function getModifiedGitRevisionContentsCommand(string $gitFile, string $git, str
 	return "{$git} show :0:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
 }
 
-function getPerviousGitRevisionContentsCommand(string $gitFile, string $git, array $options, callable $executeCommand, callable $debug): string {
+function getUnmodifiedGitRevisionContentsCommand(string $gitFile, string $git, array $options, callable $executeCommand, callable $debug): string {
 	if (isset($options['git-base']) && ! empty($options['git-base'])) {
 		// git-base
 		$rev = escapeshellarg($options['git-base']);
@@ -181,7 +181,7 @@ function getModifiedGitFileHash(string $gitFile, string $git, string $cat, calla
 }
 
 function getUnmodifiedGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, array $options, callable $debug): string {
-	$fileContents = getPerviousGitRevisionContentsCommand($gitFile, $git, $options, $executeCommand, $debug);
+	$fileContents = getUnmodifiedGitRevisionContentsCommand($gitFile, $git, $options, $executeCommand, $debug);
 	$command = "{$fileContents} | {$git} hash-object --stdin";
 	$debug('running unmodified file git hash command:', $command);
 	$hash = $executeCommand($command);
