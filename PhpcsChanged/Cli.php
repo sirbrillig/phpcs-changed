@@ -96,8 +96,10 @@ EOF;
 
 	printTwoColumns([
 		'--diff <FILE>' => 'A file containing a unified diff of the changes.',
-		'--phpcs-orig <FILE>' => 'A file containing the JSON output of phpcs on the unchanged file.',
-		'--phpcs-new <FILE>' => 'A file containing the JSON output of phpcs on the changed file.',
+		'--phpcs-orig <FILE>' => 'A file containing the JSON output of phpcs on the unchanged file (alias for --phpcs-previous).',
+		'--phpcs-previous <FILE>' => 'A file containing the JSON output of phpcs on the unchanged file.',
+		'--phpcs-new <FILE>' => 'A file containing the JSON output of phpcs on the changed file (alias for --phpcs-changed).',
+		'--phpcs-changed <FILE>' => 'A file containing the JSON output of phpcs on the changed file.',
 	], "	");
 
 	echo <<<EOF

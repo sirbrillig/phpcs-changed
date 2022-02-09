@@ -32,7 +32,7 @@ If you wanted to use svn and phpcs manually, this produces the same output:
 svn diff file.php > file.php.diff
 svn cat file.php | phpcs --report=json -q > file.php.orig.phpcs
 cat file.php | phpcs --report=json -q > file.php.phpcs
-phpcs-changed --diff file.php.diff --phpcs-orig file.php.orig.phpcs --phpcs-new file.php.phpcs
+phpcs-changed --diff file.php.diff --phpcs-previous file.php.orig.phpcs --phpcs-changed file.php.phpcs
 ```
 
 Both will output something like:
