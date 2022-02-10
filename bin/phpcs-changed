@@ -32,7 +32,9 @@ $options = getopt(
 		'version',
 		'diff:',
 		'phpcs-orig:',
+		'phpcs-unmodified:',
 		'phpcs-new:',
+		'phpcs-modified:',
 		'svn',
 		'git',
 		'git-unstaged',
@@ -104,6 +106,15 @@ if (isset($options['arc-lint'])) {
 	unset($options['arc-lint']);
 }
 
+if (isset($options['phpcs-orig'])) {
+	$options['phpcs-unmodified'] = $options['phpcs-orig'];
+	unset($options['phpcs-orig']);
+}
+if (isset($options['phpcs-new'])) {
+	$options['phpcs-modified'] = $options['phpcs-new'];
+	unset($options['phpcs-new']);
+}
+
 $debug = getDebug(isset($options['debug']));
 run($options, $fileNamesExpanded, $debug);
 
@@ -112,12 +123,12 @@ function run(array $options, array $fileNamesExpanded, callable $debug): void {
 	$debug('Options: ' . json_encode($options));
 	$reportType = $options['report'] ?? 'full';
 	$diffFile = $options['diff'] ?? null;
-	$phpcsOldFile = $options['phpcs-orig'] ?? null;
-	$phpcsNewFile = $options['phpcs-new'] ?? null;
+	$phpcsUnmodifiedFile = $options['phpcs-unmodified'] ?? null;
+	$phpcsModifiedFile = $options['phpcs-modified'] ?? null;
 
-	if ($diffFile && $phpcsOldFile && $phpcsNewFile) {
+	if ($diffFile && $phpcsUnmodifiedFile && $phpcsModifiedFile) {
 		reportMessagesAndExit(
-			runManualWorkflow($diffFile, $phpcsOldFile, $phpcsNewFile),
+			runManualWorkflow($diffFile, $phpcsUnmodifiedFile, $phpcsModifiedFile),
 			$reportType,
 			$options
 		);

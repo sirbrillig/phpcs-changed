@@ -61,19 +61,19 @@ class LintMessages {
 	/**
 	 * @return static
 	 */
-	public static function getNewMessages(string $unifiedDiff, self $oldMessages, self $newMessages) {
+	public static function getNewMessages(string $unifiedDiff, self $unmodifiedMessages, self $modifiedMessages) {
 		$map = DiffLineMap::fromUnifiedDiff($unifiedDiff);
 		$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
-		return self::fromLintMessages(array_values(array_filter($newMessages->getMessages(), function($newMessage) use ($oldMessages, $map) {
+		return self::fromLintMessages(array_values(array_filter($modifiedMessages->getMessages(), function($newMessage) use ($unmodifiedMessages, $map) {
 			$lineNumber = $newMessage->getLineNumber();
 			if (! $lineNumber) {
 				return true;
 			}
-			$oldLineNumber = $map->getOldLineNumberForLine($lineNumber);
-			$oldMessagesContainingOldLineNumber = array_values(array_filter($oldMessages->getMessages(), function($oldMessage) use ($oldLineNumber) {
-				return $oldMessage->getLineNumber() === $oldLineNumber;
+			$unmodifiedLineNumber = $map->getOldLineNumberForLine($lineNumber);
+			$unmodifiedMessagesContainingUnmodifiedLineNumber = array_values(array_filter($unmodifiedMessages->getMessages(), function($unmodifiedMessage) use ($unmodifiedLineNumber) {
+				return $unmodifiedMessage->getLineNumber() === $unmodifiedLineNumber;
 			}));
-			return ! count($oldMessagesContainingOldLineNumber) > 0;
+			return ! count($unmodifiedMessagesContainingUnmodifiedLineNumber) > 0;
 		})), $fileName);
 	}
 }
