@@ -244,12 +244,9 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		if (isCachingEnabled($options)) {
 			$modifiedFileHash = $shell->getFileHash($svnFile);
 			$modifiedFilePhpcsOutput = $cache->getCacheForFile($svnFile, 'new', $modifiedFileHash, $phpcsStandard ?? '');
-		}
-		if ($modifiedFilePhpcsOutput) {
-			$debug("Using cache for modified file '{$svnFile}', hash '{$modifiedFileHash}', and standard '{$phpcsStandard}'");
+			$debug(($modifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for modified file '{$svnFile}' at hash '{$modifiedFileHash}', and standard '{$phpcsStandard}'");
 		}
 		if (! $modifiedFilePhpcsOutput) {
-			$debug("Not using cache for modified file '{$svnFile}', hash '{$modifiedFileHash}', and standard '{$phpcsStandard}'");
 			$modifiedFilePhpcsOutput = getSvnModifiedPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
 			if (isCachingEnabled($options)) {
 				$cache->setCacheForFile($svnFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $modifiedFilePhpcsOutput);
@@ -274,12 +271,11 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		}
 		$unmodifiedFilePhpcsOutput = '';
 		if (! $isNewFile) {
-			$unmodifiedFilePhpcsOutput = isCachingEnabled($options) ? $cache->getCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '') : null;
-			if ($unmodifiedFilePhpcsOutput) {
-				$debug("Using cache for unmodified file '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
+			if (isCachingEnabled($options)) {
+				$unmodifiedFilePhpcsOutput = $cache->getCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '');
+				$debug(($unmodifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for unmodified file '{$svnFile}' at revision '{$revisionId}', and standard '{$phpcsStandard}'");
 			}
 			if (! $unmodifiedFilePhpcsOutput) {
-				$debug("Not using cache for unmodified file '{$svnFile}' at revision '{$revisionId}' and standard '{$phpcsStandard}'");
 				$unmodifiedFilePhpcsOutput = getSvnUnmodifiedPhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
 				if (isCachingEnabled($options)) {
 					$cache->setCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '', $unmodifiedFilePhpcsOutput);
@@ -353,13 +349,9 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 		if (isCachingEnabled($options)) {
 			$modifiedFileHash = getModifiedGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
 			$modifiedFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'new', $modifiedFileHash, $phpcsStandard ?? '');
-		}
-		if ($modifiedFilePhpcsOutput) {
-			$debug("Using cache for modified file '{$gitFile}' at hash '{$modifiedFileHash}', and standard '{$phpcsStandard}'");
+			$debug(($modifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for modified file '{$gitFile}' at hash '{$modifiedFileHash}', and standard '{$phpcsStandard}'");
 		}
 		if (! $modifiedFilePhpcsOutput) {
-			$debugMessage = (!empty($modifiedFileHash)) ? "Not using cache for modified file '{$gitFile}' at hash '{$modifiedFileHash}', and standard '{$phpcsStandard}'" : "Not using cache for modified file '{$gitFile}' with standard '{$phpcsStandard}'. No hash was calculated.";
-			$debug($debugMessage);
 			$modifiedFilePhpcsOutput = getGitModifiedPhpcsOutput($gitFile, $git, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
 			if (isCachingEnabled($options)) {
 				$cache->setCacheForFile($gitFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $modifiedFilePhpcsOutput);
@@ -388,13 +380,9 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 			if (isCachingEnabled($options)) {
 				$unmodifiedFileHash = getUnmodifiedGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
 				$unmodifiedFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'old', $unmodifiedFileHash, $phpcsStandard ?? '');
-			}
-			if ($unmodifiedFilePhpcsOutput) {
-				$debug("Using cache for unmodified file '{$gitFile}' at hash '{$unmodifiedFileHash}' with standard '{$phpcsStandard}'");
+				$debug(($unmodifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for unmodified file '{$gitFile}' at hash '{$unmodifiedFileHash}', and standard '{$phpcsStandard}'");
 			}
 			if (! $unmodifiedFilePhpcsOutput) {
-				$debugMessage = (!empty($unmodifiedFileHash)) ? "Not using cache for modified file '{$gitFile}' at hash '{$unmodifiedFileHash}', and standard '{$phpcsStandard}'" : "Not using cache for modified file '{$gitFile}' with standard '{$phpcsStandard}'. No hash was calculated.";
-				$debug($debugMessage);
 				$unmodifiedFilePhpcsOutput = getGitUnmodifiedPhpcsOutput($gitFile, $git, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
 				if (isCachingEnabled($options)) {
 					$cache->setCacheForFile($gitFile, 'old', $unmodifiedFileHash, $phpcsStandard ?? '', $unmodifiedFilePhpcsOutput);
