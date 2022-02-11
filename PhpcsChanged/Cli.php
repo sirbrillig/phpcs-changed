@@ -285,7 +285,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 			if (! $unmodifiedFilePhpcsOutput) {
 				$unmodifiedFilePhpcsOutput = getSvnUnmodifiedPhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
 				if (isCachingEnabled($options)) {
-					$cache->setCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '' $unmodifiedFilePhpcsOutput);
+					$cache->setCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $unmodifiedFilePhpcsOutput);
 				}
 			}
 		}
