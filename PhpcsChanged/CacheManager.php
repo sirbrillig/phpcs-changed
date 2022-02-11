@@ -128,11 +128,8 @@ class CacheManager {
 	}
 
 	public function getCacheForFile(string $filePath, string $type, string $hash, string $phpcsStandard, string $warningSeverity, string $errorSeverity): ?string {
-		$warningSeverity = '' === $warningSeverity ? '5' : $warningSeverity;
-		$errorSeverity = '' === $errorSeverity ? '5' : $errorSeverity;
-		if ('5' !== $warningSeverity || '5' !==$errorSeverity) {
-			$phpcsStandard .= $warningSeverity . $errorSeverity;
-		}
+		$phpcsStandard = $this->getPhpcsStandardCacheKey( $phpcsStandard, $warningSeverity, $errorSeverity );
+
 		$entry = $this->fileDataByPath[$filePath][$type][$hash][$phpcsStandard] ?? null;
 		if (! $entry) {
 			($this->debug)("Cache miss: file '{$filePath}', hash '{$hash}', standard '{$phpcsStandard}'");
@@ -142,11 +139,9 @@ class CacheManager {
 	}
 
 	public function setCacheForFile(string $filePath, string $type, string $hash, string $phpcsStandard, string $warningSeverity, string $errorSeverity, string $data): void {
-		$warningSeverity = '' === $warningSeverity ? '5' : $warningSeverity;
-		$errorSeverity = '' === $errorSeverity ? '5' : $errorSeverity;
-		if ('5' !== $warningSeverity || '5' !==$errorSeverity) {
-			$phpcsStandard .= $warningSeverity . $errorSeverity;
-		}
+
+		$phpcsStandard = $this->getPhpcsStandardCacheKey( $phpcsStandard, $warningSeverity, $errorSeverity );
+
 		$this->hasBeenModified = true;
 		$entry = new CacheEntry();
 		$entry->phpcsStandard = $phpcsStandard;
@@ -171,6 +166,15 @@ class CacheManager {
 		}
 		$this->fileDataByPath[$entry->path][$entry->type][$entry->hash][$entry->phpcsStandard] = $entry;
 		($this->debug)("Cache add: file '{$entry->path}', type '{$entry->type}', hash '{$entry->hash}', standard '{$entry->phpcsStandard}'");
+	}
+
+	public function getPhpcsStandardCacheKey( string $phpcsStandard, string $warningSeverity, string $errorSeverity ): string {
+		$warningSeverity = '' === $warningSeverity ? '5' : $warningSeverity;
+		$errorSeverity = '' === $errorSeverity ? '5' : $errorSeverity;
+		if ('5' !== $warningSeverity || '5' !==$errorSeverity) {
+			$phpcsStandard .= $warningSeverity . $errorSeverity;
+		}
+		return $phpcsStandard;
 	}
 
 	private function pruneOldEntriesForFile(CacheEntry $newEntry): void {
