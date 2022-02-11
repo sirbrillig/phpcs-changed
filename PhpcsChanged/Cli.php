@@ -238,7 +238,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 
 	$warningSeverity = $options['warning-severity'] ?? null;
 	$phpcsStandardOption .= isset($warningSeverity) ? ' --warning-severity=' . escapeshellarg($warningSeverity) : '';
-	$errorSeverity = isset($options['error-severity']) ?? null;
+	$errorSeverity = $options['error-severity'] ?? null;
 	$phpcsStandardOption .= $errorSeverity ? ' --error-severity=' . escapeshellarg($errorSeverity) : '';
 
 	try {
