@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 use PhpcsChanged\CacheManager;
 use PhpcsChangedTests\TestCache;
 
-final class CAcheManagerTest extends TestCase {
+final class CacheManagerTest extends TestCase {
 
 	public function providePhpcsStandardCacheKeyGenerationData() {
 		return [
