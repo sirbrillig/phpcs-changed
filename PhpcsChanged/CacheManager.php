@@ -9,6 +9,11 @@ use function PhpcsChanged\getVersion;
 
 class CacheManager {
 	/**
+	 * Default PHPCS's severity for both, errror and warning.
+	 */
+	const DEFAULT_SEVERITY = '5';
+
+	/**
 	 * A cache map with four levels of keys:
 	 *
 	 * 1. The file path
@@ -169,9 +174,9 @@ class CacheManager {
 	}
 
 	public function getPhpcsStandardCacheKey( string $phpcsStandard, string $warningSeverity, string $errorSeverity ): string {
-		$warningSeverity = '' === $warningSeverity ? '5' : $warningSeverity;
-		$errorSeverity = '' === $errorSeverity ? '5' : $errorSeverity;
-		if ('5' !== $warningSeverity || '5' !==$errorSeverity) {
+		$warningSeverity = '' === $warningSeverity ? self::DEFAULT_SEVERITY : $warningSeverity;
+		$errorSeverity = '' === $errorSeverity ? self::DEFAULT_SEVERITY : $errorSeverity;
+		if (self::DEFAULT_SEVERITY !== $warningSeverity || self::DEFAULT_SEVERITY !==$errorSeverity) {
 			$phpcsStandard .= $warningSeverity . $errorSeverity;
 		}
 		return $phpcsStandard;
