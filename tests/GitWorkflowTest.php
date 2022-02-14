@@ -169,7 +169,7 @@ final class GitWorkflowTest extends TestCase {
 		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php' | phpcs"));
 
 		foreach( $cache->getEntries() as $entry ) {
-			$this->assertEquals( 'standard12', $entry->phpcsStandard );
+			$this->assertEquals( 'standard:w1e2', $entry->phpcsStandard );
 		}
 	}
 
@@ -207,7 +207,7 @@ final class GitWorkflowTest extends TestCase {
 		$cacheEntries = $cache->getEntries();
 		$this->assertNotEmpty($cacheEntries);
 		foreach( $cacheEntries as $entry ) {
-			$this->assertEquals( 'standard00', $entry->phpcsStandard );
+			$this->assertEquals( 'standard:w0e0', $entry->phpcsStandard );
 		}
 	}
 

@@ -515,7 +515,7 @@ Run "phpcs --help" for usage information
 		$cacheEntries = $cache->getEntries();
 		$this->assertNotEmpty($cacheEntries);
 		foreach( $cacheEntries as $entry ) {
-			$this->assertEquals( 'standard00', $entry->phpcsStandard );
+			$this->assertEquals( 'standard:w0e0', $entry->phpcsStandard );
 		}
 	}
 }

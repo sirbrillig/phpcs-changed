@@ -21,19 +21,19 @@ final class CAcheManagerTest extends TestCase {
 				'standard',
 				'1',
 				'1',
-				'standard11'
+				'standard:w1e1'
 			],
 			'empty warning severity key gets replaced by default value of 5' => [
 				'standard',
 				'',
 				'1',
-				'standard51',
+				'standard:w5e1',
 			],
 			'empty error severity key gets replaced by default value of 5' => [
 				'standard',
 				'1',
 				'',
-				'standard15',
+				'standard:w1e5',
 			],
 			'empty error and warning severity key returns unchanged standard value' => [
 				'standard',

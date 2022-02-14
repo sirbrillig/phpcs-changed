@@ -19,7 +19,7 @@ class CacheManager {
 	 * 1. The file path
 	 * 2. The cache type; either 'new' (modified version of a file) or 'old' (unmodified version of a file)
 	 * 3. The file hash (if needed; this is not used for old files)
-	 * 4. The phpcs standard plus error and warning severity option. The phpcs standard only in case no severity is set, or default value of 5 is used (makes the format backward compatible).
+	 * 4. The phpcs standard plus warning and error severity option (prefixed by w/e respectively, delimitered by colon). The phpcs standard only in case no severity is set, or default value of 5 is used (makes the format backward compatible). Eg.: `standard:w0e4`.
 	 *
 	 * @var array<string, array<string, array<string, array<string, CacheEntry>>>>
 	 */
@@ -177,7 +177,7 @@ class CacheManager {
 		$warningSeverity = '' === $warningSeverity ? self::DEFAULT_SEVERITY : $warningSeverity;
 		$errorSeverity = '' === $errorSeverity ? self::DEFAULT_SEVERITY : $errorSeverity;
 		if (self::DEFAULT_SEVERITY !== $warningSeverity || self::DEFAULT_SEVERITY !==$errorSeverity) {
-			$phpcsStandard .= $warningSeverity . $errorSeverity;
+			$phpcsStandard .= ':w' . $warningSeverity . 'e' . $errorSeverity;
 		}
 		return $phpcsStandard;
 	}
