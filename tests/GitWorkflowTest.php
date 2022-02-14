@@ -204,7 +204,9 @@ final class GitWorkflowTest extends TestCase {
 		$this->assertFalse($shell->wasCommandCalled("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs"));
 		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php' | phpcs"));
 
-		foreach( $cache->getEntries() as $entry ) {
+		$cacheEntries = $cache->getEntries();
+		$this->assertNotEmpty($cacheEntries);
+		foreach( $cacheEntries as $entry ) {
 			$this->assertEquals( 'standard00', $entry->phpcsStandard );
 		}
 	}
@@ -238,7 +240,9 @@ final class GitWorkflowTest extends TestCase {
 		$this->assertFalse($shell->wasCommandCalled("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs"));
 		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php' | phpcs"));
 
-		foreach( $cache->getEntries() as $entry ) {
+		$cacheEntries = $cache->getEntries();
+		$this->assertNotEmpty($cacheEntries);
+		foreach( $cacheEntries as $entry ) {
 			$this->assertEquals( 'standard', $entry->phpcsStandard );
 		}
 	}

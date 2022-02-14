@@ -512,7 +512,9 @@ Run "phpcs --help" for usage information
 		$cache = new CacheManager(new TestCache());
 		runSvnWorkflow([$svnFile], $options, $shell, $cache, '\PhpcsChangedTests\debug' );
 		
-		foreach( $cache->getEntries() as $entry ) {
+		$cacheEntries = $cache->getEntries();
+		$this->assertNotEmpty($cacheEntries);
+		foreach( $cacheEntries as $entry ) {
 			$this->assertEquals( 'standard00', $entry->phpcsStandard );
 		}
 	}
