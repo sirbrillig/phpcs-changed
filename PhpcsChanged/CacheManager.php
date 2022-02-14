@@ -9,12 +9,17 @@ use function PhpcsChanged\getVersion;
 
 class CacheManager {
 	/**
+	 * Default PHPCS's severity for both, errror and warning.
+	 */
+	const DEFAULT_SEVERITY = '5';
+
+	/**
 	 * A cache map with four levels of keys:
 	 *
 	 * 1. The file path
 	 * 2. The cache type; either 'new' (modified version of a file) or 'old' (unmodified version of a file)
 	 * 3. The file hash (if needed; this is not used for old files)
-	 * 4. The phpcs standard
+	 * 4. The phpcs standard plus warning and error severity option (prefixed by w/e respectively, delimitered by colon). The phpcs standard only in case no severity is set, or default value of 5 is used (makes the format backward compatible). Eg.: `standard:w0e4`.
 	 *
 	 * @var array<string, array<string, array<string, array<string, CacheEntry>>>>
 	 */
@@ -127,7 +132,9 @@ class CacheManager {
 		$this->cacheObject->cacheVersion = $cacheVersion;
 	}
 
-	public function getCacheForFile(string $filePath, string $type, string $hash, string $phpcsStandard): ?string {
+	public function getCacheForFile(string $filePath, string $type, string $hash, string $phpcsStandard, string $warningSeverity, string $errorSeverity): ?string {
+		$phpcsStandard = $this->getPhpcsStandardCacheKey( $phpcsStandard, $warningSeverity, $errorSeverity );
+
 		$entry = $this->fileDataByPath[$filePath][$type][$hash][$phpcsStandard] ?? null;
 		if (! $entry) {
 			($this->debug)("Cache miss: file '{$filePath}', hash '{$hash}', standard '{$phpcsStandard}'");
@@ -136,7 +143,10 @@ class CacheManager {
 		return $entry->data;
 	}
 
-	public function setCacheForFile(string $filePath, string $type, string $hash, string $phpcsStandard, string $data): void {
+	public function setCacheForFile(string $filePath, string $type, string $hash, string $phpcsStandard, string $warningSeverity, string $errorSeverity, string $data): void {
+
+		$phpcsStandard = $this->getPhpcsStandardCacheKey( $phpcsStandard, $warningSeverity, $errorSeverity );
+
 		$this->hasBeenModified = true;
 		$entry = new CacheEntry();
 		$entry->phpcsStandard = $phpcsStandard;
@@ -161,6 +171,15 @@ class CacheManager {
 		}
 		$this->fileDataByPath[$entry->path][$entry->type][$entry->hash][$entry->phpcsStandard] = $entry;
 		($this->debug)("Cache add: file '{$entry->path}', type '{$entry->type}', hash '{$entry->hash}', standard '{$entry->phpcsStandard}'");
+	}
+
+	public function getPhpcsStandardCacheKey( string $phpcsStandard, string $warningSeverity, string $errorSeverity ): string {
+		$warningSeverity = '' === $warningSeverity ? self::DEFAULT_SEVERITY : $warningSeverity;
+		$errorSeverity = '' === $errorSeverity ? self::DEFAULT_SEVERITY : $errorSeverity;
+		if (self::DEFAULT_SEVERITY !== $warningSeverity || self::DEFAULT_SEVERITY !==$errorSeverity) {
+			$phpcsStandard .= ':w' . $warningSeverity . 'e' . $errorSeverity;
+		}
+		return $phpcsStandard;
 	}
 
 	private function pruneOldEntriesForFile(CacheEntry $newEntry): void {

@@ -495,4 +495,27 @@ Run "phpcs --help" for usage information
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
+
+	public function testFullSvnWorkflowForOneFileWithSeveritySetToZero() {
+		$svnFile = 'foobar.php';
+		$shell = new TestShell([$svnFile]);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
+		$shell->registerCommand("svn cat 'foobar.php' | phpcs --report=json -q --standard='standard' --warning-severity='0' --error-severity='0'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php' | phpcs --report=json -q --standard='standard' --warning-severity='0' --error-severity='0'" , $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$options = [
+			'warning-severity' => '0',
+			'error-severity' => '0',
+			'cache' => false, // getopt is weird and sets options to false
+			'standard' => 'standard'
+		];
+		$cache = new CacheManager(new TestCache());
+		runSvnWorkflow([$svnFile], $options, $shell, $cache, '\PhpcsChangedTests\debug' );
+		
+		$cacheEntries = $cache->getEntries();
+		$this->assertNotEmpty($cacheEntries);
+		foreach( $cacheEntries as $entry ) {
+			$this->assertEquals( 'standard:w0e0', $entry->phpcsStandard );
+		}
+	}
 }

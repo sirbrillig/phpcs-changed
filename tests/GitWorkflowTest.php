@@ -137,6 +137,116 @@ final class GitWorkflowTest extends TestCase {
 		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php' | phpcs"));
 	}
 
+	public function testFullGitWorkflowForOneFileUnstagedCachesDataThenUsesCacheWithSeveritySet() {
+		$gitFile = 'foobar.php';
+		$shell = new TestShell([$gitFile]);
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs", $this->phpcs->getResults('STDIN', [20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [21, 20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | git hash-object --stdin", 'previous-file-hash');
+		$shell->registerCommand("cat 'foobar.php' | git hash-object --stdin", 'new-file-hash');
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
+		$options = [
+			'no-cache-git-root' => 1,
+			'git-unstaged' => '1',
+			'cache' => false, // getopt is weird and sets options to false
+			'standard' => 'standard',
+			'warning-severity' => '1',
+			'error-severity' => '2',
+		];
+		$cache = new CacheManager( new TestCache(), '\PhpcsChangedTests\Debug' );
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
+
+		runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
+
+		$shell->resetCommandsCalled();
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
+
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs"));
+		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php' | phpcs"));
+
+		foreach( $cache->getEntries() as $entry ) {
+			$this->assertEquals( 'standard:w1e2', $entry->phpcsStandard );
+		}
+	}
+
+	public function testFullGitWorkflowForOneFileUnstagedCachesDataThenUsesCacheWithSeveritySetToZero() {
+		$gitFile = 'foobar.php';
+		$shell = new TestShell([$gitFile]);
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs --report=json -q --standard='standard' --warning-severity='0' --error-severity='0'", $this->phpcs->getResults('STDIN', [20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [21, 20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | git hash-object --stdin", 'previous-file-hash');
+		$shell->registerCommand("cat 'foobar.php' | git hash-object --stdin", 'new-file-hash');
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
+		$options = [
+			'no-cache-git-root' => 1,
+			'git-unstaged' => '1',
+			'cache' => false, // getopt is weird and sets options to false
+			'standard' => 'standard',
+			'warning-severity' => '0',
+			'error-severity' => '0',
+		];
+		$cache = new CacheManager( new TestCache(), '\PhpcsChangedTests\Debug' );
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
+
+		runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
+
+		$shell->resetCommandsCalled();
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
+
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs"));
+		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php' | phpcs"));
+
+		$cacheEntries = $cache->getEntries();
+		$this->assertNotEmpty($cacheEntries);
+		foreach( $cacheEntries as $entry ) {
+			$this->assertEquals( 'standard:w0e0', $entry->phpcsStandard );
+		}
+	}
+
+	public function testFullGitWorkflowForOneFileUnstagedCachesDataThenUsesCacheWithSeverityNotSet() {
+		$gitFile = 'foobar.php';
+		$shell = new TestShell([$gitFile]);
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs", $this->phpcs->getResults('STDIN', [20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [21, 20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show :0:$(git ls-files --full-name 'foobar.php') | git hash-object --stdin", 'previous-file-hash');
+		$shell->registerCommand("cat 'foobar.php' | git hash-object --stdin", 'new-file-hash');
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
+		$options = [
+			'no-cache-git-root' => 1,
+			'git-unstaged' => '1',
+			'cache' => false, // getopt is weird and sets options to false
+			'standard' => 'standard',
+		];
+		$cache = new CacheManager( new TestCache(), '\PhpcsChangedTests\Debug' );
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
+
+		runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
+
+		$shell->resetCommandsCalled();
+		$messages = runGitWorkflow([$gitFile], $options, $shell, $cache, '\PhpcsChangedTests\Debug');
+
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalled("git show :0:$(git ls-files --full-name 'foobar.php') | phpcs"));
+		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php' | phpcs"));
+
+		$cacheEntries = $cache->getEntries();
+		$this->assertNotEmpty($cacheEntries);
+		foreach( $cacheEntries as $entry ) {
+			$this->assertEquals( 'standard', $entry->phpcsStandard );
+		}
+	}
+
 	public function testFullGitWorkflowForOneFileUnstagedCachesDataThenClearsOldCacheWhenOldFileChanges() {
 		$gitFile = 'foobar.php';
 		$shell = new TestShell([$gitFile]);
