@@ -19,7 +19,7 @@ class CacheManager {
 	 * 1. The file path
 	 * 2. The cache type; either 'new' (modified version of a file) or 'old' (unmodified version of a file)
 	 * 3. The file hash (if needed; this is not used for old files)
-	 * 4. The phpcs standard
+	 * 4. The phpcs standard plus error and warning severity option. The phpcs standard only in case no severity is set, or default value of 5 is used (makes the format backward compatible).
 	 *
 	 * @var array<string, array<string, array<string, array<string, CacheEntry>>>>
 	 */
