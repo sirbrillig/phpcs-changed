@@ -239,7 +239,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 	$warningSeverity = $options['warning-severity'] ?? null;
 	$phpcsStandardOption .= isset($warningSeverity) ? ' --warning-severity=' . escapeshellarg($warningSeverity) : '';
 	$errorSeverity = $options['error-severity'] ?? null;
-	$phpcsStandardOption .= $errorSeverity ? ' --error-severity=' . escapeshellarg($errorSeverity) : '';
+	$phpcsStandardOption .= isset($errorSeverity) ? ' --error-severity=' . escapeshellarg($errorSeverity) : '';
 
 	try {
 		if (! $shell->isReadable($svnFile)) {
