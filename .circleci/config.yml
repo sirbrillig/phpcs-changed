@@ -8,7 +8,6 @@ jobs:
       - run: COMPOSER=composer-php-8.json composer install
       - run: COMPOSER=composer-php-8.json composer test
       - run: COMPOSER=composer-php-8.json composer phpstan
-      - run: COMPOSER=composer-php-8.json composer lint
   build_php7.4:
     docker:
       - image: circleci/php:7.4.6
