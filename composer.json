@@ -20,6 +20,12 @@
     "bin": [
         "bin/phpcs-changed"
     ],
+    "config": {
+        "sort-order": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
     "autoload": {
         "psr-4": {
             "PhpcsChanged\\": "PhpcsChanged/"
