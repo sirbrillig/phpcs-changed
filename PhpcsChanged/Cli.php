@@ -19,14 +19,18 @@ use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, getSvnFileInfo, isNewS
 use function PhpcsChanged\GitWorkflow\{getGitMergeBase, getGitUnifiedDiff, isNewGitFile, getGitUnmodifiedPhpcsOutput, getGitModifiedPhpcsOutput, validateGitFileExists, getModifiedGitFileHash, getUnmodifiedGitFileHash};
 
 function getDebug(bool $debugEnabled): callable {
-	return function(...$outputs) use ($debugEnabled) {
-		if (! $debugEnabled) {
-			return;
-		}
-		foreach ($outputs as $output) {
-			fwrite(STDERR, (is_string($output) ? $output : var_export($output, true)) . PHP_EOL);
-		}
-	};
+	return
+		/**
+		 * @param mixed[] $outputs
+		 */
+		function(...$outputs) use ($debugEnabled): void {
+			if (! $debugEnabled) {
+				return;
+			}
+			foreach ($outputs as $output) {
+				fwrite(STDERR, (is_string($output) ? $output : var_export($output, true)) . PHP_EOL);
+			}
+		};
 }
 
 function printError(string $output): void {

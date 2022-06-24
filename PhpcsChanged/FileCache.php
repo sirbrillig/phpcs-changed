@@ -23,9 +23,7 @@ class FileCache implements CacheInterface {
 		if ($contents === false) {
 			throw new \Exception('Failed to read cache file');
 		}
-		/**
-		 * @var array
-		 */
+		/** @var array{cacheVersion: string, entries: Array<string, Array<string, string>>} */
 		$decoded = json_decode($contents, true);
 		if (! $this->isDecodedDataValid($decoded)) {
 			throw new \Exception('Invalid cache file');
