@@ -8,7 +8,6 @@ use PhpcsChanged\Reporter;
 use PhpcsChanged\JsonReporter;
 use PhpcsChanged\FullReporter;
 use PhpcsChanged\PhpcsMessages;
-use PhpcsChanged\DiffLineMap;
 use PhpcsChanged\ShellException;
 use PhpcsChanged\ShellOperator;
 use PhpcsChanged\UnixShell;
