@@ -13,7 +13,7 @@ class FileCache implements CacheInterface {
 	/**
 	 * @var string
 	 */
-	public $cacheFilePath = DEFAULT_CACHE_FILE; // phpcs:ignore ImportDetection -- apparently ImportDetection does not understand constants
+	public $cacheFilePath = DEFAULT_CACHE_FILE;
 
 	public function load(): CacheObject {
 		if (! file_exists($this->cacheFilePath)) {
