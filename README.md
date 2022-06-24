@@ -122,6 +122,8 @@ The `--no-cache-git-root` option will prevent caching the check used by the git 
 
 The `--arc-lint` option can be used when the phpcs-changed is run via arcanist, as it skips some checks, which are performed by arcanist itself. It leads to better performance when used with arcanist. (Equivalent to `--no-verify-git-file --always-exit-zero`.)
 
+The `--debug` option will show every step taken by the script.
+
 ## PHP Library
 
 🐘🐘🐘
@@ -246,6 +248,10 @@ You can also run linting and static analysis:
 composer lint
 composer phpstan
 ```
+
+## Debugging
+
+If something isn't working the way you expect, use the `--debug` option. This will show a considerable amount of output. Pay particular attention to the CLI commands run by the script. You can run these commands manually to try to better understand the issue.
 
 ## Inspiration
 
