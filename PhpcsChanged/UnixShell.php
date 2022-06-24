@@ -38,8 +38,8 @@ class UnixShell implements ShellOperator {
 		exit($code);
 	}
 
-	public function printError(string $output): void {
-		printError($output);
+	public function printError(string $message): void {
+		printError($message);
 	}
 
 	public function getFileNameFromPath(string $path): string {
