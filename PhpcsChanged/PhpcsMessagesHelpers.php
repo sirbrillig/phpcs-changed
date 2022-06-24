@@ -12,6 +12,9 @@ class PhpcsMessagesHelpers {
 		if (empty($messages)) {
 			return self::fromArrays([], $forcedFileName ?? 'STDIN');
 		}
+		/**
+		 * @var array
+		 */
 		$parsed = json_decode($messages, true);
 		if (! $parsed) {
 			throw new \Exception('Failed to decode phpcs JSON: ' . var_export($messages, true));
