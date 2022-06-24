@@ -305,7 +305,6 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 	}
 
 	$debug('processing data...');
-	$fileName = $fileName ?? DiffLineMap::getFileNameFromDiff($unifiedDiff);
 	return getNewPhpcsMessages(
 		$unifiedDiff,
 		PhpcsMessages::fromPhpcsJson($unmodifiedFilePhpcsOutput, $fileName),
@@ -417,7 +416,6 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 	}
 
 	$debug('processing data...');
-	$fileName = $fileName ?? DiffLineMap::getFileNameFromDiff($unifiedDiff);
 	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($unmodifiedFilePhpcsOutput, $fileName), $modifiedFilePhpcsMessages);
 }
 
