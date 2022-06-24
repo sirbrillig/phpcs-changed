@@ -527,7 +527,7 @@ function shouldIgnorePath(string $path, string $patternOption = null): bool {
 			$replacements['/'] = '\\\\';
 		}
 
-		$pattern = strtr($pattern, $replacements);
+		$pattern = strtr(strval($pattern), $replacements);
 
 		$testPath = $path;
 
