@@ -7,12 +7,12 @@ use PhpcsChanged\DiffLineType;
 
 class DiffLine {
 	/**
-	 * @var int
+	 * @var int|null
 	 */
 	private $oldLine;
 
 	/**
-	 * @var int
+	 * @var int|null
 	 */
 	private $newLine;
 
