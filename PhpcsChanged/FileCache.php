@@ -32,7 +32,7 @@ class FileCache implements CacheInterface {
 		$cacheObject->cacheVersion = $decoded['cacheVersion'];
 		foreach($decoded['entries'] as $entry) {
 			if (! $this->isDecodedEntryValid($entry)) {
-				throw new \Exception('Invalid cache file entry: ' . $entry);
+				throw new \Exception('Invalid cache file entry: ' . var_export($entry, true));
 			}
 			$cacheObject->entries[] = CacheEntry::fromJson($entry);
 		}
