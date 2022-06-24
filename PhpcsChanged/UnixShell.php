@@ -18,7 +18,7 @@ class UnixShell implements ShellOperator {
 	}
 
 	public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
-		exec($command, $output, $return_val) ?? '';
+		exec($command, $output, $return_val);
 		return join(PHP_EOL, $output) . PHP_EOL;
 	}
 
@@ -38,8 +38,8 @@ class UnixShell implements ShellOperator {
 		exit($code);
 	}
 
-	public function printError(string $output): void {
-		printError($output);
+	public function printError(string $message): void {
+		printError($message);
 	}
 
 	public function getFileNameFromPath(string $path): string {

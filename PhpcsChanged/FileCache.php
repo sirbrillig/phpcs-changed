@@ -13,7 +13,7 @@ class FileCache implements CacheInterface {
 	/**
 	 * @var string
 	 */
-	public $cacheFilePath = DEFAULT_CACHE_FILE; // phpcs:ignore ImportDetection -- apparently ImportDetection does not understand constants
+	public $cacheFilePath = DEFAULT_CACHE_FILE;
 
 	public function load(): CacheObject {
 		if (! file_exists($this->cacheFilePath)) {
@@ -23,6 +23,7 @@ class FileCache implements CacheInterface {
 		if ($contents === false) {
 			throw new \Exception('Failed to read cache file');
 		}
+		/** @var array{cacheVersion: string, entries: Array<string, Array<string, string>>} */
 		$decoded = json_decode($contents, true);
 		if (! $this->isDecodedDataValid($decoded)) {
 			throw new \Exception('Invalid cache file');
@@ -31,7 +32,7 @@ class FileCache implements CacheInterface {
 		$cacheObject->cacheVersion = $decoded['cacheVersion'];
 		foreach($decoded['entries'] as $entry) {
 			if (! $this->isDecodedEntryValid($entry)) {
-				throw new \Exception('Invalid cache file entry: ' . $entry);
+				throw new \Exception('Invalid cache file entry: ' . var_export($entry, true));
 			}
 			$cacheObject->entries[] = CacheEntry::fromJson($entry);
 		}
@@ -70,7 +71,7 @@ class FileCache implements CacheInterface {
 
 	private function isDecodedEntryValid(array $entry): bool {
 		if (! array_key_exists('path', $entry) || ! array_key_exists('data', $entry) || ! array_key_exists('phpcsStandard', $entry) || ! array_key_exists('hash', $entry) || ! array_key_exists('type', $entry)) {
-			return false;		
+			return false;
 		}
 		return true;
 	}

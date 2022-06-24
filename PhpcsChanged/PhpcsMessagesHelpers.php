@@ -12,6 +12,9 @@ class PhpcsMessagesHelpers {
 		if (empty($messages)) {
 			return self::fromArrays([], $forcedFileName ?? 'STDIN');
 		}
+		/**
+		 * @var array
+		 */
 		$parsed = json_decode($messages, true);
 		if (! $parsed) {
 			throw new \Exception('Failed to decode phpcs JSON: ' . var_export($messages, true));
@@ -42,7 +45,7 @@ class PhpcsMessagesHelpers {
 
 	public static function fromArrays(array $messages, string $fileName = null): PhpcsMessages {
 		return new PhpcsMessages(array_map(function(array $messageArray) use ($fileName) {
-			return new LintMessage($messageArray['line'] ?? null, $fileName, $messageArray['type'] ?? 'ERROR', $messageArray);
+			return new LintMessage($messageArray['line'] ?? 0, $fileName, $messageArray['type'] ?? 'ERROR', $messageArray);
 		}, $messages));
 	}
 

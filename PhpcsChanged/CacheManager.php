@@ -47,7 +47,9 @@ class CacheManager {
 
 	public function __construct(CacheInterface $cache, callable $debug = null) {
 		$this->cache = $cache;
-		$noopDebug = function(...$output) {}; // phpcs:ignore VariableAnalysis
+		$noopDebug =
+			/** @param string[] $output */
+			function(...$output): void {}; // phpcs:ignore VariableAnalysis
 		$this->debug = $debug ?? $noopDebug;
 	}
 
