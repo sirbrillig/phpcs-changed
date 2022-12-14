@@ -14,7 +14,7 @@ function validateGitFileExists(string $gitFile, string $git, callable $isReadabl
 	if (! $isReadable($gitFile)) {
 		throw new ShellException("Cannot read file '{$gitFile}'");
 	}
-	$gitStatusCommand = "${git} status --porcelain " . escapeshellarg($gitFile);
+	$gitStatusCommand = "{$git} status --porcelain " . escapeshellarg($gitFile);
 	$debug('checking git existence of file with command:', $gitStatusCommand);
 	$gitStatusOutput = $executeCommand($gitStatusCommand);
 	$debug('git status output:', $gitStatusOutput);
@@ -79,7 +79,7 @@ function isNewGitFile(string $gitFile, string $git, callable $executeCommand, ar
 }
 
 function isNewGitFileRemote(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
-	$gitStatusCommand = "${git} cat-file -e " . escapeshellarg($options['git-base']) . ':' . escapeshellarg($gitFile) . ' 2>/dev/null';
+	$gitStatusCommand = "{$git} cat-file -e " . escapeshellarg($options['git-base']) . ':' . escapeshellarg($gitFile) . ' 2>/dev/null';
 	$debug('checking status of file with command:', $gitStatusCommand);
 	/** @var int */
 	$return_val = 1;
@@ -91,7 +91,7 @@ function isNewGitFileRemote(string $gitFile, string $git, callable $executeComma
 }
 
 function isNewGitFileLocal(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
-	$gitStatusCommand = "${git} status --porcelain " . escapeshellarg($gitFile);
+	$gitStatusCommand = "{$git} status --porcelain " . escapeshellarg($gitFile);
 	$debug('checking git status of file with command:', $gitStatusCommand);
 	$gitStatusOutput = $executeCommand($gitStatusCommand);
 	$debug('git status output:', $gitStatusOutput);
@@ -140,7 +140,7 @@ function getModifiedGitRevisionContentsCommand(string $gitFile, string $git, str
 		if (isRunFromGitRoot($git, $executeCommand, $options, $debug)) {
 			return "{$git} show HEAD:" . escapeshellarg($gitFile);
 		}
-		return "{$git} show HEAD:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
+		return "{$git} show HEAD:$({$git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
 	} else if (isset($options['git-unstaged'])) {
 		// for git-unstaged mode, we get the contents of the file from the current working copy
 		return "{$cat} " . escapeshellarg($gitFile);
@@ -149,7 +149,7 @@ function getModifiedGitRevisionContentsCommand(string $gitFile, string $git, str
 	if (isRunFromGitRoot($git, $executeCommand, $options, $debug)) {
 		return "{$git} show :0:" . escapeshellarg($gitFile);
 	}
-	return "{$git} show :0:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
+	return "{$git} show :0:$({$git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
 }
 
 function getUnmodifiedGitRevisionContentsCommand(string $gitFile, string $git, array $options, callable $executeCommand, callable $debug): string {
@@ -164,9 +164,9 @@ function getUnmodifiedGitRevisionContentsCommand(string $gitFile, string $git, a
 		$rev = 'HEAD';
 	}
 	if (isRunFromGitRoot($git, $executeCommand, $options, $debug)) {
-		return "${git} show {$rev}:" . escapeshellarg($gitFile);
+		return "{$git} show {$rev}:" . escapeshellarg($gitFile);
 	}
-	return "${git} show {$rev}:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ")";
+	return "{$git} show {$rev}:$({$git} ls-files --full-name " . escapeshellarg($gitFile) . ")";
 }
 
 function getModifiedGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, array $options, callable $debug): string {
