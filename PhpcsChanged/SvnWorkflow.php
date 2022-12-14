@@ -18,7 +18,7 @@ function getSvnUnifiedDiff(string $svnFile, string $svn, callable $executeComman
 }
 
 function getSvnFileInfo(string $svnFile, string $svn, callable $executeCommand, callable $debug): string {
-	$svnStatusCommand = "${svn} info " . escapeshellarg($svnFile);
+	$svnStatusCommand = "{$svn} info " . escapeshellarg($svnFile);
 	$debug('checking svn status of file with command:', $svnStatusCommand);
 	$svnStatusOutput = $executeCommand($svnStatusCommand);
 	$debug('svn status output:', $svnStatusOutput);
@@ -43,7 +43,7 @@ function getSvnRevisionId(string $svnFileInfo): string {
 }
 
 function getSvnUnmodifiedPhpcsOutput(string $svnFile, string $svn, string $phpcs, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
-	$unmodifiedFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($svnFile) . ' -';
+	$unmodifiedFilePhpcsOutputCommand = "{$svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($svnFile) . ' -';
 	$debug('running unmodified file phpcs command:', $unmodifiedFilePhpcsOutputCommand);
 	$unmodifiedFilePhpcsOutput = $executeCommand($unmodifiedFilePhpcsOutputCommand);
 	if (! $unmodifiedFilePhpcsOutput) {
