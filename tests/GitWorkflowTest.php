@@ -16,6 +16,9 @@ use function PhpcsChanged\Cli\runGitWorkflow;
 use function PhpcsChanged\GitWorkflow\{isNewGitFile, getGitUnifiedDiff};
 
 final class GitWorkflowTest extends TestCase {
+	public $fixture;
+	public $phpcs;
+
 	public function setUp(): void {
 		parent::setUp();
 		$this->fixture = new GitFixture();
