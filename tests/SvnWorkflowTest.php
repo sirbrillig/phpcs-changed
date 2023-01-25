@@ -16,6 +16,9 @@ use function PhpcsChanged\Cli\runSvnWorkflow;
 use function PhpcsChanged\SvnWorkflow\{getSvnFileInfo, isNewSvnFile, getSvnUnifiedDiff};
 
 final class SvnWorkflowTest extends TestCase {
+	public $phpcs;
+	public $fixture;
+
 	public function setUp(): void {
 		parent::setUp();
 		$this->fixture = new SvnFixture();
