@@ -134,13 +134,18 @@ function getGitModifiedPhpcsOutput(string $gitFile, string $git, string $phpcs, 
 	return $modifiedFilePhpcsOutput;
 }
 
+function getFullPathToFileCommand(string $gitFile, string $git): string {
+	return "{$git} ls-files --full-name " . escapeshellarg($gitFile);
+}
+
 function getModifiedGitRevisionContentsCommand(string $gitFile, string $git, string $cat, array $options, callable $executeCommand, callable $debug): string {
+	$fullPathCommand = getFullPathToFileCommand($gitFile, $git);
 	if (isset($options['git-base']) && ! empty($options['git-base'])) {
 		// for git-base mode, we get the contents of the file from the HEAD version of the file in the current branch
 		if (isRunFromGitRoot($git, $executeCommand, $options, $debug)) {
 			return "{$git} show HEAD:" . escapeshellarg($gitFile);
 		}
-		return "{$git} show HEAD:$({$git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
+		return "{$git} show HEAD:$({$fullPathCommand})";
 	} else if (isset($options['git-unstaged'])) {
 		// for git-unstaged mode, we get the contents of the file from the current working copy
 		return "{$cat} " . escapeshellarg($gitFile);
@@ -149,7 +154,7 @@ function getModifiedGitRevisionContentsCommand(string $gitFile, string $git, str
 	if (isRunFromGitRoot($git, $executeCommand, $options, $debug)) {
 		return "{$git} show :0:" . escapeshellarg($gitFile);
 	}
-	return "{$git} show :0:$({$git} ls-files --full-name " . escapeshellarg($gitFile) . ')';
+	return "{$git} show :0:$({$fullPathCommand})";
 }
 
 function getUnmodifiedGitRevisionContentsCommand(string $gitFile, string $git, array $options, callable $executeCommand, callable $debug): string {
@@ -166,7 +171,8 @@ function getUnmodifiedGitRevisionContentsCommand(string $gitFile, string $git, a
 	if (isRunFromGitRoot($git, $executeCommand, $options, $debug)) {
 		return "{$git} show {$rev}:" . escapeshellarg($gitFile);
 	}
-	return "{$git} show {$rev}:$({$git} ls-files --full-name " . escapeshellarg($gitFile) . ")";
+	$fullPathCommand = getFullPathToFileCommand($gitFile, $git);
+	return "{$git} show {$rev}:$({$fullPathCommand})";
 }
 
 function getModifiedGitFileHash(string $gitFile, string $git, string $cat, callable $executeCommand, array $options, callable $debug): string {
