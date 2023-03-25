@@ -420,7 +420,7 @@ Run "phpcs --help" for usage information
 		$shell->registerCommand("git merge-base 'master' HEAD", "0123456789abcdef0123456789abcdef01234567\n");
 		$shell->registerCommand("git diff '0123456789abcdef0123456789abcdef01234567'... --no-prefix 'bin/foobar.php'", $fixture);
 		$shell->registerCommand("git status --porcelain 'bin/foobar.php'", '');
-		$shell->registerCommand("git cat-file -e '0123456789abcdef0123456789abcdef01234567':'bin/foobar.php'", '');
+		$shell->registerCommand("git cat-file -e '0123456789abcdef0123456789abcdef01234567':$(git ls-files --full-name 'bin/foobar.php')", '');
 		$shell->registerCommand("git show '0123456789abcdef0123456789abcdef01234567':$(git ls-files --full-name 'bin/foobar.php') | phpcs --report=json -q --stdin-path='bin/foobar.php' -", $this->phpcs->getResults('\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php', [6], 'Found unused symbol Foobar.')->toPhpcsJson());
 		$shell->registerCommand("git show '0123456789abcdef0123456789abcdef01234567':$(git ls-files --full-name 'bin/foobar.php') | git hash-object --stdin", 'previous-file-hash');
 		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'bin/foobar.php') | phpcs --report=json -q --stdin-path='bin/foobar.php' -", $this->phpcs->getResults('\/srv\/www\/wordpress-default\/public_html\/test\/bin\/foobar.php', [6, 7], 'Found unused symbol Foobar.')->toPhpcsJson());
@@ -441,7 +441,7 @@ Run "phpcs --help" for usage information
 		$fixture = $this->fixture->getAltNewFileDiff('test.php');
 		$shell->registerCommand("git merge-base 'master' HEAD", "0123456789abcdef0123456789abcdef01234567\n");
 		$shell->registerCommand("git diff '0123456789abcdef0123456789abcdef01234567'... --no-prefix 'test.php'", $fixture);
-		$shell->registerCommand("git cat-file -e '0123456789abcdef0123456789abcdef01234567':'test.php'", '', 128);
+		$shell->registerCommand("git cat-file -e '0123456789abcdef0123456789abcdef01234567':$(git ls-files --full-name 'test.php')", '', 128);
 		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'test.php') | phpcs --report=json -q --stdin-path='test.php' -", $this->phpcs->getResults('\/srv\/www\/wordpress-default\/public_html\/test\/test.php', [6, 7, 8], "Found unused symbol 'Foobar'.")->toPhpcsJson());
 		$shell->registerCommand("git show '0123456789abcdef0123456789abcdef01234567':$(git ls-files --full-name 'test.php') | git hash-object --stdin", 'previous-file-hash');
 		$shell->registerCommand("git show HEAD:$(git ls-files --full-name 'test.php') | git hash-object --stdin", 'new-file-hash');
