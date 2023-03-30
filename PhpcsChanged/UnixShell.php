@@ -11,7 +11,7 @@ use function PhpcsChanged\Cli\printError;
  */
 class UnixShell implements ShellOperator {
 	public function validateExecutableExists(string $name, string $command): void {
-		exec(sprintf("type %s > /dev/null 2>&1", escapeshellarg($command)), $ignore, $returnVal);
+		exec(sprintf("where %s > /dev/null 2>&1", escapeshellarg($command)), $ignore, $returnVal);
 		if ($returnVal != 0) {
 			throw new \Exception("Cannot find executable for {$name}, currently set to '{$command}'.");
 		}
