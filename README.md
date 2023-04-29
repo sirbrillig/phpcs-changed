@@ -246,7 +246,7 @@ You can also run linting and static analysis:
 
 ```
 composer lint
-composer phpstan
+composer static-analysis
 ```
 
 ## Debugging
