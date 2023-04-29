@@ -15,7 +15,8 @@
         "precommit": "composer test && composer lint && composer phpstan",
         "test": "./vendor/bin/phpunit --color=always --verbose",
         "lint": "./vendor/bin/phpcs -s PhpcsChanged bin tests index.php",
-        "phpstan": "./vendor/bin/phpstan analyze PhpcsChanged/"
+        "phpstan": "./vendor/bin/phpstan analyze PhpcsChanged/ bin/phpcs-changed",
+        "static-analysis": "composer phpstan"
     },
     "bin": [
         "bin/phpcs-changed"
