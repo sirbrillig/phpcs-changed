@@ -155,7 +155,7 @@ function run(array $rawOptions, callable $debug): void {
 	if ($options->isGitMode()) {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
-			runGitWorkflow($options->files, $options->toArray(), $shell, new CacheManager(new FileCache(), $debug), $debug),
+			runGitWorkflow($options, $shell, new CacheManager(new FileCache(), $debug), $debug),
 			$options
 		);
 		return;
