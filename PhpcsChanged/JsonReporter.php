@@ -39,7 +39,7 @@ class JsonReporter implements Reporter {
 				'warnings' => count($warnings),
 				'fixable' => 0,
 			],
-			'files' => array_merge(...$outputByFile),
+			'files' => array_merge([], ...$outputByFile),
 		];
 		$output = json_encode($dataForJson, JSON_UNESCAPED_SLASHES);
 		if (! $output) {

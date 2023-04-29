@@ -23,6 +23,9 @@ use function PhpcsChanged\Cli\{
 use PhpcsChanged\UnixShell;
 use PhpcsChanged\CacheManager;
 use PhpcsChanged\FileCache;
+use PhpcsChanged\CliOptions;
+use PhpcsChanged\InvalidOptionException;
+use PhpcsChanged\Modes;
 
 $optind = 0;
 $options = getopt(
@@ -62,22 +65,22 @@ $fileNames = array_slice($argv, $optind);
 $fileNamesExpanded = [];
 foreach( $fileNames as $file ) {
 	if (is_dir($file)) {
-		if ( shouldIgnorePath($file, $options['ignore'] ?? null, '') ) {
+		if (shouldIgnorePath($file, isset($options['ignore']) && is_string($options['ignore']) ? $options['ignore'] : null)) {
 			continue;
 		}
-		$iterator = new RecursiveIteratorIterator(new RecursiveCallbackFilterIterator(new RecursiveDirectoryIterator($file, (RecursiveDirectoryIterator::SKIP_DOTS | FilesystemIterator::FOLLOW_SYMLINKS)), function($file, $key, $iterator){
+		$iterator = new \RecursiveIteratorIterator(new \RecursiveCallbackFilterIterator(new \RecursiveDirectoryIterator($file, (\RecursiveDirectoryIterator::SKIP_DOTS | \FilesystemIterator::FOLLOW_SYMLINKS)), function($file, $key, $iterator){
 			if ($file->isFile() && !fileHasValidExtension($file)) {
 				return false;
 			}
 			return $iterator->hasChildren() || $file->isFile() ? true : false;
 		}));
 		foreach ($iterator as $file) {
-			if (shouldIgnorePath($file->getPathName(), $options['ignore'] ?? null,'')) {
+			if (shouldIgnorePath($file->getPathName(), isset($options['ignore']) && is_string($options['ignore']) ? $options['ignore'] : null)) {
 				continue;
 			}
 			$fileNamesExpanded[] = $file->getPathName();
 		}
-	} elseif (!shouldIgnorePath($file, $options['ignore'] ?? null, '')) {
+	} elseif (!shouldIgnorePath($file, isset($options['ignore']) && is_string($options['ignore']) ? $options['ignore'] : null)) {
 		$fileNamesExpanded[] = $file;
 	}
 }
@@ -117,55 +120,47 @@ if (isset($options['phpcs-new'])) {
 	unset($options['phpcs-new']);
 }
 
+$options['files'] = $fileNamesExpanded;
+
 $debug = getDebug(isset($options['debug']));
-run($options, $fileNamesExpanded, $debug);
+run($options, $debug);
 
-function run(array $options, array $fileNamesExpanded, callable $debug): void {
-	$debug('Running on filenames: ' . implode(', ', $fileNamesExpanded));
-	$debug('Options: ' . json_encode($options));
-	$reportType = $options['report'] ?? 'full';
-	$diffFile = $options['diff'] ?? null;
-	$phpcsUnmodifiedFile = $options['phpcs-unmodified'] ?? null;
-	$phpcsModifiedFile = $options['phpcs-modified'] ?? null;
+function run(array $rawOptions, callable $debug): void {
+	$debug('Options: ' . json_encode($rawOptions));
+	try {
+		$options = CliOptions::fromArray($rawOptions);
+	} catch ( InvalidOptionException $err ) {
+		printErrorAndExit($err->getMessage());
+		exit(1);
+	}
+	$debug('Running on filenames: ' . implode(', ', $options->files));
 
-	if ($diffFile && $phpcsUnmodifiedFile && $phpcsModifiedFile) {
+	if ($options->mode === Modes::MANUAL) {
 		reportMessagesAndExit(
-			runManualWorkflow($diffFile, $phpcsUnmodifiedFile, $phpcsModifiedFile),
-			$reportType,
+			runManualWorkflow($options->diffFile, $options->phpcsUnmodified, $options->phpcsModified),
 			$options
 		);
 		return;
 	}
 
-	if ((isset($options['svn']) || isset($options['git'])) && empty($fileNamesExpanded)) {
-		printErrorAndExit('You must supply at least one file or directory to process.');
-		return;
-	}
-
-	if (isset($options['svn'])) {
+	if ($options->mode === Modes::SVN) {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
-			runSvnWorkflow($fileNamesExpanded, $options, $shell, new CacheManager(new FileCache(), $debug), $debug),
-			$reportType,
+			runSvnWorkflow($options->files, $options->toArray(), $shell, new CacheManager(new FileCache(), $debug), $debug),
 			$options
 		);
 		return;
 	}
 
-	if (isset($options['git'])) {
+	if ($options->isGitMode()) {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
-			runGitWorkflow($fileNamesExpanded, $options, $shell, new CacheManager(new FileCache(), $debug), $debug),
-			$reportType,
+			runGitWorkflow($options->files, $options->toArray(), $shell, new CacheManager(new FileCache(), $debug), $debug),
 			$options
 		);
 		return;
 	}
 
-	if (count($options) > 0) {
-		printErrorAndExit('You must use either manual or automatic mode.');
-		return;
-	}
 	printHelp();
 	exit(1);
 }

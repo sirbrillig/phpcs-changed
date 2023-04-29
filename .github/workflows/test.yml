@@ -77,8 +77,6 @@ jobs:
 
       - name: 'Composer: adjust dependencies'
         run: |
-          # Remove dev dependencies which are not compatible with all supported PHP versions.
-          composer remove --dev --no-update phpstan/phpstan
           # Set the PHPCS version for this test run.
           composer require --no-update squizlabs/php_codesniffer:"${{ matrix.phpcs_version }}"
 

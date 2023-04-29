@@ -25,7 +25,7 @@ class LintMessages {
 	 * @return static
 	 */
 	public static function merge(array $messages) {
-		return self::fromLintMessages(array_merge(...array_map(function(self $message) {
+		return self::fromLintMessages(array_merge([], ...array_map(function(self $message) {
 			return $message->getMessages();
 		}, $messages)));
 	}

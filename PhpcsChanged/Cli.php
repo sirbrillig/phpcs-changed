@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace PhpcsChanged\Cli;
 
+use PhpcsChanged\CliOptions;
 use PhpcsChanged\NoChangesException;
 use PhpcsChanged\Reporter;
 use PhpcsChanged\JsonReporter;
@@ -243,6 +244,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 	$phpcsStandardOption .= isset($warningSeverity) ? ' --warning-severity=' . escapeshellarg($warningSeverity) : '';
 	$errorSeverity = $options['error-severity'] ?? null;
 	$phpcsStandardOption .= isset($errorSeverity) ? ' --error-severity=' . escapeshellarg($errorSeverity) : '';
+	$fileName = $shell->getFileNameFromPath($svnFile);
 
 	try {
 		if (! $shell->isReadable($svnFile)) {
@@ -263,7 +265,6 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 			}
 		}
 
-		$fileName = $shell->getFileNameFromPath($svnFile);
 		$modifiedFilePhpcsMessages = PhpcsMessages::fromPhpcsJson($modifiedFilePhpcsOutput, $fileName);
 		$hasNewPhpcsMessages = !empty($modifiedFilePhpcsMessages->getMessages());
 
@@ -354,6 +355,7 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 	$phpcsStandardOption .= isset($warningSeverity) ? ' --warning-severity=' . escapeshellarg($warningSeverity) : '';
 	$errorSeverity = $options['error-severity'] ?? null;
 	$phpcsStandardOption .= isset($errorSeverity) ? ' --error-severity=' . escapeshellarg($errorSeverity) : '';
+	$fileName = $shell->getFileNameFromPath($gitFile);
 
 	try {
 		validateGitFileExists($gitFile, $git, [$shell, 'isReadable'], [$shell, 'executeCommand'], $debug, $options);
@@ -372,7 +374,6 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 			}
 		}
 
-		$fileName = $shell->getFileNameFromPath($gitFile);
 		$modifiedFilePhpcsMessages = PhpcsMessages::fromPhpcsJson($modifiedFilePhpcsOutput, $fileName);
 		$hasNewPhpcsMessages = !empty($modifiedFilePhpcsMessages->getMessages());
 
@@ -418,10 +419,10 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($unmodifiedFilePhpcsOutput, $fileName), $modifiedFilePhpcsMessages);
 }
 
-function reportMessagesAndExit(PhpcsMessages $messages, string $reportType, array $options): void {
-	$reporter = getReporter($reportType);
-	echo $reporter->getFormattedMessages($messages, $options);
-	if ( isset($options['always-exit-zero']) ) {
+function reportMessagesAndExit(PhpcsMessages $messages, CliOptions $options): void {
+	$reporter = getReporter($options->reporter);
+	echo $reporter->getFormattedMessages($messages, $options->toArray());
+	if ($options->alwaysExitZero) {
 		exit(0);
 	}
 	exit($reporter->getExitCode($messages));

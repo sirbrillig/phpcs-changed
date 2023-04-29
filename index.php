@@ -4,6 +4,9 @@ declare(strict_types=1);
 namespace PhpcsChanged;
 
 // Classes
+require_once __DIR__ . '/PhpcsChanged/Modes.php';
+require_once __DIR__ . '/PhpcsChanged/InvalidOptionException.php';
+require_once __DIR__ . '/PhpcsChanged/CliOptions.php';
 require_once __DIR__ . '/PhpcsChanged/DiffLine.php';
 require_once __DIR__ . '/PhpcsChanged/DiffLineType.php';
 require_once __DIR__ . '/PhpcsChanged/DiffLineMap.php';
