@@ -100,6 +100,9 @@ class CliOptions {
 
 	public static function fromArray(array $options): self {
 		$cliOptions = new self();
+		// Note that this array is likely created by `getopt()` which sets any
+		// boolean option to `false`, meaning that we must use `isset()` to
+		// determine if these options are set.
 		if (isset($options['files'])) {
 			$cliOptions->files = $options['files'];
 		}
@@ -174,6 +177,7 @@ class CliOptions {
 	public function toArray(): array {
 		$options = [];
 		$options['report'] = $this->reporter;
+		$options['files'] = $this->files;
 		if ($this->phpcsStandard) {
 			$options['standard'] = $this->phpcsStandard;
 		}
