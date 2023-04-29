@@ -244,6 +244,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 	$phpcsStandardOption .= isset($warningSeverity) ? ' --warning-severity=' . escapeshellarg($warningSeverity) : '';
 	$errorSeverity = $options['error-severity'] ?? null;
 	$phpcsStandardOption .= isset($errorSeverity) ? ' --error-severity=' . escapeshellarg($errorSeverity) : '';
+	$fileName = $shell->getFileNameFromPath($svnFile);
 
 	try {
 		if (! $shell->isReadable($svnFile)) {
@@ -264,7 +265,6 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 			}
 		}
 
-		$fileName = $shell->getFileNameFromPath($svnFile);
 		$modifiedFilePhpcsMessages = PhpcsMessages::fromPhpcsJson($modifiedFilePhpcsOutput, $fileName);
 		$hasNewPhpcsMessages = !empty($modifiedFilePhpcsMessages->getMessages());
 
@@ -355,6 +355,7 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 	$phpcsStandardOption .= isset($warningSeverity) ? ' --warning-severity=' . escapeshellarg($warningSeverity) : '';
 	$errorSeverity = $options['error-severity'] ?? null;
 	$phpcsStandardOption .= isset($errorSeverity) ? ' --error-severity=' . escapeshellarg($errorSeverity) : '';
+	$fileName = $shell->getFileNameFromPath($gitFile);
 
 	try {
 		validateGitFileExists($gitFile, $git, [$shell, 'isReadable'], [$shell, 'executeCommand'], $debug, $options);
@@ -373,7 +374,6 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 			}
 		}
 
-		$fileName = $shell->getFileNameFromPath($gitFile);
 		$modifiedFilePhpcsMessages = PhpcsMessages::fromPhpcsJson($modifiedFilePhpcsOutput, $fileName);
 		$hasNewPhpcsMessages = !empty($modifiedFilePhpcsMessages->getMessages());
 
