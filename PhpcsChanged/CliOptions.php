@@ -100,7 +100,6 @@ class CliOptions {
 
 	public static function fromArray(array $options): self {
 		$cliOptions = new self();
-		$cliOptions->reporter = $options['report'];
 		if (isset($options['files'])) {
 			$cliOptions->files = $options['files'];
 		}
@@ -119,6 +118,9 @@ class CliOptions {
 		if (isset($options['git-base'])) {
 			$cliOptions->mode = 'git-base';
 			$cliOptions->gitBase = $options['git-base'];
+		}
+		if (isset($options['report'])) {
+			$cliOptions->reporter = $options['report'];
 		}
 		if (isset($options['debug'])) {
 			$cliOptions->debug = true;
