@@ -202,9 +202,6 @@ class CliOptions {
 			$options['git'] = true;
 			$options['git-base'] = $this->gitBase;
 		}
-		if ($this->debug) {
-			$options['debug'] = true;
-		}
 		if ($this->useCache) {
 			$options['cache'] = true;
 		}
