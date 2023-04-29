@@ -49,8 +49,8 @@ jobs:
       - name: Show PHPCS results in PR
         run: cs2pr ./phpcs-report.xml
 
-  phpstan:
-    name: "PHP: 7.4 | PHPStan"
+  staticanalysis:
+    name: "PHP: 7.4 | Static analysis"
     runs-on: ubuntu-latest
 
     steps:
@@ -69,5 +69,5 @@ jobs:
       - name: Install Composer dependencies
         uses: "ramsey/composer-install@v2"
 
-      - name: Run PHPStan
-        run: composer phpstan
+      - name: Run Static analysis
+        run: composer static-analysis
