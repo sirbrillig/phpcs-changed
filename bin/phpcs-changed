@@ -137,7 +137,7 @@ function run(array $rawOptions, callable $debug): void {
 
 	if ($options->mode === Modes::MANUAL) {
 		reportMessagesAndExit(
-			runManualWorkflow($diffFile, $phpcsUnmodifiedFile, $phpcsModifiedFile),
+			runManualWorkflow($options->diffFile, $options->phpcsUnmodified, $options->phpcsModified),
 			$options
 		);
 		return;
