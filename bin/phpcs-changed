@@ -128,10 +128,9 @@ if (count($options) === 0) {
 }
 
 $debug = getDebug(isset($options['debug']));
-run($options, $fileNamesExpanded, $debug);
+run($options, $debug);
 
-function run(array $rawOptions, array $fileNamesExpanded, callable $debug): void {
-	$debug('Running on filenames: ' . implode(', ', $fileNamesExpanded));
+function run(array $rawOptions, callable $debug): void {
 	$debug('Options: ' . json_encode($rawOptions));
 	try {
 		$options = CliOptions::fromArray($rawOptions);
@@ -139,6 +138,7 @@ function run(array $rawOptions, array $fileNamesExpanded, callable $debug): void
 		printErrorAndExit($err->getMessage());
 		exit(1);
 	}
+	$debug('Running on filenames: ' . implode(', ', $options->files));
 
 	if ($options->mode === Modes::MANUAL) {
 		reportMessagesAndExit(
@@ -152,7 +152,7 @@ function run(array $rawOptions, array $fileNamesExpanded, callable $debug): void
 	if ($options->mode === Modes::SVN) {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
-			runSvnWorkflow($fileNamesExpanded, $options->toArray(), $shell, new CacheManager(new FileCache(), $debug), $debug),
+			runSvnWorkflow($options->files, $options->toArray(), $shell, new CacheManager(new FileCache(), $debug), $debug),
 			$options->reporter,
 			$options->toArray()
 		);
@@ -162,7 +162,7 @@ function run(array $rawOptions, array $fileNamesExpanded, callable $debug): void
 	if ($options->isGitMode()) {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
-			runGitWorkflow($fileNamesExpanded, $options->toArray(), $shell, new CacheManager(new FileCache(), $debug), $debug),
+			runGitWorkflow($options->files, $options->toArray(), $shell, new CacheManager(new FileCache(), $debug), $debug),
 			$options->reporter,
 			$options->toArray()
 		);
