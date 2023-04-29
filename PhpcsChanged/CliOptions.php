@@ -90,11 +90,17 @@ class CliOptions {
 
 	/**
 	 * @var string|null
+	 *
+	 * Note that this is typically a numeric string and can be '0' which is falsy
+	 * in PHP so be careful when testing for it.
 	 */
 	public $warningSeverity = null;
 
 	/**
 	 * @var string|null
+	 *
+	 * Note that this is typically a numeric string and can be '0' which is falsy
+	 * in PHP so be careful when testing for it.
 	 */
 	public $errorSeverity = null;
 
@@ -225,10 +231,10 @@ class CliOptions {
 		if ($this->noVerifyGitFile) {
 			$options['no-verify-git-file'] = true;
 		}
-		if ($this->warningSeverity) {
+		if (isset($this->warningSeverity)) {
 			$options['warning-severity'] = $this->warningSeverity;
 		}
-		if ($this->errorSeverity) {
+		if (isset($this->errorSeverity)) {
 			$options['error-severity'] = $this->errorSeverity;
 		}
 		return $options;

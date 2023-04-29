@@ -312,7 +312,7 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 	);
 }
 
-function runGitWorkflow(array $gitFiles, array $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
+function runGitWorkflow(CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
 	$git = getenv('GIT') ?: 'git';
 	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$cat = getenv('CAT') ?: 'cat';
@@ -323,8 +323,8 @@ function runGitWorkflow(array $gitFiles, array $options, ShellOperator $shell, C
 		$shell->validateExecutableExists('phpcs', $phpcs);
 		$shell->validateExecutableExists('cat', $cat);
 		$debug('executables are valid');
-		if (isset($options['git-base']) && ! empty($options['git-base'])) {
-			$options['git-base'] = getGitMergeBase($git, [$shell, 'executeCommand'], $options, $debug);
+		if ($options->gitBase) {
+			$options->gitBase = getGitMergeBase($git, [$shell, 'executeCommand'], $options->toArray(), $debug);
 		}
 	} catch(\Exception $err) {
 		$shell->printError($err->getMessage());
@@ -332,13 +332,13 @@ function runGitWorkflow(array $gitFiles, array $options, ShellOperator $shell, C
 		throw $err; // Just in case we do not actually exit
 	}
 
-	loadCache($cache, $shell, $options);
+	loadCache($cache, $shell, $options->toArray());
 
 	$phpcsMessages = array_map(function(string $gitFile) use ($options, $shell, $cache, $debug): PhpcsMessages {
-		return runGitWorkflowForFile($gitFile, $options, $shell, $cache, $debug);
-	}, $gitFiles);
+		return runGitWorkflowForFile($gitFile, $options->toArray(), $shell, $cache, $debug);
+	}, $options->files);
 
-	saveCache($cache, $shell, $options);
+	saveCache($cache, $shell, $options->toArray());
 
 	return PhpcsMessages::merge($phpcsMessages);
 }
