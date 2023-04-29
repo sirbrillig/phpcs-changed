@@ -122,11 +122,6 @@ if (isset($options['phpcs-new'])) {
 
 $options['files'] = $fileNamesExpanded;
 
-if (count($options) === 0) {
-	printHelp();
-	exit(1);
-}
-
 $debug = getDebug(isset($options['debug']));
 run($options, $debug);
 
