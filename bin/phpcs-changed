@@ -143,8 +143,7 @@ function run(array $rawOptions, callable $debug): void {
 	if ($options->mode === Modes::MANUAL) {
 		reportMessagesAndExit(
 			runManualWorkflow($diffFile, $phpcsUnmodifiedFile, $phpcsModifiedFile),
-			$options->reporter,
-			$options->toArray()
+			$options
 		);
 		return;
 	}
@@ -153,8 +152,7 @@ function run(array $rawOptions, callable $debug): void {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
 			runSvnWorkflow($options->files, $options->toArray(), $shell, new CacheManager(new FileCache(), $debug), $debug),
-			$options->reporter,
-			$options->toArray()
+			$options
 		);
 		return;
 	}
@@ -163,8 +161,7 @@ function run(array $rawOptions, callable $debug): void {
 		$shell = new UnixShell();
 		reportMessagesAndExit(
 			runGitWorkflow($options->files, $options->toArray(), $shell, new CacheManager(new FileCache(), $debug), $debug),
-			$options->reporter,
-			$options->toArray()
+			$options
 		);
 		return;
 	}

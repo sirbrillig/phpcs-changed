@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace PhpcsChanged\Cli;
 
+use PhpcsChanged\CliOptions;
 use PhpcsChanged\NoChangesException;
 use PhpcsChanged\Reporter;
 use PhpcsChanged\JsonReporter;
@@ -418,10 +419,10 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($unmodifiedFilePhpcsOutput, $fileName), $modifiedFilePhpcsMessages);
 }
 
-function reportMessagesAndExit(PhpcsMessages $messages, string $reportType, array $options): void {
-	$reporter = getReporter($reportType);
-	echo $reporter->getFormattedMessages($messages, $options);
-	if ( isset($options['always-exit-zero']) ) {
+function reportMessagesAndExit(PhpcsMessages $messages, CliOptions $options): void {
+	$reporter = getReporter($options->reporter);
+	echo $reporter->getFormattedMessages($messages, $options->toArray());
+	if ($options->alwaysExitZero) {
 		exit(0);
 	}
 	exit($reporter->getExitCode($messages));
