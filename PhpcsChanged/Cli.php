@@ -177,14 +177,14 @@ Overrides:
 EOF;
 }
 
-function getReporter(string $reportType): Reporter {
+function getReporter(string $reportType, CliOptions $options): Reporter {
 	switch ($reportType) {
 		case 'full':
 			return new FullReporter();
 		case 'json':
 			return new JsonReporter();
 		case 'xml':
-			return new XmlReporter();
+			return new XmlReporter($options);
 	}
 	printErrorAndExit("Unknown Reporter '{$reportType}'");
 	throw new \Exception("Unknown Reporter '{$reportType}'"); // Just in case we don't exit for some reason.
@@ -420,7 +420,7 @@ function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperat
 }
 
 function reportMessagesAndExit(PhpcsMessages $messages, CliOptions $options): void {
-	$reporter = getReporter($options->reporter);
+	$reporter = getReporter($options->reporter, $options);
 	echo $reporter->getFormattedMessages($messages, $options->toArray());
 	if ($options->alwaysExitZero) {
 		exit(0);
