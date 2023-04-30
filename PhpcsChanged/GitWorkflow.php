@@ -3,22 +3,22 @@ declare(strict_types=1);
 
 namespace PhpcsChanged\GitWorkflow;
 
+use PhpcsChanged\CliOptions;
 use PhpcsChanged\NoChangesException;
 use PhpcsChanged\ShellException;
+use PhpcsChanged\ShellOperator;
+use function PhpcsChanged\Cli\getDebug;
 
-function validateGitFileExists(string $gitFile, string $git, callable $isReadable, callable $executeCommand, callable $debug, array $options): void {
-	if (isset($options['no-verify-git-file'])) {
+function validateGitFileExists(string $gitFile, ShellOperator $shell, CliOptions $options): void {
+	$debug = getDebug($options->debug);
+	if (isset($options->noVerifyGitFile)) {
 		$debug('skipping Git file exists check.');
 		return;
 	}
-	if (! $isReadable($gitFile)) {
+	if (! $shell->isReadable($gitFile)) {
 		throw new ShellException("Cannot read file '{$gitFile}'");
 	}
-	$gitStatusCommand = "{$git} status --porcelain " . escapeshellarg($gitFile);
-	$debug('checking git existence of file with command:', $gitStatusCommand);
-	$gitStatusOutput = $executeCommand($gitStatusCommand);
-	$debug('git status output:', $gitStatusOutput);
-	if (isset($gitStatusOutput[0]) && $gitStatusOutput[0] === '?') {
+	if (! $shell->doesFileExistInGit($gitFile)) {
 		throw new ShellException("File does not appear to be tracked by git: '{$gitFile}'");
 	}
 }
