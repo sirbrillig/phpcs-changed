@@ -9,8 +9,6 @@ use PhpcsChanged\CliOptions;
  * Interface to perform file and shell operations
  */
 interface ShellOperator {
-	public function __construct(CliOptions $options);
-
 	public function validateExecutableExists(string $name, string $command): void;
 
 	public function executeCommand(string $command, array &$output = null, int &$return_val = null): string;
