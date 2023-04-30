@@ -34,9 +34,6 @@ class UnixShell implements ShellOperator {
 	}
 
 	public function doesFileExistInGit(string $fileName): bool {
-		if (! $this->isReadable($fileName)) {
-			return false;
-		}
 		$debug = getDebug($this->options->debug);
 		$git = getenv('GIT') ?: 'git';
 		$gitStatusCommand = "{$git} status --porcelain " . escapeshellarg($fileName);
