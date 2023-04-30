@@ -12,10 +12,13 @@ use function PhpcsChanged\Cli\getDebug;
  * Module to perform file and shell operations
  */
 class UnixShell implements ShellOperator {
-	private $debug;
+	/**
+	 * @var CliOptions
+	 */
+	private $options;
 
 	public function __construct(CliOptions $options) {
-		$this->debug = getDebug($options->debug);
+		$this->options = $options;
 	}
 
 	public function validateExecutableExists(string $name, string $command): void {
@@ -34,11 +37,12 @@ class UnixShell implements ShellOperator {
 		if (! $this->isReadable($fileName)) {
 			return false;
 		}
+		$debug = getDebug($this->options->debug);
 		$git = getenv('GIT') ?: 'git';
 		$gitStatusCommand = "{$git} status --porcelain " . escapeshellarg($fileName);
-		$this->debug('checking git existence of file with command:', $gitStatusCommand);
+		$debug('checking git existence of file with command:', $gitStatusCommand);
 		$gitStatusOutput = $this->executeCommand($gitStatusCommand);
-		$this->debug('git status output:', $gitStatusOutput);
+		$debug('git status output:', $gitStatusOutput);
 		if (isset($gitStatusOutput[0]) && $gitStatusOutput[0] === '?') {
 			return false;
 		}
