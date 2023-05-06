@@ -104,4 +104,105 @@ class TestShell implements ShellOperator {
 		}
 		return true;
 	}
+
+	public function getGitRootDirectory(): string {
+		$git = getenv('GIT') ?: 'git';
+		$gitRootCommand = "{$git} rev-parse --show-toplevel";
+		$gitRoot = $this->executeCommand($gitRootCommand);
+		return trim($gitRoot);
+	}
+
+	private function getFullGitPathToFile(string $fileName): string {
+		$git = getenv('GIT') ?: 'git';
+		$command = "{$git} ls-files --full-name " . escapeshellarg($fileName);
+		$fullPath = $this->executeCommand($command);
+		return trim($fullPath);
+	}
+
+	private function getModifiedFileContentsCommand(string $fileName): string {
+		$git = getenv('GIT') ?: 'git';
+		$cat = getenv('CAT') ?: 'cat';
+		$fullPath = $this->getFullGitPathToFile($fileName);
+		if ($this->options->mode === Modes::GIT_BASE) {
+			// for git-base mode, we get the contents of the file from the HEAD version of the file in the current branch
+			return "{$git} show HEAD:" . escapeshellarg($fullPath);
+		}
+		if ($this->options->mode === Modes::GIT_UNSTAGED) {
+			// for git-unstaged mode, we get the contents of the file from the current working copy
+			return "{$cat} " . escapeshellarg($fileName);
+		}
+		// default mode is git-staged, so we get the contents from the staged version of the file
+		return "{$git} show :0:" . escapeshellarg($fullPath);
+	}
+
+	private function getUnmodifiedFileContentsCommand(string $fileName): string {
+		$git = getenv('GIT') ?: 'git';
+		if ($this->options->mode === Modes::GIT_BASE) {
+			$rev = escapeshellarg($this->options->gitBase);
+		} else if ($this->options->mode === Modes::GIT_UNSTAGED) {
+			$rev = ':0'; // :0 in this case means "staged version or HEAD if there is no staged version"
+		} else {
+			// git-staged is the default
+			$rev = 'HEAD';
+		}
+		$fullPath = $this->getFullGitPathToFile($fileName);
+		return "{$git} show {$rev}:" . escapeshellarg($fullPath);
+	}
+
+	public function getGitHashOfModifiedFile(string $fileName): string {
+		$git = getenv('GIT') ?: 'git';
+		$fileContentsCommand = $this->getModifiedFileContentsCommand($fileName);
+		$command = "{$fileContentsCommand} | {$git} hash-object --stdin";
+		$hash = $this->executeCommand($command);
+		if (! $hash) {
+			throw new ShellException("Cannot get modified file hash for file '{$fileName}'");
+		}
+		return $hash;
+	}
+
+	public function getGitHashOfUnmodifiedFile(string $fileName): string {
+		$git = getenv('GIT') ?: 'git';
+		$fileContentsCommand = $this->getUnmodifiedFileContentsCommand($fileName);
+		$command = "{$fileContentsCommand} | {$git} hash-object --stdin";
+		$hash = $this->executeCommand($command);
+		if (! $hash) {
+			throw new ShellException("Cannot get unmodified file hash for file '{$fileName}'");
+		}
+		return $hash;
+	}
+
+	private function getPhpcsStandardOption(): string {
+		$phpcsStandard = $this->options->phpcsStandard;
+		$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
+		$warningSeverity = $this->options->warningSeverity;
+		$phpcsStandardOption .= isset($warningSeverity) ? ' --warning-severity=' . escapeshellarg($warningSeverity) : '';
+		$errorSeverity = $this->options->errorSeverity;
+		$phpcsStandardOption .= isset($errorSeverity) ? ' --error-severity=' . escapeshellarg($errorSeverity) : '';
+		return $phpcsStandardOption;
+	}
+
+	public function getPhpcsOutputOfModifiedGitFile(string $fileName): string {
+		$phpcs = getenv('PHPCS') ?: 'phpcs';
+		$fileContentsCommand = $this->getModifiedFileContentsCommand($fileName);
+		$modifiedFilePhpcsOutputCommand = "{$fileContentsCommand} | {$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . ' --stdin-path=' .  escapeshellarg($fileName) .' -';
+		$modifiedFilePhpcsOutput = $this->executeCommand($modifiedFilePhpcsOutputCommand);
+		if (! $modifiedFilePhpcsOutput) {
+			throw new ShellException("Cannot get modified file phpcs output for file '{$fileName}'");
+		}
+		if (false !== strpos($modifiedFilePhpcsOutput, 'You must supply at least one file or directory to process')) {
+			return '';
+		}
+		return $modifiedFilePhpcsOutput;
+	}
+
+	public function getPhpcsOutputOfUnmodifiedGitFile(string $fileName): string {
+		$phpcs = getenv('PHPCS') ?: 'phpcs';
+		$unmodifiedFileContentsCommand = $this->getUnmodifiedFileContentsCommand($fileName);
+		$unmodifiedFilePhpcsOutputCommand = "{$unmodifiedFileContentsCommand} | {$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . ' --stdin-path=' .  escapeshellarg($fileName) . ' -';
+		$unmodifiedFilePhpcsOutput = $this->executeCommand($unmodifiedFilePhpcsOutputCommand);
+		if (! $unmodifiedFilePhpcsOutput) {
+			throw new ShellException("Cannot get unmodified file phpcs output for file '{$fileName}'");
+		}
+		return $unmodifiedFilePhpcsOutput;
+	}
 }
