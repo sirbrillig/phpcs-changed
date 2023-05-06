@@ -18,7 +18,7 @@ class TestShell implements ShellOperator {
 
 	private $fileHashes = [];
 
-	private CliOptions $options;
+	private $options;
 
 	public function __construct(array $readableFileNames) {
 		foreach ($readableFileNames as $fileName) {
