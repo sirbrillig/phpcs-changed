@@ -11,9 +11,8 @@ use PhpcsChanged\CliOptions;
 interface ShellOperator {
 	public function validateExecutableExists(string $name, string $command): void;
 
+	// TODO: remove executeCommand from the interface and rely on the more specific methods.
 	public function executeCommand(string $command, array &$output = null, int &$return_val = null): string;
-
-	public function doesFileExistInGit(string $fileName): bool;
 
 	public function isReadable(string $fileName): bool;
 
@@ -24,4 +23,16 @@ interface ShellOperator {
 	public function printError(string $message): void;
 
 	public function getFileNameFromPath(string $path): string;
+
+	public function doesFileExistInGit(string $fileName): bool;
+
+	public function getGitRootDirectory(): string;
+
+	public function getGitHashOfModifiedFile(string $fileName): string;
+
+	public function getGitHashOfUnmodifiedFile(string $fileName): string;
+
+	public function getPhpcsOutputOfModifiedGitFile(string $fileName): string;
+
+	public function getPhpcsOutputOfUnmodifiedGitFile(string $fileName): string;
 }
