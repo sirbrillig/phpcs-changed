@@ -129,7 +129,7 @@ class UnixShell implements ShellOperator {
 		$phpcsStandardOption .= isset($warningSeverity) ? ' --warning-severity=' . escapeshellarg($warningSeverity) : '';
 		$errorSeverity = $this->options->errorSeverity;
 		$phpcsStandardOption .= isset($errorSeverity) ? ' --error-severity=' . escapeshellarg($errorSeverity) : '';
-		return $phpcsStandardOption
+		return $phpcsStandardOption;
 	}
 
 	public function getPhpcsOutputOfModifiedGitFile(string $fileName): string {
