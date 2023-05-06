@@ -113,13 +113,6 @@ class TestShell implements ShellOperator {
 		return true;
 	}
 
-	public function getGitRootDirectory(): string {
-		$git = getenv('GIT') ?: 'git';
-		$gitRootCommand = "{$git} rev-parse --show-toplevel";
-		$gitRoot = $this->executeCommand($gitRootCommand);
-		return trim($gitRoot);
-	}
-
 	private function getFullGitPathToFile(string $fileName): string {
 		$git = getenv('GIT') ?: 'git';
 		$command = "{$git} ls-files --full-name " . escapeshellarg($fileName);

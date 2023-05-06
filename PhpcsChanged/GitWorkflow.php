@@ -23,25 +23,6 @@ function validateGitFileExists(string $gitFile, ShellOperator $shell, CliOptions
 	}
 }
 
-function isRunFromGitRoot(ShellOperator $shell, CliOptions $options): bool {
-	// This should never change while the script runs so we cache it.
-	static $isRunFromGitRoot;
-
-	if (isset($options['no-cache-git-root'])) {
-		$isRunFromGitRoot = null;
-	}
-	if (null !== $isRunFromGitRoot) {
-		return $isRunFromGitRoot;
-	}
-	
-	$debug = getDebug($options->debug);
-	$gitRoot = $shell->getGitRootDirectory();
-	$isRunFromGitRoot = (getcwd() === $gitRoot);
-
-	$debug('is run from git root: ' . var_export($isRunFromGitRoot, true));
-	return $isRunFromGitRoot;
-}
-
 function getGitMergeBase(string $git, callable $executeCommand, array $options, callable $debug): string {
 	if ( empty($options['git-base']) ) {
 		return '';

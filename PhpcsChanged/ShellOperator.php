@@ -28,8 +28,6 @@ interface ShellOperator {
 
 	public function doesUnmodifiedFileExistInGit(string $fileName): bool;
 
-	public function getGitRootDirectory(): string;
-
 	public function getGitHashOfModifiedFile(string $fileName): string;
 
 	public function getGitHashOfUnmodifiedFile(string $fileName): string;

@@ -85,15 +85,6 @@ class UnixShell implements ShellOperator {
 		return $this->isFileStagedForAdding($fileName);
 	}
 
-	public function getGitRootDirectory(): string {
-		$debug = getDebug($this->options->debug);
-		$git = getenv('GIT') ?: 'git';
-		$gitRootCommand = "{$git} rev-parse --show-toplevel";
-		$debug('getting git root directory with command:', $gitRootCommand);
-		$gitRoot = $this->executeCommand($gitRootCommand);
-		return trim($gitRoot);
-	}
-
 	private function getFullGitPathToFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
 		$git = getenv('GIT') ?: 'git';
