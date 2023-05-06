@@ -5,6 +5,7 @@ namespace PhpcsChanged;
 
 use PhpcsChanged\ShellOperator;
 use PhpcsChanged\CliOptions;
+use PhpcsChanged\Modes;
 use function PhpcsChanged\Cli\printError;
 use function PhpcsChanged\Cli\getDebug;
 
@@ -68,7 +69,7 @@ class UnixShell implements ShellOperator {
 		$git = getenv('GIT') ?: 'git';
 		$cat = getenv('CAT') ?: 'cat';
 		$fullPath = $this->getFullGitPathToFile($fileName);
-		if ($this->options->mode === Mode::GIT_BASE) {
+		if ($this->options->mode === Modes::GIT_BASE) {
 			// for git-base mode, we get the contents of the file from the HEAD version of the file in the current branch
 			return "{$git} show HEAD:" . escapeshellarg($fullPath);
 		}
@@ -82,9 +83,9 @@ class UnixShell implements ShellOperator {
 
 	private function getUnmodifiedFileContentsCommand(string $fileName): string {
 		$git = getenv('GIT') ?: 'git';
-		if ($this->options->mode === Mode::GIT_BASE) {
+		if ($this->options->mode === Modes::GIT_BASE) {
 			$rev = escapeshellarg($this->options->gitBase);
-		} else if ($this->options->mode === Mode::GIT_UNSTAGED) {
+		} else if ($this->options->mode === Modes::GIT_UNSTAGED) {
 			$rev = ':0'; // :0 in this case means "staged version or HEAD if there is no staged version"
 		} else {
 			// git-staged is the default
