@@ -113,19 +113,19 @@ class CliOptions {
 			$cliOptions->files = $options['files'];
 		}
 		if (isset($options['svn'])) {
-			$cliOptions->mode = 'svn';
+			$cliOptions->mode = Modes::SVN;
 		}
 		if (isset($options['git'])) {
-			$cliOptions->mode = 'git-staged';
+			$cliOptions->mode = Modes::GIT_STAGED;
 		}
 		if (isset($options['git-unstaged'])) {
-			$cliOptions->mode = 'git-unstaged';
+			$cliOptions->mode = Modes::GIT_UNSTAGED;
 		}
 		if (isset($options['git-staged'])) {
-			$cliOptions->mode = 'git-staged';
+			$cliOptions->mode = Modes::GIT_STAGED;
 		}
 		if (isset($options['git-base'])) {
-			$cliOptions->mode = 'git-base';
+			$cliOptions->mode = Modes::GIT_BASE;
 			$cliOptions->gitBase = $options['git-base'];
 		}
 		if (isset($options['report'])) {
@@ -144,15 +144,15 @@ class CliOptions {
 			$cliOptions->useCache = false;
 		}
 		if (isset($options['diff'])) {
-			$cliOptions->mode = 'manual';
+			$cliOptions->mode = Modes::MANUAL;
 			$cliOptions->diffFile = $options['diff'];
 		}
 		if (isset($options['phpcs-unmodified'])) {
-			$cliOptions->mode = 'manual';
+			$cliOptions->mode = Modes::MANUAL;
 			$cliOptions->phpcsUnmodified = $options['phpcs-unmodified'];
 		}
 		if (isset($options['phpcs-modified'])) {
-			$cliOptions->mode = 'manual';
+			$cliOptions->mode = Modes::MANUAL;
 			$cliOptions->phpcsModified = $options['phpcs-modified'];
 		}
 		if (isset($options['s'])) {
