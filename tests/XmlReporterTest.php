@@ -6,6 +6,7 @@ require_once __DIR__ . '/helpers/helpers.php';
 
 use PHPUnit\Framework\TestCase;
 use PhpcsChanged\PhpcsMessages;
+use PhpcsChanged\CliOptions;
 use PhpcsChangedTests\TestXmlReporter;
 
 final class XmlReporterTest extends TestCase {
@@ -30,7 +31,8 @@ final class XmlReporterTest extends TestCase {
 </phpcs>
 
 EOF;
-		$reporter = new TestXmlReporter();
+		$options = new CliOptions();
+		$reporter = new TestXmlReporter($options);
 		$result = $reporter->getFormattedMessages($messages, []);
 		$this->assertEquals($expected, $result);
 	}
@@ -56,7 +58,8 @@ EOF;
 </phpcs>
 
 EOF;
-		$reporter = new TestXmlReporter();
+		$options = new CliOptions();
+		$reporter = new TestXmlReporter($options);
 		$result = $reporter->getFormattedMessages($messages, ['s' => 1]);
 		$this->assertEquals($expected, $result);
 	}
@@ -81,7 +84,8 @@ EOF;
 </phpcs>
 
 EOF;
-		$reporter = new TestXmlReporter();
+		$options = new CliOptions();
+		$reporter = new TestXmlReporter($options);
 		$result = $reporter->getFormattedMessages($messages, ['s' => 1]);
 		$this->assertEquals($expected, $result);
 	}
@@ -117,7 +121,8 @@ EOF;
 </phpcs>
 
 EOF;
-		$reporter = new TestXmlReporter();
+		$options = new CliOptions();
+		$reporter = new TestXmlReporter($options);
 		$result = $reporter->getFormattedMessages($messages, []);
 		$this->assertEquals($expected, $result);
 	}
@@ -188,7 +193,8 @@ EOF;
 </phpcs>
 
 EOF;
-		$reporter = new TestXmlReporter();
+		$options = new CliOptions();
+		$reporter = new TestXmlReporter($options);
 		$result = $reporter->getFormattedMessages($messages, ['s' => 1]);
 		$this->assertEquals($expected, $result);
 	}
@@ -203,7 +209,8 @@ EOF;
 </phpcs>
 
 EOF;
-		$reporter = new TestXmlReporter();
+		$options = new CliOptions();
+		$reporter = new TestXmlReporter($options);
 		$result = $reporter->getFormattedMessages($messages, []);
 		$this->assertEquals($expected, $result);
 	}
@@ -229,7 +236,8 @@ EOF;
 </phpcs>
 
 EOF;
-		$reporter = new TestXmlReporter();
+		$options = new CliOptions();
+		$reporter = new TestXmlReporter($options);
 		$result = $reporter->getFormattedMessages($messages, []);
 		$this->assertEquals($expected, $result);
 	}
@@ -246,13 +254,15 @@ EOF;
 				'message' => 'Found unused symbol Foo.',
 			],
 		], 'fileA.php');
-		$reporter = new TestXmlReporter();
+		$options = new CliOptions();
+		$reporter = new TestXmlReporter($options);
 		$this->assertEquals(1, $reporter->getExitCode($messages));
 	}
 
 	public function testGetExitCodeWithNoMessages() {
 		$messages = PhpcsMessages::fromArrays([], 'fileA.php');
-		$reporter = new TestXmlReporter();
+		$options = new CliOptions();
+		$reporter = new TestXmlReporter($options);
 		$this->assertEquals(0, $reporter->getExitCode($messages));
 	}
 }

@@ -177,14 +177,14 @@ Overrides:
 EOF;
 }
 
-function getReporter(string $reportType): Reporter {
+function getReporter(string $reportType, CliOptions $options): Reporter {
 	switch ($reportType) {
 		case 'full':
 			return new FullReporter();
 		case 'json':
 			return new JsonReporter();
 		case 'xml':
-			return new XmlReporter();
+			return new XmlReporter($options);
 	}
 	printErrorAndExit("Unknown Reporter '{$reportType}'");
 	throw new \Exception("Unknown Reporter '{$reportType}'"); // Just in case we don't exit for some reason.
@@ -335,7 +335,7 @@ function runGitWorkflow(CliOptions $options, ShellOperator $shell, CacheManager 
 	loadCache($cache, $shell, $options->toArray());
 
 	$phpcsMessages = array_map(function(string $gitFile) use ($options, $shell, $cache, $debug): PhpcsMessages {
-		return runGitWorkflowForFile($gitFile, $options->toArray(), $shell, $cache, $debug);
+		return runGitWorkflowForFile($gitFile, $options, $shell, $cache, $debug);
 	}, $options->files);
 
 	saveCache($cache, $shell, $options->toArray());
@@ -343,33 +343,33 @@ function runGitWorkflow(CliOptions $options, ShellOperator $shell, CacheManager 
 	return PhpcsMessages::merge($phpcsMessages);
 }
 
-function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
+function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
 	$git = getenv('GIT') ?: 'git';
 	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$cat = getenv('CAT') ?: 'cat';
 
-	$phpcsStandard = $options['standard'] ?? null;
+	$phpcsStandard = $options->phpcsStandard;
 	$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
 
-	$warningSeverity = $options['warning-severity'] ?? null;
+	$warningSeverity = $options->warningSeverity;
 	$phpcsStandardOption .= isset($warningSeverity) ? ' --warning-severity=' . escapeshellarg($warningSeverity) : '';
-	$errorSeverity = $options['error-severity'] ?? null;
+	$errorSeverity = $options->errorSeverity;
 	$phpcsStandardOption .= isset($errorSeverity) ? ' --error-severity=' . escapeshellarg($errorSeverity) : '';
 	$fileName = $shell->getFileNameFromPath($gitFile);
 
 	try {
-		validateGitFileExists($gitFile, $git, [$shell, 'isReadable'], [$shell, 'executeCommand'], $debug, $options);
+		validateGitFileExists($gitFile, $shell, $options);
 
 		$modifiedFilePhpcsOutput = null;
 		$modifiedFileHash = '';
-		if (isCachingEnabled($options)) {
-			$modifiedFileHash = getModifiedGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
+		if (isCachingEnabled($options->toArray())) {
+			$modifiedFileHash = getModifiedGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options->toArray(), $debug);
 			$modifiedFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
 			$debug(($modifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for modified file '{$gitFile}' at hash '{$modifiedFileHash}', and standard '{$phpcsStandard}'");
 		}
 		if (! $modifiedFilePhpcsOutput) {
-			$modifiedFilePhpcsOutput = getGitModifiedPhpcsOutput($gitFile, $git, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
-			if (isCachingEnabled($options)) {
+			$modifiedFilePhpcsOutput = getGitModifiedPhpcsOutput($gitFile, $git, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $options->toArray(), $debug);
+			if (isCachingEnabled($options->toArray())) {
 				$cache->setCacheForFile($gitFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $modifiedFilePhpcsOutput);
 			}
 		}
@@ -383,23 +383,23 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 			throw new NoChangesException("Modified file '{$gitFile}' has no PHPCS messages; skipping");
 		}
 
-		$isNewFile = isNewGitFile($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
+		$isNewFile = isNewGitFile($gitFile, $git, [$shell, 'executeCommand'], $options->toArray(), $debug);
 		if ($isNewFile) {
 			$debug('Skipping the linting of the unmodified file as it is a new file.');
 		}
 		if (! $isNewFile) {
 			$debug('Checking the unmodified file with PHPCS since the file is not new and contains some messages.');
-			$unifiedDiff = getGitUnifiedDiff($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
+			$unifiedDiff = getGitUnifiedDiff($gitFile, $git, [$shell, 'executeCommand'], $options->toArray(), $debug);
 			$unmodifiedFilePhpcsOutput = null;
 			$unmodifiedFileHash = '';
-			if (isCachingEnabled($options)) {
-				$unmodifiedFileHash = getUnmodifiedGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options, $debug);
+			if (isCachingEnabled($options->toArray())) {
+				$unmodifiedFileHash = getUnmodifiedGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options->toArray(), $debug);
 				$unmodifiedFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'old', $unmodifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
 				$debug(($unmodifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for unmodified file '{$gitFile}' at hash '{$unmodifiedFileHash}', and standard '{$phpcsStandard}'");
 			}
 			if (! $unmodifiedFilePhpcsOutput) {
-				$unmodifiedFilePhpcsOutput = getGitUnmodifiedPhpcsOutput($gitFile, $git, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
-				if (isCachingEnabled($options)) {
+				$unmodifiedFilePhpcsOutput = getGitUnmodifiedPhpcsOutput($gitFile, $git, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $options->toArray(), $debug);
+				if (isCachingEnabled($options->toArray())) {
 					$cache->setCacheForFile($gitFile, 'old', $unmodifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $unmodifiedFilePhpcsOutput);
 				}
 			}
@@ -420,7 +420,7 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 }
 
 function reportMessagesAndExit(PhpcsMessages $messages, CliOptions $options): void {
-	$reporter = getReporter($options->reporter);
+	$reporter = getReporter($options->reporter, $options);
 	echo $reporter->getFormattedMessages($messages, $options->toArray());
 	if ($options->alwaysExitZero) {
 		exit(0);

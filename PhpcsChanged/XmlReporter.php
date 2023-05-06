@@ -8,8 +8,18 @@ use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\LintMessage;
 use PhpcsChanged\UnixShell;
 use PhpcsChanged\ShellException;
+use PhpcsChanged\CliOptions;
 
 class XmlReporter implements Reporter {
+	/**
+	 * @var CliOptions
+	 */
+	private $options;
+
+	public function __construct(CliOptions $options) {
+		$this->options = $options;
+	}
+
 	public function getFormattedMessages(PhpcsMessages $messages, array $options): string { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
 		$files = array_unique(array_map(function(LintMessage $message): string {
 			return $message->getFile() ?? 'STDIN';
@@ -65,7 +75,7 @@ class XmlReporter implements Reporter {
 
 	protected function getPhpcsVersion(): string {
 		$phpcs = getenv('PHPCS') ?: 'phpcs';
-		$shell = new UnixShell();
+		$shell = new UnixShell($this->options);
 
 		$versionPhpcsOutputCommand = "{$phpcs} --version";
 		$versionPhpcsOutput = $shell->executeCommand($versionPhpcsOutputCommand);

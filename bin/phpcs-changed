@@ -144,7 +144,7 @@ function run(array $rawOptions, callable $debug): void {
 	}
 
 	if ($options->mode === Modes::SVN) {
-		$shell = new UnixShell();
+		$shell = new UnixShell($options);
 		reportMessagesAndExit(
 			runSvnWorkflow($options->files, $options->toArray(), $shell, new CacheManager(new FileCache(), $debug), $debug),
 			$options
@@ -153,7 +153,7 @@ function run(array $rawOptions, callable $debug): void {
 	}
 
 	if ($options->isGitMode()) {
-		$shell = new UnixShell();
+		$shell = new UnixShell($options);
 		reportMessagesAndExit(
 			runGitWorkflow($options, $shell, new CacheManager(new FileCache(), $debug), $debug),
 			$options

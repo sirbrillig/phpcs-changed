@@ -91,4 +91,17 @@ class TestShell implements ShellOperator {
 		$parts = explode('/', $path);
 		return end($parts);
 	}
+
+	public function doesFileExistInGit(string $fileName): bool {
+		if (! $this->isReadable($fileName)) {
+			return false;
+		}
+		$git = getenv('GIT') ?: 'git';
+		$gitStatusCommand = "{$git} status --porcelain " . escapeshellarg($fileName);
+		$gitStatusOutput = $this->executeCommand($gitStatusCommand);
+		if (isset($gitStatusOutput[0]) && $gitStatusOutput[0] === '?') {
+			return false;
+		}
+		return true;
+	}
 }
