@@ -69,37 +69,3 @@ function getGitUnifiedDiff(string $gitFile, string $git, callable $executeComman
 	$debug('diff command output:', $unifiedDiff);
 	return $unifiedDiff;
 }
-
-function isNewGitFile(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
-	if ( isset($options['git-base']) && ! empty($options['git-base']) ) {
-		return isNewGitFileRemote( $gitFile, $git, $executeCommand, $options, $debug );
-	} else {
-		return isNewGitFileLocal( $gitFile, $git, $executeCommand, $options, $debug );
-	}
-}
-
-function isNewGitFileRemote(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
-	$gitStatusCommand = "{$git} cat-file -e " . escapeshellarg($options['git-base']) . ':$(' . getFullPathToFileCommand($gitFile, $git) . ') 2>/dev/null';
-	$debug('checking status of file with command:', $gitStatusCommand);
-	/** @var int */
-	$return_val = 1;
-	$gitStatusOutput = [];
-	$gitStatusOutput = $executeCommand($gitStatusCommand, $gitStatusOutput, $return_val);
-	$debug('status command output:', $gitStatusOutput);
-	$debug('status command return val:', $return_val);
-	return 0 !== $return_val;
-}
-
-function isNewGitFileLocal(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): bool {
-	$gitStatusCommand = "{$git} status --porcelain " . escapeshellarg($gitFile);
-	$debug('checking git status of file with command:', $gitStatusCommand);
-	$gitStatusOutput = $executeCommand($gitStatusCommand);
-	$debug('git status output:', $gitStatusOutput);
-	if (! $gitStatusOutput || false === strpos($gitStatusOutput, $gitFile)) {
-		return false;
-	}
-	if (isset($gitStatusOutput[0]) && $gitStatusOutput[0] === '?') {
-		throw new ShellException("File does not appear to be tracked by git: '{$gitFile}'");
-	}
-	return isset($gitStatusOutput[0]) && $gitStatusOutput[0] === 'A';
-}

@@ -3,7 +3,10 @@ declare(strict_types=1);
 
 namespace PhpcsChangedTests;
 
+use PhpcsChanged\CliOptions;
+use PhpcsChanged\Modes;
 use PhpcsChanged\ShellOperator;
+use PhpcsChanged\ShellException;
 
 class TestShell implements ShellOperator {
 
@@ -15,10 +18,16 @@ class TestShell implements ShellOperator {
 
 	private $fileHashes = [];
 
+	private CliOptions $options;
+
 	public function __construct(array $readableFileNames) {
 		foreach ($readableFileNames as $fileName) {
 			$this->registerReadableFileName($fileName);
 		}
+	}
+
+	public function setOptions(CliOptions $options): void {
+		$this->options = $options;
 	}
 
 	public function registerReadableFileName(string $fileName, bool $override = false): bool {
@@ -66,11 +75,10 @@ class TestShell implements ShellOperator {
 		return $this->fileHashes[$fileName] ?? $fileName;
 	}
 
-	public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
+	public function executeCommand(string $command, int &$return_val = null): string {
 		foreach ($this->commands as $registeredCommand => $return) {
 			if ($registeredCommand === substr($command, 0, strlen($registeredCommand)) ) {
 				$return_val = $return['return_val'];
-				$output = $return['output'];
 				$this->commandsCalled[$registeredCommand] = $command;
 				return $return['output'];
 			}
@@ -204,5 +212,35 @@ class TestShell implements ShellOperator {
 			throw new ShellException("Cannot get unmodified file phpcs output for file '{$fileName}'");
 		}
 		return $unmodifiedFilePhpcsOutput;
+	}
+
+	private function doesFileExistInGitBase(string $fileName): bool {
+		$git = getenv('GIT') ?: 'git';
+		$gitStatusCommand = "{$git} cat-file -e " . escapeshellarg($this->options->gitBase) . ':' . escapeshellarg($this->getFullGitPathToFile($fileName)) . ' 2>/dev/null';
+		/** @var int */
+		$return_val = 1;
+		$this->executeCommand($gitStatusCommand, $return_val);
+		return 0 !== $return_val;
+	}
+
+	// TODO: this is very similar to doesFileExistInGit; can we combine them?
+	private function isFileStagedForAdding(string $fileName): bool {
+		$git = getenv('GIT') ?: 'git';
+		$gitStatusCommand = "{$git} status --porcelain " . escapeshellarg($fileName);
+		$gitStatusOutput = $this->executeCommand($gitStatusCommand);
+		if (! $gitStatusOutput || false === strpos($gitStatusOutput, $fileName)) {
+			return false;
+		}
+		if (isset($gitStatusOutput[0]) && $gitStatusOutput[0] === '?') {
+			throw new ShellException("File does not appear to be tracked by git: '{$fileName}'");
+		}
+		return isset($gitStatusOutput[0]) && $gitStatusOutput[0] === 'A';
+	}
+
+	public function doesUnmodifiedFileExistInGit(string $fileName): bool {
+		if ($this->options->mode === Modes::GIT_BASE) {
+			return $this->doesFileExistInGitBase($fileName);
+		}
+		return $this->isFileStagedForAdding($fileName);
 	}
 }

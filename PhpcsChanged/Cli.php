@@ -16,7 +16,7 @@ use PhpcsChanged\XmlReporter;
 use PhpcsChanged\CacheManager;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
 use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, getSvnFileInfo, isNewSvnFile, getSvnUnmodifiedPhpcsOutput, getSvnModifiedPhpcsOutput, getSvnRevisionId};
-use function PhpcsChanged\GitWorkflow\{getGitMergeBase, getGitUnifiedDiff, isNewGitFile, validateGitFileExists};
+use function PhpcsChanged\GitWorkflow\{getGitMergeBase, getGitUnifiedDiff, validateGitFileExists};
 
 function getDebug(bool $debugEnabled): callable {
 	return
@@ -377,7 +377,7 @@ function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperat
 			throw new NoChangesException("Modified file '{$gitFile}' has no PHPCS messages; skipping");
 		}
 
-		$isNewFile = isNewGitFile($gitFile, $git, [$shell, 'executeCommand'], $options->toArray(), $debug);
+		$isNewFile = $shell->doesUnmodifiedFileExistInGit($gitFile);
 		if ($isNewFile) {
 			$debug('Skipping the linting of the unmodified file as it is a new file.');
 		}

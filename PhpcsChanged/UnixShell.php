@@ -29,9 +29,10 @@ class UnixShell implements ShellOperator {
 		}
 	}
 
-	public function executeCommand(string $command, array &$output = null, int &$return_val = null): string {
+	public function executeCommand(string $command, int &$return_val = null): string {
+		$output = [];
 		exec($command, $output, $return_val);
-		return join(PHP_EOL, $output) . PHP_EOL;
+		return implode(PHP_EOL, $output) . PHP_EOL;
 	}
 
 	public function doesFileExistInGit(string $fileName): bool {
@@ -45,6 +46,43 @@ class UnixShell implements ShellOperator {
 			return false;
 		}
 		return true;
+	}
+
+	private function doesFileExistInGitBase(string $fileName): bool {
+		$debug = getDebug($this->options->debug);
+		$git = getenv('GIT') ?: 'git';
+		$gitStatusCommand = "{$git} cat-file -e " . escapeshellarg($this->options->gitBase) . ':' . escapeshellarg($this->getFullGitPathToFile($fileName)) . ' 2>/dev/null';
+		$debug('checking status of file with command:', $gitStatusCommand);
+		/** @var int */
+		$return_val = 1;
+		$gitStatusOutput = $this->executeCommand($gitStatusCommand, $return_val);
+		$debug('status command output:', $gitStatusOutput);
+		$debug('status command return val:', $return_val);
+		return 0 !== $return_val;
+	}
+
+	// TODO: this is very similar to doesFileExistInGit; can we combine them?
+	private function isFileStagedForAdding(string $fileName): bool {
+		$debug = getDebug($this->options->debug);
+		$git = getenv('GIT') ?: 'git';
+		$gitStatusCommand = "{$git} status --porcelain " . escapeshellarg($fileName);
+		$debug('checking git status of file with command:', $gitStatusCommand);
+		$gitStatusOutput = $this->executeCommand($gitStatusCommand);
+		$debug('git status output:', $gitStatusOutput);
+		if (! $gitStatusOutput || false === strpos($gitStatusOutput, $fileName)) {
+			return false;
+		}
+		if (isset($gitStatusOutput[0]) && $gitStatusOutput[0] === '?') {
+			throw new ShellException("File does not appear to be tracked by git: '{$fileName}'");
+		}
+		return isset($gitStatusOutput[0]) && $gitStatusOutput[0] === 'A';
+	}
+
+	public function doesUnmodifiedFileExistInGit(string $fileName): bool {
+		if ($this->options->mode === Modes::GIT_BASE) {
+			return $this->doesFileExistInGitBase($fileName);
+		}
+		return $this->isFileStagedForAdding($fileName);
 	}
 
 	public function getGitRootDirectory(): string {
