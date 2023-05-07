@@ -9,20 +9,6 @@ use PhpcsChanged\ShellException;
 use PhpcsChanged\ShellOperator;
 use function PhpcsChanged\Cli\getDebug;
 
-function validateGitFileExists(string $gitFile, ShellOperator $shell, CliOptions $options): void {
-	$debug = getDebug($options->debug);
-	if (isset($options->noVerifyGitFile)) {
-		$debug('skipping Git file exists check.');
-		return;
-	}
-	if (! $shell->isReadable($gitFile)) {
-		throw new ShellException("Cannot read file '{$gitFile}'");
-	}
-	if (! $shell->doesFileExistInGit($gitFile)) {
-		throw new ShellException("File does not appear to be tracked by git: '{$gitFile}'");
-	}
-}
-
 function getGitMergeBase(string $git, callable $executeCommand, array $options, callable $debug): string {
 	if ( empty($options['git-base']) ) {
 		return '';

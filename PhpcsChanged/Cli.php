@@ -16,7 +16,7 @@ use PhpcsChanged\XmlReporter;
 use PhpcsChanged\CacheManager;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
 use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, getSvnFileInfo, isNewSvnFile, getSvnUnmodifiedPhpcsOutput, getSvnModifiedPhpcsOutput, getSvnRevisionId};
-use function PhpcsChanged\GitWorkflow\{getGitMergeBase, getGitUnifiedDiff, validateGitFileExists};
+use function PhpcsChanged\GitWorkflow\{getGitMergeBase, getGitUnifiedDiff};
 
 function getDebug(bool $debugEnabled): callable {
 	return
@@ -352,8 +352,6 @@ function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperat
 	$fileName = $shell->getFileNameFromPath($gitFile);
 
 	try {
-		validateGitFileExists($gitFile, $shell, $options);
-
 		$modifiedFilePhpcsOutput = null;
 		$modifiedFileHash = '';
 		if (isCachingEnabled($options->toArray())) {

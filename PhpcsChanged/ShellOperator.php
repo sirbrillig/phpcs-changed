@@ -24,8 +24,6 @@ interface ShellOperator {
 
 	public function getFileNameFromPath(string $path): string;
 
-	public function doesFileExistInGit(string $fileName): bool;
-
 	public function doesUnmodifiedFileExistInGit(string $fileName): bool;
 
 	public function getGitHashOfModifiedFile(string $fileName): string;

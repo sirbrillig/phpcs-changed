@@ -100,19 +100,6 @@ class TestShell implements ShellOperator {
 		return end($parts);
 	}
 
-	public function doesFileExistInGit(string $fileName): bool {
-		if (! $this->isReadable($fileName)) {
-			return false;
-		}
-		$git = getenv('GIT') ?: 'git';
-		$gitStatusCommand = "{$git} status --porcelain " . escapeshellarg($fileName);
-		$gitStatusOutput = $this->executeCommand($gitStatusCommand);
-		if (isset($gitStatusOutput[0]) && $gitStatusOutput[0] === '?') {
-			return false;
-		}
-		return true;
-	}
-
 	private function getFullGitPathToFile(string $fileName): string {
 		$git = getenv('GIT') ?: 'git';
 		$command = "{$git} ls-files --full-name " . escapeshellarg($fileName);
@@ -216,7 +203,6 @@ class TestShell implements ShellOperator {
 		return 0 !== $return_val;
 	}
 
-	// TODO: this is very similar to doesFileExistInGit; can we combine them?
 	private function isFileStagedForAdding(string $fileName): bool {
 		$git = getenv('GIT') ?: 'git';
 		$gitStatusCommand = "{$git} status --porcelain " . escapeshellarg($fileName);

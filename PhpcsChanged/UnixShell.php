@@ -18,6 +18,11 @@ class UnixShell implements ShellOperator {
 	 */
 	private $options;
 
+	/**
+	 * @var Array<string, string>
+	 */
+	private $fullPaths = [];
+
 	public function __construct(CliOptions $options) {
 		$this->options = $options;
 	}
@@ -35,19 +40,6 @@ class UnixShell implements ShellOperator {
 		return implode(PHP_EOL, $output) . PHP_EOL;
 	}
 
-	public function doesFileExistInGit(string $fileName): bool {
-		$debug = getDebug($this->options->debug);
-		$git = getenv('GIT') ?: 'git';
-		$gitStatusCommand = "{$git} status --porcelain " . escapeshellarg($fileName);
-		$debug('checking git existence of file with command:', $gitStatusCommand);
-		$gitStatusOutput = $this->executeCommand($gitStatusCommand);
-		$debug('git status output:', $gitStatusOutput);
-		if (isset($gitStatusOutput[0]) && $gitStatusOutput[0] === '?') {
-			return false;
-		}
-		return true;
-	}
-
 	private function doesFileExistInGitBase(string $fileName): bool {
 		$debug = getDebug($this->options->debug);
 		$git = getenv('GIT') ?: 'git';
@@ -61,14 +53,18 @@ class UnixShell implements ShellOperator {
 		return 0 !== $return_val;
 	}
 
-	// TODO: this is very similar to doesFileExistInGit; can we combine them?
-	private function isFileStagedForAdding(string $fileName): bool {
+	private function getGitStatusForFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
 		$git = getenv('GIT') ?: 'git';
 		$gitStatusCommand = "{$git} status --porcelain " . escapeshellarg($fileName);
 		$debug('checking git status of file with command:', $gitStatusCommand);
 		$gitStatusOutput = $this->executeCommand($gitStatusCommand);
 		$debug('git status output:', $gitStatusOutput);
+		return $gitStatusOutput;
+	}
+
+	private function isFileStagedForAdding(string $fileName): bool {
+		$gitStatusOutput = $this->getGitStatusForFile($fileName);
 		if (! $gitStatusOutput || false === strpos($gitStatusOutput, $fileName)) {
 			return false;
 		}
@@ -86,12 +82,24 @@ class UnixShell implements ShellOperator {
 	}
 
 	private function getFullGitPathToFile(string $fileName): string {
+		if ($this->fullPaths[$fileName]) {
+			return $this->fullPaths[$fileName];
+		}
 		$debug = getDebug($this->options->debug);
 		$git = getenv('GIT') ?: 'git';
+		$gitStatusOutput = $this->getGitStatusForFile($fileName);
+		if (! $gitStatusOutput || false === strpos($gitStatusOutput, $fileName)) {
+			throw new ShellException("File does not appear to be tracked by git: '{$fileName}'");
+		}
+		if (isset($gitStatusOutput[0]) && $gitStatusOutput[0] === '?') {
+			throw new ShellException("File does not appear to be tracked by git: '{$fileName}'");
+		}
 		$command = "{$git} ls-files --full-name " . escapeshellarg($fileName);
 		$debug('getting full path to file with command:', $command);
-		$fullPath = $this->executeCommand($command);
-		return trim($fullPath);
+		$fullPath = trim($this->executeCommand($command));
+		// This will not change so we can cache it.
+		$this->fullPaths[$fileName] = $fullPath;
+		return $fullPath;
 	}
 
 	private function getModifiedFileContentsCommand(string $fileName): string {
