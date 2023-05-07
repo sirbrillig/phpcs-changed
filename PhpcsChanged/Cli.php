@@ -16,7 +16,6 @@ use PhpcsChanged\XmlReporter;
 use PhpcsChanged\CacheManager;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
 use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, getSvnFileInfo, isNewSvnFile, getSvnUnmodifiedPhpcsOutput, getSvnModifiedPhpcsOutput, getSvnRevisionId};
-use function PhpcsChanged\GitWorkflow\getGitMergeBase;
 
 function getDebug(bool $debugEnabled): callable {
 	return
@@ -324,7 +323,7 @@ function runGitWorkflow(CliOptions $options, ShellOperator $shell, CacheManager 
 		$shell->validateExecutableExists('cat', $cat);
 		$debug('executables are valid');
 		if ($options->gitBase) {
-			$options->gitBase = getGitMergeBase($git, [$shell, 'executeCommand'], $options->toArray(), $debug);
+			$options->gitBase = $shell->getGitMergeBase();
 		}
 	} catch(\Exception $err) {
 		$shell->printError($err->getMessage());

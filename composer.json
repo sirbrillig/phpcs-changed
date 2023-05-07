@@ -34,7 +34,6 @@
         "files": [
             "PhpcsChanged/Cli.php",
             "PhpcsChanged/SvnWorkflow.php",
-            "PhpcsChanged/GitWorkflow.php",
             "PhpcsChanged/functions.php"
         ]
     },
