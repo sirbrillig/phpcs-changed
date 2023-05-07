@@ -227,7 +227,7 @@ class TestShell implements ShellOperator {
 	public function getGitUnifiedDiff(string $fileName): string {
 		$git = getenv('GIT') ?: 'git';
 		$objectOption = $this->options->mode === Modes::GIT_BASE ? ' ' . escapeshellarg($this->options->gitBase) . '...' : '';
-		$stagedOption = empty($objectOption) && $this->options->mode === Modes::GIT_UNSTAGED ? ' --staged' : '';
+		$stagedOption = empty($objectOption) && $this->options->mode !== Modes::GIT_UNSTAGED ? ' --staged' : '';
 		$unifiedDiffCommand = "{$git} diff{$stagedOption}{$objectOption} --no-prefix " . escapeshellarg($fileName);
 		$unifiedDiff = $this->executeCommand($unifiedDiffCommand);
 		if (! $unifiedDiff) {
