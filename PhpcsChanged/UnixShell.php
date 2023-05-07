@@ -174,7 +174,7 @@ class UnixShell implements ShellOperator {
 
 	public function getPhpcsOutputOfModifiedGitFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
-		$phpcs = getenv('PHPCS') ?: 'phpcs';
+		$phpcs = $this->options->getExecutablePath('phpcs');
 		$fileContentsCommand = $this->getModifiedFileContentsCommand($fileName);
 		$modifiedFilePhpcsOutputCommand = "{$fileContentsCommand} | {$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . ' --stdin-path=' .  escapeshellarg($fileName) .' -';
 		$debug('running modified file phpcs command:', $modifiedFilePhpcsOutputCommand);
@@ -192,7 +192,7 @@ class UnixShell implements ShellOperator {
 
 	public function getPhpcsOutputOfUnmodifiedGitFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
-		$phpcs = getenv('PHPCS') ?: 'phpcs';
+		$phpcs = $this->options->getExecutablePath('phpcs');
 		$unmodifiedFileContentsCommand = $this->getUnmodifiedFileContentsCommand($fileName);
 		$unmodifiedFilePhpcsOutputCommand = "{$unmodifiedFileContentsCommand} | {$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . ' --stdin-path=' .  escapeshellarg($fileName) . ' -';
 		$debug('running unmodified file phpcs command:', $unmodifiedFilePhpcsOutputCommand);

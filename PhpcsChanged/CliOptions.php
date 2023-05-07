@@ -6,11 +6,27 @@ use PhpcsChanged\InvalidOptionException;
 
 class CliOptions {
 	/**
+	 * The mode to operate in: manual or automatic.
+	 *
+	 * Use the `Modes` constants for this purpose rather than the strings.
+	 *
 	 * @var 'svn'|'manual'|'git-staged'|'git-unstaged'|'git-base'|null
 	 */
 	public $mode;
 
 	/**
+	 * The path to the phpcs executable.
+	 *
+	 * If null, it will default to the `PHPCS` environment variable. If that is
+	 * not set, it will be just `phpcs`.
+	 *
+	 * @var string|null
+	 */
+	public $phpcsPath = null;
+
+	/**
+	 * The file paths to be scanned.
+	 *
 	 * @var string[]
 	 */
 	public $files = [];
@@ -112,6 +128,9 @@ class CliOptions {
 		if (isset($options['files'])) {
 			$cliOptions->files = $options['files'];
 		}
+		if (isset($options['phpcs-path'])) {
+			$cliOptions->phpcsPath = $options['phpcs-path'];
+		}
 		if (isset($options['svn'])) {
 			$cliOptions->mode = Modes::SVN;
 		}
@@ -187,6 +206,9 @@ class CliOptions {
 		if ($this->phpcsStandard) {
 			$options['standard'] = $this->phpcsStandard;
 		}
+		if ($this->phpcsPath) {
+			$options['phpcs-path'] = $this->phpcsPath;
+		}
 		if ($this->debug) {
 			$options['debug'] = true;
 		}
@@ -243,6 +265,15 @@ class CliOptions {
 	public function isGitMode(): bool {
 		$gitModes = [Modes::GIT_BASE, Modes::GIT_UNSTAGED, Modes::GIT_STAGED];
 		return in_array($this->mode, $gitModes, true);
+	}
+
+	public function getExecutablePath(string $executableName): string {
+		switch ($executableName) {
+			case 'phpcs':
+				return $this->phpcsPath ?: getenv('PHPCS') ?: 'phpcs';
+			default:
+				throw new \Exception("No executable found called '{$executableName}'.");
+		}
 	}
 
 	public function validate(): void {
