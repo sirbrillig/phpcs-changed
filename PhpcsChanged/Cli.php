@@ -352,6 +352,10 @@ function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperat
 	$fileName = $shell->getFileNameFromPath($gitFile);
 
 	try {
+		if (! $shell->isReadable($gitFile)) {
+			throw new ShellException("Cannot read file '{$gitFile}'");
+		}
+
 		$modifiedFilePhpcsOutput = null;
 		$modifiedFileHash = '';
 		if (isCachingEnabled($options->toArray())) {
