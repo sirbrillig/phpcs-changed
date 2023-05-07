@@ -7,6 +7,7 @@ use PhpcsChanged\CliOptions;
 use PhpcsChanged\Modes;
 use PhpcsChanged\ShellOperator;
 use PhpcsChanged\ShellException;
+use PhpcsChanged\NoChangesException;
 
 class TestShell implements ShellOperator {
 
@@ -221,5 +222,17 @@ class TestShell implements ShellOperator {
 			return $this->doesFileExistInGitBase($fileName);
 		}
 		return $this->isFileStagedForAdding($fileName);
+	}
+
+	public function getGitUnifiedDiff(string $fileName): string {
+		$git = getenv('GIT') ?: 'git';
+		$objectOption = $this->options->mode === Modes::GIT_BASE ? ' ' . escapeshellarg($this->options->gitBase) . '...' : '';
+		$stagedOption = empty($objectOption) && $this->options->mode === Modes::GIT_UNSTAGED ? ' --staged' : '';
+		$unifiedDiffCommand = "{$git} diff{$stagedOption}{$objectOption} --no-prefix " . escapeshellarg($fileName);
+		$unifiedDiff = $this->executeCommand($unifiedDiffCommand);
+		if (! $unifiedDiff) {
+			throw new NoChangesException("Cannot get git diff for file '{$fileName}'; skipping");
+		}
+		return $unifiedDiff;
 	}
 }

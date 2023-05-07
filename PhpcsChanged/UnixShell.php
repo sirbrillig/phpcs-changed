@@ -204,6 +204,21 @@ class UnixShell implements ShellOperator {
 		return $unmodifiedFilePhpcsOutput;
 	}
 
+	public function getGitUnifiedDiff(string $fileName): string {
+		$debug = getDebug($this->options->debug);
+		$git = getenv('GIT') ?: 'git';
+		$objectOption = $this->options->mode === Modes::GIT_BASE ? ' ' . escapeshellarg($this->options->gitBase) . '...' : '';
+		$stagedOption = empty($objectOption) && $this->options->mode !== Modes::GIT_UNSTAGED ? ' --staged' : '';
+		$unifiedDiffCommand = "{$git} diff{$stagedOption}{$objectOption} --no-prefix " . escapeshellarg($fileName);
+		$debug('running diff command:', $unifiedDiffCommand);
+		$unifiedDiff = $this->executeCommand($unifiedDiffCommand);
+		if (! $unifiedDiff) {
+			throw new NoChangesException("Cannot get git diff for file '{$fileName}'; skipping");
+		}
+		$debug('diff command output:', $unifiedDiff);
+		return $unifiedDiff;
+	}
+
 	public function isReadable(string $fileName): bool {
 		return is_readable($fileName);
 	}

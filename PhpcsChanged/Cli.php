@@ -16,7 +16,7 @@ use PhpcsChanged\XmlReporter;
 use PhpcsChanged\CacheManager;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
 use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, getSvnFileInfo, isNewSvnFile, getSvnUnmodifiedPhpcsOutput, getSvnModifiedPhpcsOutput, getSvnRevisionId};
-use function PhpcsChanged\GitWorkflow\{getGitMergeBase, getGitUnifiedDiff};
+use function PhpcsChanged\GitWorkflow\getGitMergeBase;
 
 function getDebug(bool $debugEnabled): callable {
 	return
@@ -385,7 +385,7 @@ function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperat
 		}
 		if (! $isNewFile) {
 			$debug('Checking the unmodified file with PHPCS since the file is not new and contains some messages.');
-			$unifiedDiff = getGitUnifiedDiff($gitFile, $git, [$shell, 'executeCommand'], $options->toArray(), $debug);
+			$unifiedDiff = $shell->getGitUnifiedDiff($gitFile);
 			$unmodifiedFilePhpcsOutput = null;
 			$unmodifiedFileHash = '';
 			if (isCachingEnabled($options->toArray())) {

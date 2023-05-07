@@ -23,16 +23,3 @@ function getGitMergeBase(string $git, callable $executeCommand, array $options, 
 	$debug('merge-base command output:', $mergeBase);
 	return trim($mergeBase);
 }
-
-function getGitUnifiedDiff(string $gitFile, string $git, callable $executeCommand, array $options, callable $debug): string {
-	$objectOption = isset($options['git-base']) && ! empty($options['git-base']) ? ' ' . escapeshellarg($options['git-base']) . '...' : '';
-	$stagedOption = empty( $objectOption ) && ! isset($options['git-unstaged']) ? ' --staged' : '';
-	$unifiedDiffCommand = "{$git} diff{$stagedOption}{$objectOption} --no-prefix " . escapeshellarg($gitFile);
-	$debug('running diff command:', $unifiedDiffCommand);
-	$unifiedDiff = $executeCommand($unifiedDiffCommand);
-	if (! $unifiedDiff) {
-		throw new NoChangesException("Cannot get git diff for file '{$gitFile}'; skipping");
-	}
-	$debug('diff command output:', $unifiedDiff);
-	return $unifiedDiff;
-}
