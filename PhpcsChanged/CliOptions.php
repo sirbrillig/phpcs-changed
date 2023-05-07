@@ -35,6 +35,26 @@ class CliOptions {
 	public $gitPath = null;
 
 	/**
+	 * The path to the cat executable.
+	 *
+	 * If null, it will default to the `CAT` environment variable. If that is
+	 * not set, it will be just `cat`.
+	 *
+	 * @var string|null
+	 */
+	public $catPath = null;
+
+	/**
+	 * The path to the svn executable.
+	 *
+	 * If null, it will default to the `SVN` environment variable. If that is
+	 * not set, it will be just `svn`.
+	 *
+	 * @var string|null
+	 */
+	public $svnPath = null;
+
+	/**
 	 * The file paths to be scanned.
 	 *
 	 * @var string[]
@@ -144,6 +164,12 @@ class CliOptions {
 		if (isset($options['git-path'])) {
 			$cliOptions->gitPath = $options['git-path'];
 		}
+		if (isset($options['cat-path'])) {
+			$cliOptions->catPath = $options['cat-path'];
+		}
+		if (isset($options['svn-path'])) {
+			$cliOptions->svnPath = $options['svn-path'];
+		}
 		if (isset($options['svn'])) {
 			$cliOptions->mode = Modes::SVN;
 		}
@@ -225,6 +251,12 @@ class CliOptions {
 		if ($this->gitPath) {
 			$options['git-path'] = $this->gitPath;
 		}
+		if ($this->catPath) {
+			$options['cat-path'] = $this->catPath;
+		}
+		if ($this->svnPath) {
+			$options['svn-path'] = $this->svnPath;
+		}
 		if ($this->debug) {
 			$options['debug'] = true;
 		}
@@ -289,6 +321,10 @@ class CliOptions {
 				return $this->phpcsPath ?: getenv('PHPCS') ?: 'phpcs';
 			case 'git':
 				return $this->gitPath ?: getenv('GIT') ?: 'git';
+			case 'cat':
+				return $this->catPath ?: getenv('CAT') ?: 'cat';
+			case 'svn':
+				return $this->svnPath ?: getenv('SVN') ?: 'svn';
 			default:
 				throw new \Exception("No executable found called '{$executableName}'.");
 		}

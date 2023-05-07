@@ -202,9 +202,9 @@ function runManualWorkflow(string $diffFile, string $phpcsUnmodifiedFile, string
 }
 
 function runSvnWorkflow(array $svnFiles, CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
-	$svn = getenv('SVN') ?: 'svn';
+	$svn = $options->getExecutablePath('svn');
 	$phpcs = $options->getExecutablePath('phpcs');
-	$cat = getenv('CAT') ?: 'cat';
+	$cat = $options->getExecutablePath('cat');
 
 	try {
 		$debug('validating executables');
@@ -230,9 +230,9 @@ function runSvnWorkflow(array $svnFiles, CliOptions $options, ShellOperator $she
 }
 
 function runSvnWorkflowForFile(string $svnFile, CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
-	$svn = getenv('SVN') ?: 'svn';
+	$svn = $options->getExecutablePath('svn');
 	$phpcs = $options->getExecutablePath('phpcs');
-	$cat = getenv('CAT') ?: 'cat';
+	$cat = $options->getExecutablePath('cat');
 
 	$phpcsStandard = $options->phpcsStandard;
 	$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
@@ -312,7 +312,7 @@ function runSvnWorkflowForFile(string $svnFile, CliOptions $options, ShellOperat
 function runGitWorkflow(CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
 	$git = $options->getExecutablePath('git');
 	$phpcs = $options->getExecutablePath('phpcs');
-	$cat = getenv('CAT') ?: 'cat';
+	$cat = $options->getExecutablePath('cat');
 
 	try {
 		$debug('validating executables');
