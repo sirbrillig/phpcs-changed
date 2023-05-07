@@ -162,14 +162,20 @@ EOF;
 		'--always-exit-zero' => 'Always exit the script with a 0 return code. Otherwise, a 1 return code indicates phpcs messages.',
 		'--no-cache-git-root' => 'Prevent caching the git root used by the git workflow.',
 		'--no-verify-git-file' => 'Prevent checking if a file is tracked by git in the git workflow.',
+		'--phpcs-path <PATH>' => 'The path to the phpcs executable. Overrides env variables.',
+		'--svn-path <PATH>' => 'The path to the svn executable. Overrides env variables.',
+		'--git-path <PATH>' => 'The path to the git executable. Overrides env variables.',
+		'--cat-path <PATH>' => 'The path to the cat executable. Overrides env variables.',
 	], "	");
 	echo <<<EOF
 Overrides:
 
 	If using automatic mode, this script requires three shell commands: 'svn' or
-	'git', 'cat', and 'phpcs'. If those commands are not in your PATH or you would
-	like to override them, you can use the environment variables 'SVN', 'GIT',
-	'CAT', and 'PHPCS', respectively, to specify the full path for each one.
+	'git', 'cat', and 'phpcs'. If those commands are not in your PATH or you
+	would like to override them, you can use the environment variables 'SVN',
+	'GIT', 'CAT', and 'PHPCS', respectively, to specify the full path for each
+	one. You can alternatively use the `--svn-path`, `--git-path`, `--cat-path`,
+	or `--phpcs-path` CLI options.
 
 EOF;
 }
