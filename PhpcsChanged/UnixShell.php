@@ -82,7 +82,7 @@ class UnixShell implements ShellOperator {
 	}
 
 	private function getFullGitPathToFile(string $fileName): string {
-		if ($this->fullPaths[$fileName]) {
+		if (array_key_exists($fileName, $this->fullPaths)) {
 			return $this->fullPaths[$fileName];
 		}
 		$debug = getDebug($this->options->debug);
