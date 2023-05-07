@@ -16,7 +16,7 @@ use PhpcsChanged\XmlReporter;
 use PhpcsChanged\CacheManager;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
 use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, getSvnFileInfo, isNewSvnFile, getSvnUnmodifiedPhpcsOutput, getSvnModifiedPhpcsOutput, getSvnRevisionId};
-use function PhpcsChanged\GitWorkflow\{getGitMergeBase, getGitUnifiedDiff, isNewGitFile, getGitUnmodifiedPhpcsOutput, getGitModifiedPhpcsOutput, validateGitFileExists, getModifiedGitFileHash, getUnmodifiedGitFileHash};
+use function PhpcsChanged\GitWorkflow\{getGitMergeBase, getGitUnifiedDiff};
 
 function getDebug(bool $debugEnabled): callable {
 	return
@@ -345,30 +345,26 @@ function runGitWorkflow(CliOptions $options, ShellOperator $shell, CacheManager 
 
 function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
 	$git = getenv('GIT') ?: 'git';
-	$phpcs = getenv('PHPCS') ?: 'phpcs';
-	$cat = getenv('CAT') ?: 'cat';
 
 	$phpcsStandard = $options->phpcsStandard;
-	$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
-
 	$warningSeverity = $options->warningSeverity;
-	$phpcsStandardOption .= isset($warningSeverity) ? ' --warning-severity=' . escapeshellarg($warningSeverity) : '';
 	$errorSeverity = $options->errorSeverity;
-	$phpcsStandardOption .= isset($errorSeverity) ? ' --error-severity=' . escapeshellarg($errorSeverity) : '';
 	$fileName = $shell->getFileNameFromPath($gitFile);
 
 	try {
-		validateGitFileExists($gitFile, $shell, $options);
+		if (! $shell->isReadable($gitFile)) {
+			throw new ShellException("Cannot read file '{$gitFile}'");
+		}
 
 		$modifiedFilePhpcsOutput = null;
 		$modifiedFileHash = '';
 		if (isCachingEnabled($options->toArray())) {
-			$modifiedFileHash = getModifiedGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options->toArray(), $debug);
+			$modifiedFileHash = $shell->getGitHashOfModifiedFile($gitFile);
 			$modifiedFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
 			$debug(($modifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for modified file '{$gitFile}' at hash '{$modifiedFileHash}', and standard '{$phpcsStandard}'");
 		}
 		if (! $modifiedFilePhpcsOutput) {
-			$modifiedFilePhpcsOutput = getGitModifiedPhpcsOutput($gitFile, $git, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $options->toArray(), $debug);
+			$modifiedFilePhpcsOutput = $shell->getPhpcsOutputOfModifiedGitFile($gitFile);
 			if (isCachingEnabled($options->toArray())) {
 				$cache->setCacheForFile($gitFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $modifiedFilePhpcsOutput);
 			}
@@ -383,7 +379,7 @@ function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperat
 			throw new NoChangesException("Modified file '{$gitFile}' has no PHPCS messages; skipping");
 		}
 
-		$isNewFile = isNewGitFile($gitFile, $git, [$shell, 'executeCommand'], $options->toArray(), $debug);
+		$isNewFile = $shell->doesUnmodifiedFileExistInGit($gitFile);
 		if ($isNewFile) {
 			$debug('Skipping the linting of the unmodified file as it is a new file.');
 		}
@@ -393,12 +389,12 @@ function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperat
 			$unmodifiedFilePhpcsOutput = null;
 			$unmodifiedFileHash = '';
 			if (isCachingEnabled($options->toArray())) {
-				$unmodifiedFileHash = getUnmodifiedGitFileHash($gitFile, $git, $cat, [$shell, 'executeCommand'], $options->toArray(), $debug);
+				$unmodifiedFileHash = $shell->getGitHashOfUnmodifiedFile($gitFile);
 				$unmodifiedFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'old', $unmodifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
 				$debug(($unmodifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for unmodified file '{$gitFile}' at hash '{$unmodifiedFileHash}', and standard '{$phpcsStandard}'");
 			}
 			if (! $unmodifiedFilePhpcsOutput) {
-				$unmodifiedFilePhpcsOutput = getGitUnmodifiedPhpcsOutput($gitFile, $git, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $options->toArray(), $debug);
+				$unmodifiedFilePhpcsOutput = $shell->getPhpcsOutputOfUnmodifiedGitFile($gitFile);
 				if (isCachingEnabled($options->toArray())) {
 					$cache->setCacheForFile($gitFile, 'old', $unmodifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $unmodifiedFilePhpcsOutput);
 				}
