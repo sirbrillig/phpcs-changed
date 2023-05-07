@@ -96,6 +96,12 @@ class TestShell implements ShellOperator {
 		return isset($this->commandsCalled[$registeredCommand]);
 	}
 
+	public function getPhpcsStandards(): string {
+		$phpcs = $this->options->getExecutablePath('phpcs');
+		$installedCodingStandardsPhpcsOutputCommand = "{$phpcs} -i";
+		return $this->executeCommand($installedCodingStandardsPhpcsOutputCommand);
+	}
+
 	public function getFileNameFromPath(string $path): string {
 		$parts = explode('/', $path);
 		return end($parts);

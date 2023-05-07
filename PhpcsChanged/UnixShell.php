@@ -40,6 +40,12 @@ class UnixShell implements ShellOperator {
 		return implode(PHP_EOL, $output) . PHP_EOL;
 	}
 
+	public function getPhpcsStandards(): string {
+		$phpcs = $this->options->getExecutablePath('phpcs');
+		$installedCodingStandardsPhpcsOutputCommand = "{$phpcs} -i";
+		return $this->executeCommand($installedCodingStandardsPhpcsOutputCommand);
+	}
+
 	private function doesFileExistInGitBase(string $fileName): bool {
 		$debug = getDebug($this->options->debug);
 		$git = getenv('GIT') ?: 'git';

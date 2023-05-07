@@ -22,6 +22,8 @@ interface ShellOperator {
 
 	public function printError(string $message): void;
 
+	public function getPhpcsStandards(): string;
+
 	public function getFileNameFromPath(string $path): string;
 
 	public function doesUnmodifiedFileExistInGit(string $fileName): bool;

@@ -25,6 +25,16 @@ class CliOptions {
 	public $phpcsPath = null;
 
 	/**
+	 * The path to the git executable.
+	 *
+	 * If null, it will default to the `GIT` environment variable. If that is
+	 * not set, it will be just `git`.
+	 *
+	 * @var string|null
+	 */
+	public $gitPath = null;
+
+	/**
 	 * The file paths to be scanned.
 	 *
 	 * @var string[]
@@ -131,6 +141,9 @@ class CliOptions {
 		if (isset($options['phpcs-path'])) {
 			$cliOptions->phpcsPath = $options['phpcs-path'];
 		}
+		if (isset($options['git-path'])) {
+			$cliOptions->gitPath = $options['git-path'];
+		}
 		if (isset($options['svn'])) {
 			$cliOptions->mode = Modes::SVN;
 		}
@@ -209,6 +222,9 @@ class CliOptions {
 		if ($this->phpcsPath) {
 			$options['phpcs-path'] = $this->phpcsPath;
 		}
+		if ($this->gitPath) {
+			$options['git-path'] = $this->gitPath;
+		}
 		if ($this->debug) {
 			$options['debug'] = true;
 		}
@@ -271,6 +287,8 @@ class CliOptions {
 		switch ($executableName) {
 			case 'phpcs':
 				return $this->phpcsPath ?: getenv('PHPCS') ?: 'phpcs';
+			case 'git':
+				return $this->gitPath ?: getenv('GIT') ?: 'git';
 			default:
 				throw new \Exception("No executable found called '{$executableName}'.");
 		}
