@@ -219,6 +219,23 @@ class UnixShell implements ShellOperator {
 		return $unifiedDiff;
 	}
 
+	public function getGitMergeBase(): string {
+		if ($this->options->mode !== Modes::GIT_BASE) {
+			return '';
+		}
+		$debug = getDebug($this->options->debug);
+		$git = getenv('GIT') ?: 'git';
+		$mergeBaseCommand = "{$git} merge-base " . escapeshellarg($this->options->gitBase) . ' HEAD';
+		$debug('running merge-base command:', $mergeBaseCommand);
+		$mergeBase = $this->executeCommand($mergeBaseCommand);
+		if (! $mergeBase) {
+			$debug('merge-base command produced no output');
+			return $this->options->gitBase;
+		}
+		$debug('merge-base command output:', $mergeBase);
+		return trim($mergeBase);
+	}
+
 	public function isReadable(string $fileName): bool {
 		return is_readable($fileName);
 	}

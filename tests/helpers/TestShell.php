@@ -235,4 +235,17 @@ class TestShell implements ShellOperator {
 		}
 		return $unifiedDiff;
 	}
+
+	public function getGitMergeBase(): string {
+		if ($this->options->mode !== Modes::GIT_BASE) {
+			return '';
+		}
+		$git = getenv('GIT') ?: 'git';
+		$mergeBaseCommand = "{$git} merge-base " . escapeshellarg($this->options->gitBase) . ' HEAD';
+		$mergeBase = $this->executeCommand($mergeBaseCommand);
+		if (! $mergeBase) {
+			return $this->options->gitBase;
+		}
+		return trim($mergeBase);
+	}
 }

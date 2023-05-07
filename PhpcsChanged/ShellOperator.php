@@ -35,4 +35,6 @@ interface ShellOperator {
 	public function getPhpcsOutputOfUnmodifiedGitFile(string $fileName): string;
 
 	public function getGitUnifiedDiff(string $fileName): string;
+
+	public function getGitMergeBase(): string;
 }
