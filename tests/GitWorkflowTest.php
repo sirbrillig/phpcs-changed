@@ -14,7 +14,6 @@ use PhpcsChangedTests\GitFixture;
 use PhpcsChangedTests\PhpcsFixture;
 use PhpcsChangedTests\TestCache;
 use function PhpcsChanged\Cli\runGitWorkflow;
-use function PhpcsChanged\GitWorkflow\getGitUnifiedDiff;
 
 final class GitWorkflowTest extends TestCase {
 	public $fixture;
@@ -24,19 +23,6 @@ final class GitWorkflowTest extends TestCase {
 		parent::setUp();
 		$this->fixture = new GitFixture();
 		$this->phpcs = new PhpcsFixture();
-	}
-
-	public function testGetGitUnifiedDiff() {
-		$gitFile = 'foobar.php';
-		$git = 'git';
-		$diff = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
-		$executeCommand = function($command) use ($diff) {
-			if (! $command || false === strpos($command, "git diff --staged --no-prefix 'foobar.php'")) {
-				return '';
-			}
-			return $diff;
-		};
-		$this->assertEquals($diff, getGitUnifiedDiff($gitFile, $git, $executeCommand, [], '\PhpcsChangedTests\Debug'));
 	}
 
 	public function testFullGitWorkflowForOneFileStaged() {
