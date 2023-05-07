@@ -87,12 +87,14 @@ class UnixShell implements ShellOperator {
 		}
 		$debug = getDebug($this->options->debug);
 		$git = getenv('GIT') ?: 'git';
-		$gitStatusOutput = $this->getGitStatusForFile($fileName);
-		if (! $gitStatusOutput || false === strpos($gitStatusOutput, $fileName)) {
-			throw new ShellException("File does not appear to be tracked by git: '{$fileName}'");
-		}
-		if (isset($gitStatusOutput[0]) && $gitStatusOutput[0] === '?') {
-			throw new ShellException("File does not appear to be tracked by git: '{$fileName}'");
+		if (! $this->options->noVerifyGitFile) {
+			$gitStatusOutput = $this->getGitStatusForFile($fileName);
+			if (! $gitStatusOutput || false === strpos($gitStatusOutput, $fileName)) {
+				throw new ShellException("File does not appear to be tracked by git: '{$fileName}'");
+			}
+			if (isset($gitStatusOutput[0]) && $gitStatusOutput[0] === '?') {
+				throw new ShellException("File does not appear to be tracked by git: '{$fileName}'");
+			}
 		}
 		$command = "{$git} ls-files --full-name " . escapeshellarg($fileName);
 		$debug('getting full path to file with command:', $command);
