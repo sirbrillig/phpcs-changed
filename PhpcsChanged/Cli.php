@@ -344,8 +344,6 @@ function runGitWorkflow(CliOptions $options, ShellOperator $shell, CacheManager 
 }
 
 function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
-	$git = getenv('GIT') ?: 'git';
-
 	$phpcsStandard = $options->phpcsStandard;
 	$warningSeverity = $options->warningSeverity;
 	$errorSeverity = $options->errorSeverity;
