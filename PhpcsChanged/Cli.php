@@ -162,6 +162,7 @@ EOF;
 		'--always-exit-zero' => 'Always exit the script with a 0 return code. Otherwise, a 1 return code indicates phpcs messages.',
 		'--no-cache-git-root' => 'Prevent caching the git root used by the git workflow.',
 		'--no-verify-git-file' => 'Prevent checking if a file is tracked by git in the git workflow.',
+		'--no-vendor-phpcs' => 'Prevents looking for phpcs executable in vendor directory.',
 		'--phpcs-path <PATH>' => 'The path to the phpcs executable. Overrides env variables.',
 		'--svn-path <PATH>' => 'The path to the svn executable. Overrides env variables.',
 		'--git-path <PATH>' => 'The path to the git executable. Overrides env variables.',
@@ -176,6 +177,11 @@ Overrides:
 	'GIT', 'CAT', and 'PHPCS', respectively, to specify the full path for each
 	one. You can alternatively use the `--svn-path`, `--git-path`, `--cat-path`,
 	or `--phpcs-path` CLI options.
+
+	For phpcs, if the path is not overridden, and a `phpcs` executable exists
+	under the `vendor/bin` directory where this command is run, that executable
+	will be used instead of relying on the PATH. You can disable this feature
+	with the `--no-vendor-phpcs` option.
 
 EOF;
 }
