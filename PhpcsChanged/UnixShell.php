@@ -41,7 +41,7 @@ class UnixShell implements ShellOperator {
 	}
 
 	public function getPhpcsStandards(): string {
-		$phpcs = $this->options->getExecutablePath('phpcs');
+		$phpcs = $this->getPhpcsExecutable();
 		$installedCodingStandardsPhpcsOutputCommand = "{$phpcs} -i";
 		return $this->executeCommand($installedCodingStandardsPhpcsOutputCommand);
 	}
@@ -187,9 +187,32 @@ class UnixShell implements ShellOperator {
 		return $phpcsStandardOption;
 	}
 
+	private function getPhpcsExecutable(): string {
+		if (! empty($this->options->phpcsPath) || ! empty(getenv('PHPCS'))) {
+			return $this->options->getExecutablePath('phpcs');
+		}
+		if ($this->doesPhpcsExistInVendor()) {
+			return $this->getVendorPhpcsPath();
+		}
+		return 'phpcs';
+	}
+
+	private function doesPhpcsExistInVendor(): bool {
+		try {
+			$this->validateExecutableExists('phpcs', $this->getVendorPhpcsPath());
+		} catch (\Exception $err) {
+			return false;
+		}
+		return true;
+	}
+
+	private function getVendorPhpcsPath(): string {
+		return 'vendor/bin/phpcs';
+	}
+
 	public function getPhpcsOutputOfModifiedGitFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
-		$phpcs = $this->options->getExecutablePath('phpcs');
+		$phpcs = $this->getPhpcsExecutable();
 		$fileContentsCommand = $this->getModifiedFileContentsCommand($fileName);
 		$modifiedFilePhpcsOutputCommand = "{$fileContentsCommand} | {$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . ' --stdin-path=' .  escapeshellarg($fileName) .' -';
 		$debug('running modified file phpcs command:', $modifiedFilePhpcsOutputCommand);
@@ -207,7 +230,7 @@ class UnixShell implements ShellOperator {
 
 	public function getPhpcsOutputOfUnmodifiedGitFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
-		$phpcs = $this->options->getExecutablePath('phpcs');
+		$phpcs = $this->getPhpcsExecutable();
 		$unmodifiedFileContentsCommand = $this->getUnmodifiedFileContentsCommand($fileName);
 		$unmodifiedFilePhpcsOutputCommand = "{$unmodifiedFileContentsCommand} | {$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . ' --stdin-path=' .  escapeshellarg($fileName) . ' -';
 		$debug('running unmodified file phpcs command:', $unmodifiedFilePhpcsOutputCommand);
