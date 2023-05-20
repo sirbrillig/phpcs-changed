@@ -147,6 +147,26 @@ final class SvnWorkflowTest extends TestCase {
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
+	public function testFullSvnWorkflowForOneFileWithVendorDefaultPhpcs() {
+		$svnFile = 'foobar.php';
+		$phpcsPath = 'vendor/bin/phpcs';
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable($phpcsPath);
+		$shell->registerExecutable('cat');
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
+		$shell->registerCommand("svn cat 'foobar.php' | {$phpcsPath}", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php' | {$phpcsPath}", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
 	public function testFullSvnWorkflowForOneFileWithNoMessages() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
