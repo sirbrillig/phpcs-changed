@@ -150,6 +150,15 @@ class CliOptions {
 	 */
 	public $errorSeverity = null;
 
+	/**
+	 * This option will disable the automatic detection of the `phpcs` executable
+	 * in a `vendor` directory. If true, and the phpcs executable path is not
+	 * overridden, the default path to phpcs will always be `'phpcs'`.
+	 *
+	 * @var bool
+	 */
+	public $noVendorPhpcs = false;
+
 	public static function fromArray(array $options): self {
 		$cliOptions = new self();
 		// Note that this array is likely created by `getopt()` which sets any
@@ -157,6 +166,9 @@ class CliOptions {
 		// determine if these options are set.
 		if (isset($options['files'])) {
 			$cliOptions->files = $options['files'];
+		}
+		if (isset($options['no-vendor-phpcs'])) {
+			$cliOptions->noVendorPhpcs = $options['no-vendor-phpcs'];
 		}
 		if (isset($options['phpcs-path'])) {
 			$cliOptions->phpcsPath = $options['phpcs-path'];
@@ -244,6 +256,9 @@ class CliOptions {
 		$options['files'] = $this->files;
 		if ($this->phpcsStandard) {
 			$options['standard'] = $this->phpcsStandard;
+		}
+		if ($this->noVendorPhpcs) {
+			$options['no-vendor-phpcs'] = true;
 		}
 		if ($this->phpcsPath) {
 			$options['phpcs-path'] = $this->phpcsPath;

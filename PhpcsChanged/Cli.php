@@ -197,7 +197,7 @@ function getPhpcsExecutable(CliOptions $options, ShellOperator $shell): string {
 	if (! empty($options->phpcsPath) || ! empty(getenv('PHPCS'))) {
 		return $options->getExecutablePath('phpcs');
 	}
-	if (doesPhpcsExistInVendor($shell)) {
+	if (! $options->noVendorPhpcs && doesPhpcsExistInVendor($shell)) {
 		return getVendorPhpcsPath();
 	}
 	return 'phpcs';
