@@ -72,6 +72,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
@@ -90,6 +93,9 @@ final class SvnWorkflowTest extends TestCase {
 			'svn-path' => $svnPath,
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable($svnPath);
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("{$svnPath} diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("{$svnPath} info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("{$svnPath} cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
@@ -108,6 +114,9 @@ final class SvnWorkflowTest extends TestCase {
 			'cat-path' => $catPath,
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable($catPath);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
@@ -126,6 +135,9 @@ final class SvnWorkflowTest extends TestCase {
 			'phpcs-path' => $phpcsPath,
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable($phpcsPath);
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php' | {$phpcsPath}", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
@@ -142,6 +154,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getEmptyResults()->toPhpcsJson());
@@ -159,6 +174,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
@@ -176,6 +194,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
@@ -196,6 +217,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
@@ -223,6 +247,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
@@ -261,6 +288,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
@@ -307,6 +337,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
@@ -354,6 +387,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
@@ -375,6 +411,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
@@ -398,6 +437,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$oldFileOutput = $this->phpcs->getResults('STDIN', [20, 99]);
@@ -421,6 +463,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
@@ -449,6 +494,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
@@ -470,6 +518,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
@@ -489,6 +540,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => $svnFiles,
 		]);
 		$shell = new TestShell($options, $svnFiles);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn diff 'baz.php'", $this->fixture->getAddedLineDiff('baz.php', 'use Baz;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
@@ -514,6 +568,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
@@ -530,6 +587,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
@@ -546,6 +606,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
@@ -564,6 +627,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNonSvnFileDiff('foobar.php'), 1);
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfoNonSvnFile('foobar.php'), 1);
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
@@ -578,6 +644,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNewFileDiff('foobar.php'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfoNewFile('foobar.php'));
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
@@ -593,6 +662,9 @@ final class SvnWorkflowTest extends TestCase {
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNewFileDiff('foobar.php'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfoNewFile('foobar.php'));
 		$fixture = 'ERROR: You must supply at least one file or directory to process.
@@ -616,6 +688,9 @@ Run "phpcs --help" for usage information
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php' | phpcs --report=json -q --standard='standard' --warning-severity='0' --error-severity='0'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
