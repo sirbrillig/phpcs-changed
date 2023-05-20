@@ -88,11 +88,18 @@ class UnixShell implements ShellOperator {
 	}
 
 	private function getFullGitPathToFile(string $fileName): string {
+		// Return cache if set.
 		if (array_key_exists($fileName, $this->fullPaths)) {
 			return $this->fullPaths[$fileName];
 		}
+
 		$debug = getDebug($this->options->debug);
 		$git = $this->options->getExecutablePath('git');
+
+		// Verify that the file exists in git before we try to get its full path.
+		// There's never a case where we'd be scanning a modified file that is not
+		// tracked by git (a new file must be staged because otherwise we wouldn't
+		// know it exists).
 		if (! $this->options->noVerifyGitFile) {
 			$gitStatusOutput = $this->getGitStatusForFile($fileName);
 			if (! $gitStatusOutput || false === strpos($gitStatusOutput, $fileName)) {
@@ -102,9 +109,11 @@ class UnixShell implements ShellOperator {
 				throw new ShellException("File does not appear to be tracked by git: '{$fileName}'");
 			}
 		}
+
 		$command = "{$git} ls-files --full-name " . escapeshellarg($fileName);
 		$debug('getting full path to file with command:', $command);
 		$fullPath = trim($this->executeCommand($command));
+
 		// This will not change so we can cache it.
 		$this->fullPaths[$fileName] = $fullPath;
 		return $fullPath;
