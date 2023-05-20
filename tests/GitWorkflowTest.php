@@ -29,6 +29,8 @@ final class GitWorkflowTest extends TestCase {
 		$gitFile = 'foobar.php';
 		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-staged' => 1, 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
 		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
@@ -52,6 +54,8 @@ final class GitWorkflowTest extends TestCase {
 			'git-path' => $gitPath,
 		]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable($gitPath);
+		$shell->registerExecutable('phpcs');
 		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("{$gitPath} diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("{$gitPath} status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
@@ -75,6 +79,8 @@ final class GitWorkflowTest extends TestCase {
 			'phpcs-path' => $phpcsPath,
 		]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable($phpcsPath);
 		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
@@ -88,10 +94,62 @@ final class GitWorkflowTest extends TestCase {
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
+	public function testFullGitWorkflowForOneFileStagedWithVendorDefaultPhpcs() {
+		$gitFile = 'foobar.php';
+		$phpcsPath = 'vendor/bin/phpcs';
+		$options = CliOptions::fromArray([
+			'no-cache-git-root' => 1,
+			'git-staged' => 1,
+			'files' => [$gitFile],
+		]);
+		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable($phpcsPath);
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
+		$shell->registerCommand("git show HEAD:'files/foobar.php' | {$phpcsPath}", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
+		$shell->registerCommand("git show :0:'files/foobar.php' | {$phpcsPath}", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
+		$cache = new CacheManager( new TestCache() );
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
+		$messages = runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	public function testFullGitWorkflowForOneFileStagedWithNoVendorDefaultPhpcs() {
+		$gitFile = 'foobar.php';
+		$phpcsPath = 'vendor/bin/phpcs';
+		$options = CliOptions::fromArray([
+			'no-cache-git-root' => 1,
+			'git-staged' => 1,
+			'files' => [$gitFile],
+			'no-vendor-phpcs' => true,
+		]);
+		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable($phpcsPath);
+		$shell->registerExecutable('phpcs');
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
+		$shell->registerCommand("git show HEAD:'files/foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
+		$shell->registerCommand("git show :0:'files/foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
+		$cache = new CacheManager( new TestCache() );
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
+		$messages = runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
 	public function testFullGitWorkflowForOneFileUnstaged() {
 		$gitFile = 'foobar.php';
 		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-unstaged' => '1', 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
 		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
@@ -113,6 +171,8 @@ final class GitWorkflowTest extends TestCase {
 			'files' => [$gitFile],
 		]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
 		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
 		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
 		$shell->registerCommand("cat 'foobar.php' | phpcs", $this->phpcs->getEmptyResults()->toPhpcsJson());
@@ -136,6 +196,8 @@ final class GitWorkflowTest extends TestCase {
 			'files' => [$gitFile],
 		]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
 		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
@@ -169,6 +231,8 @@ final class GitWorkflowTest extends TestCase {
 			'files' => [$gitFile],
 		]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
 		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
@@ -207,6 +271,8 @@ final class GitWorkflowTest extends TestCase {
 			'files' => [$gitFile],
 		]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
 		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
@@ -245,6 +311,8 @@ final class GitWorkflowTest extends TestCase {
 			'files' => [$gitFile],
 		]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
 		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
@@ -282,6 +350,8 @@ final class GitWorkflowTest extends TestCase {
 			'files' => [$gitFile],
 		]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
 		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
 		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
@@ -314,6 +384,8 @@ final class GitWorkflowTest extends TestCase {
 			'files' => [$gitFile],
 		]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
 		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
@@ -341,6 +413,8 @@ final class GitWorkflowTest extends TestCase {
 		$gitFiles = ['foobar.php', 'baz.php'];
 		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-staged' => 1, 'files' => $gitFiles]);
 		$shell = new TestShell($options, $gitFiles);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
 		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$fixture = $this->fixture->getAddedLineDiff('baz.php', 'use Baz;');
@@ -367,6 +441,8 @@ final class GitWorkflowTest extends TestCase {
 		$gitFile = 'foobar.php';
 		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-staged' => 1, 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
 		$fixture = $this->fixture->getEmptyFileDiff();
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
@@ -384,6 +460,8 @@ final class GitWorkflowTest extends TestCase {
 		$gitFile = 'foobar.php';
 		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-staged' => 1, 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
 		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
 		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
 		$shell->registerCommand("git show HEAD:'files/foobar.php'", $this->phpcs->getResults('STDIN', [])->toPhpcsJson());
@@ -400,6 +478,8 @@ final class GitWorkflowTest extends TestCase {
 		$gitFile = 'foobar.php';
 		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-staged' => 1, 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
 		$fixture = $this->fixture->getEmptyFileDiff();
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --porcelain 'foobar.php'", "?? foobar.php" );
@@ -415,6 +495,8 @@ final class GitWorkflowTest extends TestCase {
 		$gitFile = 'foobar.php';
 		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-staged' => 1, 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
 		$fixture = $this->fixture->getNewFileDiff('foobar.php');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getNewFileInfo('foobar.php'));
@@ -431,6 +513,8 @@ final class GitWorkflowTest extends TestCase {
 		$gitFile = 'foobar.php';
 		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-staged' => 1, 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
 		$fixture = $this->fixture->getNewFileDiff('foobar.php');
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getNewFileInfo('foobar.php'));
@@ -452,6 +536,8 @@ Run "phpcs --help" for usage information
 		$gitFile = 'bin/foobar.php';
 		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-base' => 'master', 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
 		$fixture = $this->fixture->getAltAddedLineDiff('foobar.php', 'use Foobar;');
 		$shell->registerCommand("git ls-files --full-name 'bin/foobar.php'", "files/bin/foobar.php");
 		$shell->registerCommand("git merge-base 'master' HEAD", "0123456789abcdef0123456789abcdef01234567\n");
@@ -473,6 +559,8 @@ Run "phpcs --help" for usage information
 		$gitFile = 'test.php';
 		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-base' => 'master', 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
 		$shell->registerCommand("git status --porcelain 'test.php'", $this->fixture->getModifiedFileInfo('test.php'));
 		
 		$fixture = $this->fixture->getAltNewFileDiff('test.php');

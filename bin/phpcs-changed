@@ -52,6 +52,7 @@ $options = getopt(
 		'report:',
 		'debug',
 		'ignore:',
+		'no-vendor-phpcs',
 		'cache',
 		'no-cache',
 		'clear-cache',

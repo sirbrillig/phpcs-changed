@@ -20,6 +20,8 @@ class TestShell extends UnixShell {
 
 	private $fileHashes = [];
 
+	private $executables = [];
+
 	private $options;
 
 	public function __construct(CliOptions $options, array $readableFileNames) {
@@ -27,6 +29,10 @@ class TestShell extends UnixShell {
 			$this->registerReadableFileName($fileName);
 		}
 		parent::__construct($options);
+	}
+
+	public function registerExecutable(string $path): void {
+		$this->executables[$path] = true;
 	}
 
 	public function registerReadableFileName(string $fileName, bool $override = false): bool {
@@ -68,7 +74,12 @@ class TestShell extends UnixShell {
 
 	public function printError(string $message): void {} // phpcs:ignore VariableAnalysis
 
-	public function validateExecutableExists(string $name, string $command): void {} // phpcs:ignore VariableAnalysis
+	public function validateExecutableExists(string $name, string $command): void {
+		if (isset($this->executables[$command])) {
+			return;
+		}
+		throw new \Exception("The executable for {$name} with the path '{$command}' has not been mocked.");
+	}
 
 	public function getFileHash(string $fileName): string {
 		return $this->fileHashes[$fileName] ?? $fileName;

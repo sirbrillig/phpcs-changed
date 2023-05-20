@@ -124,6 +124,8 @@ The `--arc-lint` option can be used when the phpcs-changed is run via arcanist, 
 
 The `--svn-path`, `--git-path`, `--cat-path`, and `--phpcs-path` options can be used to specify the paths to the executables of the same names. If these options are not set, the program will try to use the `SVN`, `GIT`, `CAT`, and `PHPCS` env variables. If those are also not set, the program will default to `svn`, `git`, `cat`, and `phpcs`, respectively, assuming that each command will be in the system's `PATH`.
 
+For phpcs, if the path is not overridden, and a `phpcs` executable exists under the `vendor/bin` directory where this command is run, that executable will be used instead of relying on the PATH. You can disable this feature with the `--no-vendor-phpcs` option.
+
 The `--debug` option will show every step taken by the script.
 
 ## PHP Library
