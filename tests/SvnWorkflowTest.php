@@ -6,6 +6,7 @@ require_once __DIR__ . '/helpers/helpers.php';
 
 use PHPUnit\Framework\TestCase;
 use PhpcsChanged\PhpcsMessages;
+use PhpcsChanged\CliOptions;
 use PhpcsChanged\ShellException;
 use PhpcsChanged\CacheManager;
 use PhpcsChangedTests\TestShell;
@@ -66,12 +67,69 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForOneFile() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
-		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
-		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
-		$options = [];
+		$shell->registerCommand("svn cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	public function testFullSvnWorkflowForOneFileWithReplacedSvn() {
+		$svnFile = 'foobar.php';
+		$svnPath = 'bin/foo/svn';
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'files' => [$svnFile],
+			'svn-path' => $svnPath,
+		]);
+		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerCommand("{$svnPath} diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("{$svnPath} info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
+		$shell->registerCommand("{$svnPath} cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	public function testFullSvnWorkflowForOneFileWithReplacedCat() {
+		$svnFile = 'foobar.php';
+		$catPath = 'bin/foo/cat';
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'files' => [$svnFile],
+			'cat-path' => $catPath,
+		]);
+		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
+		$shell->registerCommand("svn cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("{$catPath} 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
+		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	public function testFullSvnWorkflowForOneFileWithReplacedPhpcs() {
+		$svnFile = 'foobar.php';
+		$phpcsPath = 'bin/foo/phpcs';
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'files' => [$svnFile],
+			'phpcs-path' => $phpcsPath,
+		]);
+		$shell = new TestShell($options, [$svnFile]);
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
+		$shell->registerCommand("svn cat 'foobar.php' | {$phpcsPath}", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php' | {$phpcsPath}", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -79,11 +137,14 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForOneFileWithNoMessages() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getEmptyResults()->toPhpcsJson());
-		$options = [];
 		$expected = $this->phpcs->getEmptyResults();
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -92,14 +153,16 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForOneFileWithCachingEnabledButNoCache() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'cache' => false, // getopt is weird and sets options to false
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
-		$options = [
-			'cache' => false, // getopt is weird and sets options to false
-		];
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -107,13 +170,15 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForOneFileWithOldFileCached() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'cache' => false, // getopt is weird and sets options to false
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
-		$options = [
-			'cache' => false, // getopt is weird and sets options to false
-		];
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$cache = new TestCache();
 		$cache->setEntry('foobar.php', 'old', '188280', '', $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
@@ -125,14 +190,16 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForOneFileUncachedThenCachesBothVersionsOfTheFile() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'cache' => false, // getopt is weird and sets options to false
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
-		$options = [
-			'cache' => false, // getopt is weird and sets options to false
-		];
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 
 		$cache = new TestCache();
@@ -150,14 +217,16 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForOneDoesNotUseNewFileCacheWhenHashChanges() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'cache' => false, // getopt is weird and sets options to false
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
-		$options = [
-			'cache' => false, // getopt is weird and sets options to false
-		];
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 
 		$cache = new TestCache();
@@ -186,14 +255,16 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForOneClearsCacheForFileWhenHashChanges() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'cache' => false, // getopt is weird and sets options to false
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
-		$options = [
-			'cache' => false, // getopt is weird and sets options to false
-		];
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$original_hash = $shell->getFileHash('foobar.php');
 
@@ -230,21 +301,23 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForOneDoesNotClearCacheWhenStandardChanges() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'cache' => false, // getopt is weird and sets options to false
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
-		$options = [
-			'cache' => false, // getopt is weird and sets options to false
-		];
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 
 		$cache = new TestCache();
 		$manager = new CacheManager($cache);
 
 		// Run once to cache results
-		$options['standard'] = 'one';
+		$options->phpcsStandard = 'one';
 		runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\debug');
 		$this->assertTrue($shell->wasCommandCalled("svn cat 'foobar.php'"));
 		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
@@ -257,7 +330,7 @@ final class SvnWorkflowTest extends TestCase {
 		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php'"));
 
 		// Run a third time, with the standard changed, and make sure we don't use the cache
-		$options['standard'] = 'two';
+		$options->phpcsStandard = 'two';
 		$shell->resetCommandsCalled();
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -265,7 +338,7 @@ final class SvnWorkflowTest extends TestCase {
 		$this->assertTrue($shell->wasCommandCalled("cat 'foobar.php'"));
 
 		// Run a fourth time, restoring the standard, and make sure we do use the cache
-		$options['standard'] = 'one';
+		$options->phpcsStandard = 'one';
 		$shell->resetCommandsCalled();
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, $manager, '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -275,14 +348,16 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForOneFileUncachedWhenCachingIsDisabled() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'no-cache' => false, // getopt is weird and sets options to false
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
-		$options = [
-			'no-cache' => false, // getopt is weird and sets options to false
-		];
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$cache = new TestCache();
 		$cache->disabled = true;
@@ -294,14 +369,16 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForOneFileWithOldCacheVersion() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'cache' => false, // getopt is weird and sets options to false
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
-		$options = [
-			'cache' => false, // getopt is weird and sets options to false
-		];
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$cache = new TestCache();
 		$cache->setCacheVersion('0.1-something-else');
@@ -314,17 +391,19 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForOneFileWithCacheThatHasDifferentStandard() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'cache' => false, // getopt is weird and sets options to false
+			'standard' => 'TestStandard1',
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$oldFileOutput = $this->phpcs->getResults('STDIN', [20, 99]);
 		$newFileOutput = $this->phpcs->getResults('STDIN', [20, 21]);
 		$shell->registerCommand("svn cat 'foobar.php'", $oldFileOutput->toPhpcsJson());
 		$shell->registerCommand("cat 'foobar.php'", $newFileOutput->toPhpcsJson());
-		$options = [
-			'cache' => false, // getopt is weird and sets options to false
-			'standard' => 'TestStandard1',
-		];
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$cache = new TestCache();
 		$cache->setEntry('foobar.php', 'old', '188280', 'TestStandard2', 'blah'); // This invalid JSON will throw if the cache is used
@@ -336,13 +415,15 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForOneFileWithCacheOfOldFileVersionDoesNotUseCache() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'cache' => false, // getopt is weird and sets options to false
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
-		$options = [
-			'cache' => false, // getopt is weird and sets options to false
-		];
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$cache = new TestCache();
 
@@ -362,13 +443,15 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForUnchangedFileWithBothFilesCached() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'cache' => false, // getopt is weird and sets options to false
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
-		$options = [
-			'cache' => false, // getopt is weird and sets options to false
-		];
 		$expected = PhpcsMessages::fromArrays([], 'bin/foobar.php');
 		$cache = new TestCache();
 		$cache->setEntry('foobar.php', 'new', 'foobar.php', '', $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
@@ -381,13 +464,15 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForUnchangedFileWithOldFileCached() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'cache' => false, // getopt is weird and sets options to false
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
-		$options = [
-			'cache' => false, // getopt is weird and sets options to false
-		];
 		$expected = PhpcsMessages::fromArrays([], 'bin/foobar.php');
 		$cache = new TestCache();
 		$cache->setEntry('foobar.php', 'old', '188280', '', $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
@@ -399,7 +484,11 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForMultipleFiles() {
 		$svnFiles = ['foobar.php', 'baz.php'];
-		$shell = new TestShell($svnFiles);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'files' => $svnFiles,
+		]);
+		$shell = new TestShell($options, $svnFiles);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn diff 'baz.php'", $this->fixture->getAddedLineDiff('baz.php', 'use Baz;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
@@ -410,7 +499,6 @@ final class SvnWorkflowTest extends TestCase {
 		$shell->registerCommand("svn cat 'baz.php'", $this->phpcs->getResults('STDIN', [20, 99], 'Found unused symbol Baz.')->toPhpcsJson());
 		$shell->registerCommand("cat 'baz.php'", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Baz.')->toPhpcsJson());
 
-		$options = [];
 		$expected = PhpcsMessages::merge([
 			$this->phpcs->getResults('bin/foobar.php', [20]),
 			$this->phpcs->getResults('bin/baz.php', [20], 'Found unused symbol Baz.'),
@@ -421,12 +509,15 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForUnchangedFileWithPhpCsMessages() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
-		$options = [];
 		$expected = PhpcsMessages::fromArrays([], 'STDIN');
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -434,12 +525,15 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForUnchangedFileWithoutPhpCsMessages() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
-		$options = [];
 		$expected = PhpcsMessages::fromArrays([], 'STDIN');
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -447,12 +541,15 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForChangedFileWithoutPhpCsMessagesLintsOnlyNewFile() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getEmptyFileDiff());
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php'", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
-		$options = [];
 		runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertFalse($shell->wasCommandCalled("svn diff 'foobar.php'"));
 		$this->assertFalse($shell->wasCommandCalled("svn cat 'foobar.php'"));
@@ -462,22 +559,28 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForNonSvnFile() {
 		$this->expectException(ShellException::class);
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNonSvnFileDiff('foobar.php'), 1);
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfoNonSvnFile('foobar.php'), 1);
 		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
-		$options = [];
 		runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 	}
 
 	public function testFullSvnWorkflowForNewFile() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNewFileDiff('foobar.php'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfoNewFile('foobar.php'));
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
-		$options = [];
 		$expected = $this->phpcs->getResults('foobar.php', [20, 21]);
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -485,7 +588,11 @@ final class SvnWorkflowTest extends TestCase {
 
 	public function testFullSvnWorkflowForEmptyNewFile() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNewFileDiff('foobar.php'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfoNewFile('foobar.php'));
 		$fixture = 'ERROR: You must supply at least one file or directory to process.
@@ -493,7 +600,6 @@ final class SvnWorkflowTest extends TestCase {
 Run "phpcs --help" for usage information
 ';
 		$shell->registerCommand( "cat 'foobar.php'", $fixture);
-		$options = [];
 		$expected = PhpcsMessages::fromArrays([], 'STDIN');
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -501,17 +607,19 @@ Run "phpcs --help" for usage information
 
 	public function testFullSvnWorkflowForOneFileWithSeveritySetToZero() {
 		$svnFile = 'foobar.php';
-		$shell = new TestShell([$svnFile]);
+		$options = CliOptions::fromArray([
+			'svn' => true,
+			'warning-severity' => '0',
+			'error-severity' => '0',
+			'cache' => false, // getopt is weird and sets options to false
+			'standard' => 'standard',
+			'files' => [$svnFile],
+		]);
+		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
 		$shell->registerCommand("svn cat 'foobar.php' | phpcs --report=json -q --standard='standard' --warning-severity='0' --error-severity='0'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$shell->registerCommand("cat 'foobar.php' | phpcs --report=json -q --standard='standard' --warning-severity='0' --error-severity='0'" , $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
-		$options = [
-			'warning-severity' => '0',
-			'error-severity' => '0',
-			'cache' => false, // getopt is weird and sets options to false
-			'standard' => 'standard'
-		];
 		$cache = new CacheManager(new TestCache());
 		runSvnWorkflow([$svnFile], $options, $shell, $cache, '\PhpcsChangedTests\debug' );
 		

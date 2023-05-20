@@ -34,6 +34,10 @@ $options = getopt(
 		'help',
 		'version',
 		'diff:',
+		'phpcs-path:',
+		'git-path:',
+		'cat-path:',
+		'svn-path:',
 		'phpcs-orig:',
 		'phpcs-unmodified:',
 		'phpcs-new:',
@@ -146,7 +150,7 @@ function run(array $rawOptions, callable $debug): void {
 	if ($options->mode === Modes::SVN) {
 		$shell = new UnixShell($options);
 		reportMessagesAndExit(
-			runSvnWorkflow($options->files, $options->toArray(), $shell, new CacheManager(new FileCache(), $debug), $debug),
+			runSvnWorkflow($options->files, $options, $shell, new CacheManager(new FileCache(), $debug), $debug),
 			$options
 		);
 		return;

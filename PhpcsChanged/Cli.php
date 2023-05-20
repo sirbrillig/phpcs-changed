@@ -68,11 +68,9 @@ EOF;
 }
 
 function printInstalledCodingStandards(): void {
-	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$shell = new UnixShell();
 
-	$installedCodingStandardsPhpcsOutputCommand = "{$phpcs} -i";
-	$installedCodingStandardsPhpcsOutput = $shell->executeCommand($installedCodingStandardsPhpcsOutputCommand);
+	$installedCodingStandardsPhpcsOutput = $shell->getPhpcsStandards();
 	if (! $installedCodingStandardsPhpcsOutput) {
 		$errorMessage = "Cannot get installed coding standards";
 		$shell->printError($errorMessage);
@@ -164,14 +162,20 @@ EOF;
 		'--always-exit-zero' => 'Always exit the script with a 0 return code. Otherwise, a 1 return code indicates phpcs messages.',
 		'--no-cache-git-root' => 'Prevent caching the git root used by the git workflow.',
 		'--no-verify-git-file' => 'Prevent checking if a file is tracked by git in the git workflow.',
+		'--phpcs-path <PATH>' => 'The path to the phpcs executable. Overrides env variables.',
+		'--svn-path <PATH>' => 'The path to the svn executable. Overrides env variables.',
+		'--git-path <PATH>' => 'The path to the git executable. Overrides env variables.',
+		'--cat-path <PATH>' => 'The path to the cat executable. Overrides env variables.',
 	], "	");
 	echo <<<EOF
 Overrides:
 
 	If using automatic mode, this script requires three shell commands: 'svn' or
-	'git', 'cat', and 'phpcs'. If those commands are not in your PATH or you would
-	like to override them, you can use the environment variables 'SVN', 'GIT',
-	'CAT', and 'PHPCS', respectively, to specify the full path for each one.
+	'git', 'cat', and 'phpcs'. If those commands are not in your PATH or you
+	would like to override them, you can use the environment variables 'SVN',
+	'GIT', 'CAT', and 'PHPCS', respectively, to specify the full path for each
+	one. You can alternatively use the `--svn-path`, `--git-path`, `--cat-path`,
+	or `--phpcs-path` CLI options.
 
 EOF;
 }
@@ -203,10 +207,10 @@ function runManualWorkflow(string $diffFile, string $phpcsUnmodifiedFile, string
 	return $messages;
 }
 
-function runSvnWorkflow(array $svnFiles, array $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
-	$svn = getenv('SVN') ?: 'svn';
-	$phpcs = getenv('PHPCS') ?: 'phpcs';
-	$cat = getenv('CAT') ?: 'cat';
+function runSvnWorkflow(array $svnFiles, CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
+	$svn = $options->getExecutablePath('svn');
+	$phpcs = $options->getExecutablePath('phpcs');
+	$cat = $options->getExecutablePath('cat');
 
 	try {
 		$debug('validating executables');
@@ -220,28 +224,28 @@ function runSvnWorkflow(array $svnFiles, array $options, ShellOperator $shell, C
 		throw $err; // Just in case we do not actually exit, like in tests
 	}
 
-	loadCache($cache, $shell, $options);
+	loadCache($cache, $shell, $options->toArray());
 
 	$phpcsMessages = array_map(function(string $svnFile) use ($options, $shell, $cache, $debug): PhpcsMessages {
 		return runSvnWorkflowForFile($svnFile, $options, $shell, $cache, $debug);
 	}, $svnFiles);
 
-	saveCache($cache, $shell, $options);
+	saveCache($cache, $shell, $options->toArray());
 
 	return PhpcsMessages::merge($phpcsMessages);
 }
 
-function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
-	$svn = getenv('SVN') ?: 'svn';
-	$phpcs = getenv('PHPCS') ?: 'phpcs';
-	$cat = getenv('CAT') ?: 'cat';
+function runSvnWorkflowForFile(string $svnFile, CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
+	$svn = $options->getExecutablePath('svn');
+	$phpcs = $options->getExecutablePath('phpcs');
+	$cat = $options->getExecutablePath('cat');
 
-	$phpcsStandard = $options['standard'] ?? null;
+	$phpcsStandard = $options->phpcsStandard;
 	$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
 
-	$warningSeverity = $options['warning-severity'] ?? null;
+	$warningSeverity = $options->warningSeverity;
 	$phpcsStandardOption .= isset($warningSeverity) ? ' --warning-severity=' . escapeshellarg($warningSeverity) : '';
-	$errorSeverity = $options['error-severity'] ?? null;
+	$errorSeverity = $options->errorSeverity;
 	$phpcsStandardOption .= isset($errorSeverity) ? ' --error-severity=' . escapeshellarg($errorSeverity) : '';
 	$fileName = $shell->getFileNameFromPath($svnFile);
 
@@ -252,14 +256,14 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 
 		$modifiedFileHash = '';
 		$modifiedFilePhpcsOutput = null;
-		if (isCachingEnabled($options)) {
+		if (isCachingEnabled($options->toArray())) {
 			$modifiedFileHash = $shell->getFileHash($svnFile);
 			$modifiedFilePhpcsOutput = $cache->getCacheForFile($svnFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
 			$debug(($modifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for modified file '{$svnFile}' at hash '{$modifiedFileHash}', and standard '{$phpcsStandard}'");
 		}
 		if (! $modifiedFilePhpcsOutput) {
 			$modifiedFilePhpcsOutput = getSvnModifiedPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
-			if (isCachingEnabled($options)) {
+			if (isCachingEnabled($options->toArray())) {
 				$cache->setCacheForFile($svnFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $modifiedFilePhpcsOutput);
 			}
 		}
@@ -281,13 +285,13 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 		}
 		$unmodifiedFilePhpcsOutput = '';
 		if (! $isNewFile) {
-			if (isCachingEnabled($options)) {
+			if (isCachingEnabled($options->toArray())) {
 				$unmodifiedFilePhpcsOutput = $cache->getCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
 				$debug(($unmodifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for unmodified file '{$svnFile}' at revision '{$revisionId}', and standard '{$phpcsStandard}'");
 			}
 			if (! $unmodifiedFilePhpcsOutput) {
 				$unmodifiedFilePhpcsOutput = getSvnUnmodifiedPhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
-				if (isCachingEnabled($options)) {
+				if (isCachingEnabled($options->toArray())) {
 					$cache->setCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $unmodifiedFilePhpcsOutput);
 				}
 			}
@@ -312,15 +316,13 @@ function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $s
 }
 
 function runGitWorkflow(CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
-	$git = getenv('GIT') ?: 'git';
-	$phpcs = getenv('PHPCS') ?: 'phpcs';
-	$cat = getenv('CAT') ?: 'cat';
+	$git = $options->getExecutablePath('git');
+	$phpcs = $options->getExecutablePath('phpcs');
 
 	try {
 		$debug('validating executables');
 		$shell->validateExecutableExists('git', $git);
 		$shell->validateExecutableExists('phpcs', $phpcs);
-		$shell->validateExecutableExists('cat', $cat);
 		$debug('executables are valid');
 		if ($options->gitBase) {
 			$options->gitBase = $shell->getGitMergeBase();

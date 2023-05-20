@@ -122,6 +122,8 @@ The `--no-cache-git-root` option will prevent caching the check used by the git 
 
 The `--arc-lint` option can be used when the phpcs-changed is run via arcanist, as it skips some checks, which are performed by arcanist itself. It leads to better performance when used with arcanist. (Equivalent to `--no-verify-git-file --always-exit-zero`.)
 
+The `--svn-path`, `--git-path`, `--cat-path`, and `--phpcs-path` options can be used to specify the paths to the executables of the same names. If these options are not set, the program will try to use the `SVN`, `GIT`, `CAT`, and `PHPCS` env variables. If those are also not set, the program will default to `svn`, `git`, `cat`, and `phpcs`, respectively, assuming that each command will be in the system's `PATH`.
+
 The `--debug` option will show every step taken by the script.
 
 ## PHP Library

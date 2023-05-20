@@ -40,9 +40,15 @@ class UnixShell implements ShellOperator {
 		return implode(PHP_EOL, $output) . PHP_EOL;
 	}
 
+	public function getPhpcsStandards(): string {
+		$phpcs = $this->options->getExecutablePath('phpcs');
+		$installedCodingStandardsPhpcsOutputCommand = "{$phpcs} -i";
+		return $this->executeCommand($installedCodingStandardsPhpcsOutputCommand);
+	}
+
 	private function doesFileExistInGitBase(string $fileName): bool {
 		$debug = getDebug($this->options->debug);
-		$git = getenv('GIT') ?: 'git';
+		$git = $this->options->getExecutablePath('git');
 		$gitStatusCommand = "{$git} cat-file -e " . escapeshellarg($this->options->gitBase) . ':' . escapeshellarg($this->getFullGitPathToFile($fileName)) . ' 2>/dev/null';
 		$debug('checking status of file with command:', $gitStatusCommand);
 		/** @var int */
@@ -55,7 +61,7 @@ class UnixShell implements ShellOperator {
 
 	private function getGitStatusForFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
-		$git = getenv('GIT') ?: 'git';
+		$git = $this->options->getExecutablePath('git');
 		$gitStatusCommand = "{$git} status --porcelain " . escapeshellarg($fileName);
 		$debug('checking git status of file with command:', $gitStatusCommand);
 		$gitStatusOutput = $this->executeCommand($gitStatusCommand);
@@ -82,11 +88,18 @@ class UnixShell implements ShellOperator {
 	}
 
 	private function getFullGitPathToFile(string $fileName): string {
+		// Return cache if set.
 		if (array_key_exists($fileName, $this->fullPaths)) {
 			return $this->fullPaths[$fileName];
 		}
+
 		$debug = getDebug($this->options->debug);
-		$git = getenv('GIT') ?: 'git';
+		$git = $this->options->getExecutablePath('git');
+
+		// Verify that the file exists in git before we try to get its full path.
+		// There's never a case where we'd be scanning a modified file that is not
+		// tracked by git (a new file must be staged because otherwise we wouldn't
+		// know it exists).
 		if (! $this->options->noVerifyGitFile) {
 			$gitStatusOutput = $this->getGitStatusForFile($fileName);
 			if (! $gitStatusOutput || false === strpos($gitStatusOutput, $fileName)) {
@@ -96,17 +109,19 @@ class UnixShell implements ShellOperator {
 				throw new ShellException("File does not appear to be tracked by git: '{$fileName}'");
 			}
 		}
+
 		$command = "{$git} ls-files --full-name " . escapeshellarg($fileName);
 		$debug('getting full path to file with command:', $command);
 		$fullPath = trim($this->executeCommand($command));
+
 		// This will not change so we can cache it.
 		$this->fullPaths[$fileName] = $fullPath;
 		return $fullPath;
 	}
 
 	private function getModifiedFileContentsCommand(string $fileName): string {
-		$git = getenv('GIT') ?: 'git';
-		$cat = getenv('CAT') ?: 'cat';
+		$git = $this->options->getExecutablePath('git');
+		$cat = $this->options->getExecutablePath('cat');
 		$fullPath = $this->getFullGitPathToFile($fileName);
 		if ($this->options->mode === Modes::GIT_BASE) {
 			// for git-base mode, we get the contents of the file from the HEAD version of the file in the current branch
@@ -121,7 +136,7 @@ class UnixShell implements ShellOperator {
 	}
 
 	private function getUnmodifiedFileContentsCommand(string $fileName): string {
-		$git = getenv('GIT') ?: 'git';
+		$git = $this->options->getExecutablePath('git');
 		if ($this->options->mode === Modes::GIT_BASE) {
 			$rev = escapeshellarg($this->options->gitBase);
 		} else if ($this->options->mode === Modes::GIT_UNSTAGED) {
@@ -136,7 +151,7 @@ class UnixShell implements ShellOperator {
 
 	public function getGitHashOfModifiedFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
-		$git = getenv('GIT') ?: 'git';
+		$git = $this->options->getExecutablePath('git');
 		$fileContentsCommand = $this->getModifiedFileContentsCommand($fileName);
 		$command = "{$fileContentsCommand} | {$git} hash-object --stdin";
 		$debug('running modified file git hash command:', $command);
@@ -150,7 +165,7 @@ class UnixShell implements ShellOperator {
 
 	public function getGitHashOfUnmodifiedFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
-		$git = getenv('GIT') ?: 'git';
+		$git = $this->options->getExecutablePath('git');
 		$fileContentsCommand = $this->getUnmodifiedFileContentsCommand($fileName);
 		$command = "{$fileContentsCommand} | {$git} hash-object --stdin";
 		$debug('running unmodified file git hash command:', $command);
@@ -174,7 +189,7 @@ class UnixShell implements ShellOperator {
 
 	public function getPhpcsOutputOfModifiedGitFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
-		$phpcs = getenv('PHPCS') ?: 'phpcs';
+		$phpcs = $this->options->getExecutablePath('phpcs');
 		$fileContentsCommand = $this->getModifiedFileContentsCommand($fileName);
 		$modifiedFilePhpcsOutputCommand = "{$fileContentsCommand} | {$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . ' --stdin-path=' .  escapeshellarg($fileName) .' -';
 		$debug('running modified file phpcs command:', $modifiedFilePhpcsOutputCommand);
@@ -192,7 +207,7 @@ class UnixShell implements ShellOperator {
 
 	public function getPhpcsOutputOfUnmodifiedGitFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
-		$phpcs = getenv('PHPCS') ?: 'phpcs';
+		$phpcs = $this->options->getExecutablePath('phpcs');
 		$unmodifiedFileContentsCommand = $this->getUnmodifiedFileContentsCommand($fileName);
 		$unmodifiedFilePhpcsOutputCommand = "{$unmodifiedFileContentsCommand} | {$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . ' --stdin-path=' .  escapeshellarg($fileName) . ' -';
 		$debug('running unmodified file phpcs command:', $unmodifiedFilePhpcsOutputCommand);
@@ -206,7 +221,7 @@ class UnixShell implements ShellOperator {
 
 	public function getGitUnifiedDiff(string $fileName): string {
 		$debug = getDebug($this->options->debug);
-		$git = getenv('GIT') ?: 'git';
+		$git = $this->options->getExecutablePath('git');
 		$objectOption = $this->options->mode === Modes::GIT_BASE ? ' ' . escapeshellarg($this->options->gitBase) . '...' : '';
 		$stagedOption = empty($objectOption) && $this->options->mode !== Modes::GIT_UNSTAGED ? ' --staged' : '';
 		$unifiedDiffCommand = "{$git} diff{$stagedOption}{$objectOption} --no-prefix " . escapeshellarg($fileName);
@@ -224,7 +239,7 @@ class UnixShell implements ShellOperator {
 			return '';
 		}
 		$debug = getDebug($this->options->debug);
-		$git = getenv('GIT') ?: 'git';
+		$git = $this->options->getExecutablePath('git');
 		$mergeBaseCommand = "{$git} merge-base " . escapeshellarg($this->options->gitBase) . ' HEAD';
 		$debug('running merge-base command:', $mergeBaseCommand);
 		$mergeBase = $this->executeCommand($mergeBaseCommand);
