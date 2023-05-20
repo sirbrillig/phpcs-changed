@@ -318,13 +318,11 @@ function runSvnWorkflowForFile(string $svnFile, CliOptions $options, ShellOperat
 function runGitWorkflow(CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
 	$git = $options->getExecutablePath('git');
 	$phpcs = $options->getExecutablePath('phpcs');
-	$cat = $options->getExecutablePath('cat');
 
 	try {
 		$debug('validating executables');
 		$shell->validateExecutableExists('git', $git);
 		$shell->validateExecutableExists('phpcs', $phpcs);
-		$shell->validateExecutableExists('cat', $cat);
 		$debug('executables are valid');
 		if ($options->gitBase) {
 			$options->gitBase = $shell->getGitMergeBase();
