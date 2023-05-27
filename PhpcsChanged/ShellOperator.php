@@ -9,6 +9,8 @@ use PhpcsChanged\CliOptions;
  * Interface to perform file and shell operations
  */
 interface ShellOperator {
+	public function clearCaches(): void;
+
 	public function validateExecutableExists(string $name, string $command): void;
 
 	// TODO: remove executeCommand from the interface and rely on the more specific methods.
@@ -28,6 +30,8 @@ interface ShellOperator {
 
 	public function doesUnmodifiedFileExistInGit(string $fileName): bool;
 
+	public function doesUnmodifiedFileExistInSvn(string $fileName): bool;
+
 	public function getGitHashOfModifiedFile(string $fileName): string;
 
 	public function getGitHashOfUnmodifiedFile(string $fileName): string;
@@ -36,7 +40,15 @@ interface ShellOperator {
 
 	public function getPhpcsOutputOfUnmodifiedGitFile(string $fileName): string;
 
+	public function getPhpcsOutputOfModifiedSvnFile(string $fileName): string;
+
+	public function getPhpcsOutputOfUnmodifiedSvnFile(string $fileName): string;
+
 	public function getGitUnifiedDiff(string $fileName): string;
 
 	public function getGitMergeBase(): string;
+
+	public function getSvnRevisionId(string $fileName): string;
+
+	public function getSvnUnifiedDiff(string $fileName): string;
 }

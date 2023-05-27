@@ -31,4 +31,3 @@ require_once __DIR__ . '/PhpcsChanged/FileCache.php';
 // Function-only files
 require_once __DIR__ . '/PhpcsChanged/functions.php';
 require_once __DIR__ . '/PhpcsChanged/Cli.php';
-require_once __DIR__ . '/PhpcsChanged/SvnWorkflow.php';
