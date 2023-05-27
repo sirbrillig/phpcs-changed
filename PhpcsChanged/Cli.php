@@ -15,7 +15,6 @@ use PhpcsChanged\UnixShell;
 use PhpcsChanged\XmlReporter;
 use PhpcsChanged\CacheManager;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
-use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff};
 
 function getDebug(bool $debugEnabled): callable {
 	return
@@ -265,8 +264,6 @@ function runSvnWorkflow(array $svnFiles, CliOptions $options, ShellOperator $she
 }
 
 function runSvnWorkflowForFile(string $svnFile, CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
-	$svn = $options->getExecutablePath('svn');
-
 	$phpcsStandard = $options->phpcsStandard;
 
 	$warningSeverity = $options->warningSeverity;
@@ -299,7 +296,7 @@ function runSvnWorkflowForFile(string $svnFile, CliOptions $options, ShellOperat
 			throw new NoChangesException("Modified file '{$svnFile}' has no PHPCS messages; skipping");
 		}
 
-		$unifiedDiff = getSvnUnifiedDiff($svnFile, $svn, [$shell, 'executeCommand'], $debug);
+		$unifiedDiff = $shell->getSvnUnifiedDiff($svnFile);
 
 		$revisionId = $shell->getSvnRevisionId($svnFile);
 		$isNewFile = $shell->doesUnmodifiedFileExistInSvn($svnFile);

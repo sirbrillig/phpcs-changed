@@ -33,7 +33,6 @@
         },
         "files": [
             "PhpcsChanged/Cli.php",
-            "PhpcsChanged/SvnWorkflow.php",
             "PhpcsChanged/functions.php"
         ]
     },
