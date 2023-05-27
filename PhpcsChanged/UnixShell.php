@@ -49,7 +49,7 @@ class UnixShell implements ShellOperator {
 		}
 	}
 
-	public function executeCommand(string $command, int &$return_val = null): string {
+	protected function executeCommand(string $command, int &$return_val = null): string {
 		$output = [];
 		exec($command, $output, $return_val);
 		return implode(PHP_EOL, $output) . PHP_EOL;

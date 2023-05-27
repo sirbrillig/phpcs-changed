@@ -16,9 +16,6 @@ interface ShellOperator {
 	// TODO: remove validateExecutableExists since executables are an implementation detail of the shell.
 	public function validateExecutableExists(string $name, string $command): void;
 
-	// TODO: remove executeCommand from the interface and rely on the more specific methods.
-	public function executeCommand(string $command, int &$return_val = null): string;
-
 	public function isReadable(string $fileName): bool;
 
 	public function getFileHash(string $fileName): string;
