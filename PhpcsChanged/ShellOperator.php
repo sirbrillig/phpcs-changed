@@ -47,4 +47,6 @@ interface ShellOperator {
 	public function getGitMergeBase(): string;
 
 	public function getSvnRevisionId(string $fileName): string;
+
+	public function getSvnUnifiedDiff(string $fileName): string;
 }
