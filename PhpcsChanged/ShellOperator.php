@@ -13,7 +13,7 @@ interface ShellOperator {
 
 	public function getPhpcsVersion(): string;
 
-	public function validateExecutables(): void;
+	public function validateShellIsReady(): void;
 
 	public function isReadable(string $fileName): bool;
 

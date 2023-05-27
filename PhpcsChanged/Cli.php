@@ -212,7 +212,7 @@ function runManualWorkflow(string $diffFile, string $phpcsUnmodifiedFile, string
 function runSvnWorkflow(array $svnFiles, CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
 	try {
 		$debug('validating executables');
-		$shell->validateExecutables();
+		$shell->validateShellIsReady();
 		$debug('executables are valid');
 	} catch( \Exception $err ) {
 		$shell->printError($err->getMessage());
@@ -307,7 +307,7 @@ function runSvnWorkflowForFile(string $svnFile, CliOptions $options, ShellOperat
 function runGitWorkflow(CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
 	try {
 		$debug('validating executables');
-		$shell->validateExecutables();
+		$shell->validateShellIsReady();
 		$debug('executables are valid');
 		if ($options->gitBase) {
 			$options->gitBase = $shell->getGitMergeBase();

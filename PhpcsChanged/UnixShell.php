@@ -41,7 +41,7 @@ class UnixShell implements ShellOperator {
 		$this->svnInfo = [];
 	}
 
-	public function validateExecutables(): void {
+	public function validateShellIsReady(): void {
 		if ($this->options->mode === Modes::MANUAL) {
 			$phpcs = $this->getPhpcsExecutable();
 			$this->validateExecutableExists('phpcs', $phpcs);
