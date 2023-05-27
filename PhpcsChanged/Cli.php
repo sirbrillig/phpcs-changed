@@ -15,7 +15,7 @@ use PhpcsChanged\UnixShell;
 use PhpcsChanged\XmlReporter;
 use PhpcsChanged\CacheManager;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
-use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, getSvnFileInfo, isNewSvnFile, getSvnUnmodifiedPhpcsOutput, getSvnModifiedPhpcsOutput, getSvnRevisionId};
+use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, getSvnFileInfo, isNewSvnFile, getSvnRevisionId};
 
 function getDebug(bool $debugEnabled): callable {
 	return
@@ -266,16 +266,11 @@ function runSvnWorkflow(array $svnFiles, CliOptions $options, ShellOperator $she
 
 function runSvnWorkflowForFile(string $svnFile, CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
 	$svn = $options->getExecutablePath('svn');
-	$phpcs = getPhpcsExecutable($options, $shell);
-	$cat = $options->getExecutablePath('cat');
 
 	$phpcsStandard = $options->phpcsStandard;
-	$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
 
 	$warningSeverity = $options->warningSeverity;
-	$phpcsStandardOption .= isset($warningSeverity) ? ' --warning-severity=' . escapeshellarg($warningSeverity) : '';
 	$errorSeverity = $options->errorSeverity;
-	$phpcsStandardOption .= isset($errorSeverity) ? ' --error-severity=' . escapeshellarg($errorSeverity) : '';
 	$fileName = $shell->getFileNameFromPath($svnFile);
 
 	try {
@@ -291,7 +286,7 @@ function runSvnWorkflowForFile(string $svnFile, CliOptions $options, ShellOperat
 			$debug(($modifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for modified file '{$svnFile}' at hash '{$modifiedFileHash}', and standard '{$phpcsStandard}'");
 		}
 		if (! $modifiedFilePhpcsOutput) {
-			$modifiedFilePhpcsOutput = getSvnModifiedPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+			$modifiedFilePhpcsOutput = $shell->getPhpcsOutputOfModifiedSvnFile($svnFile);
 			if (isCachingEnabled($options->toArray())) {
 				$cache->setCacheForFile($svnFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $modifiedFilePhpcsOutput);
 			}
@@ -319,7 +314,7 @@ function runSvnWorkflowForFile(string $svnFile, CliOptions $options, ShellOperat
 				$debug(($unmodifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for unmodified file '{$svnFile}' at revision '{$revisionId}', and standard '{$phpcsStandard}'");
 			}
 			if (! $unmodifiedFilePhpcsOutput) {
-				$unmodifiedFilePhpcsOutput = getSvnUnmodifiedPhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+				$unmodifiedFilePhpcsOutput = $shell->getPhpcsOutputOfUnmodifiedSvnFile($svnFile);
 				if (isCachingEnabled($options->toArray())) {
 					$cache->setCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $unmodifiedFilePhpcsOutput);
 				}

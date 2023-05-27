@@ -41,29 +41,3 @@ function getSvnRevisionId(string $svnFileInfo): string {
 	}
 	return $version;
 }
-
-function getSvnUnmodifiedPhpcsOutput(string $svnFile, string $svn, string $phpcs, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
-	$unmodifiedFilePhpcsOutputCommand = "{$svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($svnFile) . ' -';
-	$debug('running unmodified file phpcs command:', $unmodifiedFilePhpcsOutputCommand);
-	$unmodifiedFilePhpcsOutput = $executeCommand($unmodifiedFilePhpcsOutputCommand);
-	if (! $unmodifiedFilePhpcsOutput) {
-		throw new ShellException("Cannot get unmodified file phpcs output for file '{$svnFile}'");
-	}
-	$debug('unmodified file phpcs command output:', $unmodifiedFilePhpcsOutput);
-	return $unmodifiedFilePhpcsOutput;
-}
-
-function getSvnModifiedPhpcsOutput(string $svnFile, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
-	$modifiedFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($svnFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($svnFile) . ' -';
-	$debug('running modified file phpcs command:', $modifiedFilePhpcsOutputCommand);
-	$modifiedFilePhpcsOutput = $executeCommand($modifiedFilePhpcsOutputCommand);
-	if (! $modifiedFilePhpcsOutput) {
-		throw new ShellException("Cannot get modified file phpcs output for file '{$svnFile}'");
-	}
-	$debug('modified file phpcs command output:', $modifiedFilePhpcsOutput);
-	if (false !== strpos($modifiedFilePhpcsOutput, 'You must supply at least one file or directory to process')) {
-		$debug('phpcs output implies modified file is empty');
-		return '';
-	}
-	return $modifiedFilePhpcsOutput;
-}
