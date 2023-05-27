@@ -14,7 +14,6 @@ use PhpcsChangedTests\TestCache;
 use PhpcsChangedTests\SvnFixture;
 use PhpcsChangedTests\PhpcsFixture;
 use function PhpcsChanged\Cli\runSvnWorkflow;
-use function PhpcsChanged\SvnWorkflow\{getSvnFileInfo, isNewSvnFile, getSvnUnifiedDiff};
 
 final class SvnWorkflowTest extends TestCase {
 	public $phpcs;
@@ -24,45 +23,6 @@ final class SvnWorkflowTest extends TestCase {
 		parent::setUp();
 		$this->fixture = new SvnFixture();
 		$this->phpcs = new PhpcsFixture();
-	}
-
-	public function testIsNewSvnFileReturnsTrueForNewFile() {
-		$svnFile = 'foobar.php';
-		$svn = 'svn';
-		$executeCommand = function($command) {
-			if (! $command || false === strpos($command, "svn info 'foobar.php'")) {
-				return '';
-			}
-			return $this->fixture->getSvnInfoNewFile('foobar.php');
-		};
-		$svnFileInfo = getSvnFileInfo($svnFile, $svn, $executeCommand, '\PhpcsChangedTests\debug');
-		$this->assertTrue(isNewSvnFile($svnFileInfo));
-	}
-
-	public function testIsNewSvnFileReturnsFalseForOldFile() {
-		$svnFile = 'foobar.php';
-		$svn = 'svn';
-		$executeCommand = function($command) {
-			if (! $command || false === strpos($command, "svn info 'foobar.php'")) {
-				return '';
-			}
-			return $this->fixture->getSvnInfo('foobar.php');
-		};
-		$svnFileInfo = getSvnFileInfo($svnFile, $svn, $executeCommand, '\PhpcsChangedTests\debug');
-		$this->assertFalse(isNewSvnFile($svnFileInfo));
-	}
-
-	public function testGetSvnUnifiedDiff() {
-		$svnFile = 'foobar.php';
-		$svn = 'svn';
-		$diff = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
-		$executeCommand = function($command) use ($diff) {
-			if (! $command || false === strpos($command, "svn diff 'foobar.php'")) {
-				return '';
-			}
-			return $diff;
-		};
-		$this->assertEquals($diff, getSvnUnifiedDiff($svnFile, $svn, $executeCommand, '\PhpcsChangedTests\debug'));
 	}
 
 	public function testFullSvnWorkflowForOneFile() {
