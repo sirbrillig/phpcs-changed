@@ -13,8 +13,7 @@ interface ShellOperator {
 
 	public function getPhpcsVersion(): string;
 
-	// TODO: remove validateExecutableExists since executables are an implementation detail of the shell.
-	public function validateExecutableExists(string $name, string $command): void;
+	public function validateExecutables(): void;
 
 	public function isReadable(string $fileName): bool;
 
