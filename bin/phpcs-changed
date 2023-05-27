@@ -100,7 +100,9 @@ if (isset($options['version'])) {
 }
 
 if (isset($options['i'])) {
-	printInstalledCodingStandards();
+	$cliOptions = CliOptions::fromArray($options);
+	$shell = new UnixShell($cliOptions);
+	printInstalledCodingStandards($shell);
 }
 
 // --git-branch exists for compatibility, --git-base supports branches

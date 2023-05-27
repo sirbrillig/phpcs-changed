@@ -11,7 +11,6 @@ use PhpcsChanged\FullReporter;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\ShellException;
 use PhpcsChanged\ShellOperator;
-use PhpcsChanged\UnixShell;
 use PhpcsChanged\XmlReporter;
 use PhpcsChanged\CacheManager;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
@@ -66,9 +65,7 @@ EOF;
 	exit(0);
 }
 
-function printInstalledCodingStandards(): void {
-	$shell = new UnixShell();
-
+function printInstalledCodingStandards(ShellOperator $shell): void {
 	$installedCodingStandardsPhpcsOutput = $shell->getPhpcsStandards();
 	if (! $installedCodingStandardsPhpcsOutput) {
 		$errorMessage = "Cannot get installed coding standards";
