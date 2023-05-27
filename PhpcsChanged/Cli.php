@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace PhpcsChanged\Cli;
+namespace PhpcsChanged;
 
 use PhpcsChanged\CliOptions;
 use PhpcsChanged\NoChangesException;

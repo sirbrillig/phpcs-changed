@@ -6,9 +6,9 @@ namespace PhpcsChanged;
 use PhpcsChanged\ShellOperator;
 use PhpcsChanged\CliOptions;
 use PhpcsChanged\Modes;
-use function PhpcsChanged\Cli\printError;
-use function PhpcsChanged\Cli\getDebug;
-use function PhpcsChanged\Cli\getPhpcsExecutable;
+use function PhpcsChanged\printError;
+use function PhpcsChanged\getDebug;
+use function PhpcsChanged\getPhpcsExecutable;
 
 /**
  * Module to perform file and shell operations
