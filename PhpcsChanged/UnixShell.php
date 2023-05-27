@@ -274,6 +274,36 @@ class UnixShell implements ShellOperator {
 		return $phpcsOutput;
 	}
 
+	public function doesUnmodifiedFileExistInSvn(string $fileName): bool {
+		$svnFileInfo = $this->getSvnFileInfo($fileName);
+		return (false !== strpos($svnFileInfo, 'Schedule: add'));
+	}
+
+	public function getSvnRevisionId(string $fileName): string {
+		$svnFileInfo = $this->getSvnFileInfo($fileName);
+		preg_match('/\bLast Changed Rev:\s([^\n]+)/', $svnFileInfo, $matches);
+		$version = $matches[1] ?? null;
+		if (! $version) {
+			// New files will not have a revision
+			return '';
+		}
+		return $version;
+	}
+
+	private function getSvnFileInfo(string $fileName): string {
+		// TODO: cache this output
+		$debug = getDebug($this->options->debug);
+		$svn = $this->options->getExecutablePath('svn');
+		$svnStatusCommand = "{$svn} info " . escapeshellarg($fileName);
+		$debug('checking svn status of file with command:', $svnStatusCommand);
+		$svnStatusOutput = $this->executeCommand($svnStatusCommand);
+		$debug('svn status output:', $svnStatusOutput);
+		if (! $svnStatusOutput || false === strpos($svnStatusOutput, 'Schedule:')) {
+			throw new ShellException("Cannot get svn info for file '{$fileName}'");
+		}
+		return $svnStatusOutput;
+	}
+
 	public function isReadable(string $fileName): bool {
 		return is_readable($fileName);
 	}
