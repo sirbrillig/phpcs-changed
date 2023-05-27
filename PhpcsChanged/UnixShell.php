@@ -360,4 +360,21 @@ class UnixShell implements ShellOperator {
 		$parts = explode('/', $path);
 		return end($parts);
 	}
+
+	public function getPhpcsVersion(): string {
+		$phpcs = getPhpcsExecutable($this->options, $this);
+
+		$versionPhpcsOutputCommand = "{$phpcs} --version";
+		$versionPhpcsOutput = $this->executeCommand($versionPhpcsOutputCommand);
+		if (! $versionPhpcsOutput) {
+			throw new ShellException("Cannot get phpcs version");
+		}
+
+		$matched = preg_match('/version\\s([0-9.]+)/uim', $versionPhpcsOutput, $matches);
+		if (empty($matched) || empty($matches[1])) {
+			throw new ShellException("Cannot parse phpcs version output");
+		}
+
+		return $matches[1];
+	}
 }

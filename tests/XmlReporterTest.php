@@ -7,6 +7,7 @@ require_once __DIR__ . '/helpers/helpers.php';
 use PHPUnit\Framework\TestCase;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\CliOptions;
+use PhpcsChangedTests\TestShell;
 use PhpcsChangedTests\TestXmlReporter;
 
 final class XmlReporterTest extends TestCase {
@@ -32,7 +33,10 @@ final class XmlReporterTest extends TestCase {
 
 EOF;
 		$options = new CliOptions();
-		$reporter = new TestXmlReporter($options);
+		$shell = new TestShell($options, []);
+		$shell->registerExecutable('phpcs');
+		$shell->registerCommand('phpcs --version', 'PHP_CodeSniffer version 1.2.3 (stable) by Squiz (http://www.squiz.net)');
+		$reporter = new TestXmlReporter($options, $shell);
 		$result = $reporter->getFormattedMessages($messages, []);
 		$this->assertEquals($expected, $result);
 	}
@@ -59,7 +63,10 @@ EOF;
 
 EOF;
 		$options = new CliOptions();
-		$reporter = new TestXmlReporter($options);
+		$shell = new TestShell($options, []);
+		$shell->registerExecutable('phpcs');
+		$shell->registerCommand('phpcs --version', 'PHP_CodeSniffer version 1.2.3 (stable) by Squiz (http://www.squiz.net)');
+		$reporter = new TestXmlReporter($options, $shell);
 		$result = $reporter->getFormattedMessages($messages, ['s' => 1]);
 		$this->assertEquals($expected, $result);
 	}
@@ -85,7 +92,10 @@ EOF;
 
 EOF;
 		$options = new CliOptions();
-		$reporter = new TestXmlReporter($options);
+		$shell = new TestShell($options, []);
+		$shell->registerExecutable('phpcs');
+		$shell->registerCommand('phpcs --version', 'PHP_CodeSniffer version 1.2.3 (stable) by Squiz (http://www.squiz.net)');
+		$reporter = new TestXmlReporter($options, $shell);
 		$result = $reporter->getFormattedMessages($messages, ['s' => 1]);
 		$this->assertEquals($expected, $result);
 	}
@@ -122,7 +132,10 @@ EOF;
 
 EOF;
 		$options = new CliOptions();
-		$reporter = new TestXmlReporter($options);
+		$shell = new TestShell($options, []);
+		$shell->registerExecutable('phpcs');
+		$shell->registerCommand('phpcs --version', 'PHP_CodeSniffer version 1.2.3 (stable) by Squiz (http://www.squiz.net)');
+		$reporter = new TestXmlReporter($options, $shell);
 		$result = $reporter->getFormattedMessages($messages, []);
 		$this->assertEquals($expected, $result);
 	}
@@ -194,7 +207,10 @@ EOF;
 
 EOF;
 		$options = new CliOptions();
-		$reporter = new TestXmlReporter($options);
+		$shell = new TestShell($options, []);
+		$shell->registerExecutable('phpcs');
+		$shell->registerCommand('phpcs --version', 'PHP_CodeSniffer version 1.2.3 (stable) by Squiz (http://www.squiz.net)');
+		$reporter = new TestXmlReporter($options, $shell);
 		$result = $reporter->getFormattedMessages($messages, ['s' => 1]);
 		$this->assertEquals($expected, $result);
 	}
@@ -210,7 +226,10 @@ EOF;
 
 EOF;
 		$options = new CliOptions();
-		$reporter = new TestXmlReporter($options);
+		$shell = new TestShell($options, []);
+		$shell->registerExecutable('phpcs');
+		$shell->registerCommand('phpcs --version', 'PHP_CodeSniffer version 1.2.3 (stable) by Squiz (http://www.squiz.net)');
+		$reporter = new TestXmlReporter($options, $shell);
 		$result = $reporter->getFormattedMessages($messages, []);
 		$this->assertEquals($expected, $result);
 	}
@@ -237,7 +256,10 @@ EOF;
 
 EOF;
 		$options = new CliOptions();
-		$reporter = new TestXmlReporter($options);
+		$shell = new TestShell($options, []);
+		$shell->registerExecutable('phpcs');
+		$shell->registerCommand('phpcs --version', 'PHP_CodeSniffer version 1.2.3 (stable) by Squiz (http://www.squiz.net)');
+		$reporter = new TestXmlReporter($options, $shell);
 		$result = $reporter->getFormattedMessages($messages, []);
 		$this->assertEquals($expected, $result);
 	}
@@ -255,14 +277,20 @@ EOF;
 			],
 		], 'fileA.php');
 		$options = new CliOptions();
-		$reporter = new TestXmlReporter($options);
+		$shell = new TestShell($options, []);
+		$shell->registerExecutable('phpcs');
+		$shell->registerCommand('phpcs --version', 'PHP_CodeSniffer version 1.2.3 (stable) by Squiz (http://www.squiz.net)');
+		$reporter = new TestXmlReporter($options, $shell);
 		$this->assertEquals(1, $reporter->getExitCode($messages));
 	}
 
 	public function testGetExitCodeWithNoMessages() {
 		$messages = PhpcsMessages::fromArrays([], 'fileA.php');
 		$options = new CliOptions();
-		$reporter = new TestXmlReporter($options);
+		$shell = new TestShell($options, []);
+		$shell->registerExecutable('phpcs');
+		$shell->registerCommand('phpcs --version', 'PHP_CodeSniffer version 1.2.3 (stable) by Squiz (http://www.squiz.net)');
+		$reporter = new TestXmlReporter($options, $shell);
 		$this->assertEquals(0, $reporter->getExitCode($messages));
 	}
 }

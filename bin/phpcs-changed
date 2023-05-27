@@ -143,9 +143,11 @@ function run(array $rawOptions, callable $debug): void {
 	$debug('Running on filenames: ' . implode(', ', $options->files));
 
 	if ($options->mode === Modes::MANUAL) {
+		$shell = new UnixShell($options);
 		reportMessagesAndExit(
 			runManualWorkflow($options->diffFile, $options->phpcsUnmodified, $options->phpcsModified),
-			$options
+			$options,
+			$shell
 		);
 		return;
 	}
@@ -154,7 +156,8 @@ function run(array $rawOptions, callable $debug): void {
 		$shell = new UnixShell($options);
 		reportMessagesAndExit(
 			runSvnWorkflow($options->files, $options, $shell, new CacheManager(new FileCache(), $debug), $debug),
-			$options
+			$options,
+			$shell
 		);
 		return;
 	}
@@ -163,7 +166,8 @@ function run(array $rawOptions, callable $debug): void {
 		$shell = new UnixShell($options);
 		reportMessagesAndExit(
 			runGitWorkflow($options, $shell, new CacheManager(new FileCache(), $debug), $debug),
-			$options
+			$options,
+			$shell
 		);
 		return;
 	}
