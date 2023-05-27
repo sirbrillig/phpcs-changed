@@ -28,6 +28,8 @@ interface ShellOperator {
 
 	public function doesUnmodifiedFileExistInGit(string $fileName): bool;
 
+	public function doesUnmodifiedFileExistInSvn(string $fileName): bool;
+
 	public function getGitHashOfModifiedFile(string $fileName): string;
 
 	public function getGitHashOfUnmodifiedFile(string $fileName): string;
@@ -43,4 +45,6 @@ interface ShellOperator {
 	public function getGitUnifiedDiff(string $fileName): string;
 
 	public function getGitMergeBase(): string;
+
+	public function getSvnRevisionId(string $fileName): string;
 }
