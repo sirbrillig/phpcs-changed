@@ -15,7 +15,7 @@ use PhpcsChanged\UnixShell;
 use PhpcsChanged\XmlReporter;
 use PhpcsChanged\CacheManager;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
-use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff, getSvnFileInfo, isNewSvnFile, getSvnRevisionId};
+use function PhpcsChanged\SvnWorkflow\{getSvnUnifiedDiff};
 
 function getDebug(bool $debugEnabled): callable {
 	return
@@ -301,9 +301,8 @@ function runSvnWorkflowForFile(string $svnFile, CliOptions $options, ShellOperat
 
 		$unifiedDiff = getSvnUnifiedDiff($svnFile, $svn, [$shell, 'executeCommand'], $debug);
 
-		$svnFileInfo = getSvnFileInfo($svnFile, $svn, [$shell, 'executeCommand'], $debug);
-		$revisionId = getSvnRevisionId($svnFileInfo);
-		$isNewFile = isNewSvnFile($svnFileInfo);
+		$revisionId = $shell->getSvnRevisionId($svnFile);
+		$isNewFile = $shell->doesUnmodifiedFileExistInSvn($svnFile);
 		if ($isNewFile) {
 			$debug('Skipping the linting of the unmodified file as it is a new file.');
 		}
