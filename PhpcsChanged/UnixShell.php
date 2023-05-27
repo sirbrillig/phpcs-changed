@@ -252,6 +252,42 @@ class UnixShell implements ShellOperator {
 		return trim($mergeBase);
 	}
 
+	public function getPhpcsOutputOfModifiedSvnFile(string $fileName): string {
+		$debug = getDebug($this->options->debug);
+		$cat = $this->options->getExecutablePath('cat');
+		$modifiedFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($fileName) . ' | ' . $this->getPhpcsCommand($fileName);
+		$debug('running modified file phpcs command:', $modifiedFilePhpcsOutputCommand);
+		$modifiedFilePhpcsOutput = $this->executeCommand($modifiedFilePhpcsOutputCommand);
+		return $this->processPhpcsOutput($fileName, 'modified', $modifiedFilePhpcsOutput);
+	}
+
+	public function getPhpcsOutputOfUnmodifiedSvnFile(string $fileName): string {
+		$debug = getDebug($this->options->debug);
+		$svn = $this->options->getExecutablePath('svn');
+		$unmodifiedFilePhpcsOutputCommand = "{$svn} cat " . escapeshellarg($fileName) . " | " . $this->getPhpcsCommand($fileName);
+		$debug('running unmodified file phpcs command:', $unmodifiedFilePhpcsOutputCommand);
+		$unmodifiedFilePhpcsOutput = $this->executeCommand($unmodifiedFilePhpcsOutputCommand);
+		return $this->processPhpcsOutput($fileName, 'unmodified', $unmodifiedFilePhpcsOutput);
+	}
+	
+	private function getPhpcsCommand(string $fileName): string {
+		$phpcs = getPhpcsExecutable($this->options, $this);
+		return "{$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . ' --stdin-path=' .  escapeshellarg($fileName) . ' -';
+	}
+
+	private function processPhpcsOutput(string $fileName, string $modifiedOrUnmodified, string $phpcsOutput): string {
+		$debug = getDebug($this->options->debug);
+		if (! $phpcsOutput) {
+			throw new ShellException("Cannot get {$modifiedOrUnmodified} file phpcs output for file '{$fileName}'");
+		}
+		$debug("{$modifiedOrUnmodified} file phpcs command output:", $phpcsOutput);
+		if (false !== strpos($phpcsOutput, 'You must supply at least one file or directory to process')) {
+			$debug("phpcs output implies {$modifiedOrUnmodified} file is empty");
+			return '';
+		}
+		return $phpcsOutput;
+	}
+
 	public function isReadable(string $fileName): bool {
 		return is_readable($fileName);
 	}
