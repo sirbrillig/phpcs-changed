@@ -8,6 +8,7 @@ use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\LintMessage;
 use PhpcsChanged\UnixShell;
 use PhpcsChanged\ShellException;
+use PhpcsChanged\ShellOperator;
 use PhpcsChanged\CliOptions;
 
 class XmlReporter implements Reporter {
@@ -16,8 +17,14 @@ class XmlReporter implements Reporter {
 	 */
 	private $options;
 
-	public function __construct(CliOptions $options) {
+	/**
+	 * @var ShellOperator
+	 */
+	private $shell;
+
+	public function __construct(CliOptions $options, ShellOperator $shell) {
 		$this->options = $options;
+		$this->shell = $shell;
 	}
 
 	public function getFormattedMessages(PhpcsMessages $messages, array $options): string { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
@@ -36,7 +43,7 @@ class XmlReporter implements Reporter {
 			return $output;
 		}, '');
 
-		$phpcsVersion = $this->getPhpcsVersion();
+		$phpcsVersion = $this->shell->getPhpcsVersion();
 
 		$output =  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
 		$output .= "<phpcs version=\"{$phpcsVersion}\">\n";
@@ -71,24 +78,6 @@ class XmlReporter implements Reporter {
 		$xmlOutputForFile .= "\t</file>\n";
 
 		return $xmlOutputForFile;
-	}
-
-	protected function getPhpcsVersion(): string {
-		$phpcs = getenv('PHPCS') ?: 'phpcs';
-		$shell = new UnixShell($this->options);
-
-		$versionPhpcsOutputCommand = "{$phpcs} --version";
-		$versionPhpcsOutput = $shell->executeCommand($versionPhpcsOutputCommand);
-		if (! $versionPhpcsOutput) {
-			throw new ShellException("Cannot get phpcs version");
-		}
-
-		$matched = preg_match('/version\\s([0-9.]+)/uim', $versionPhpcsOutput, $matches);
-		if (empty($matched) || empty($matches[1])) {
-			throw new ShellException("Cannot parse phpcs version output");
-		}
-
-		return $matches[1];
 	}
 
 	public function getExitCode(PhpcsMessages $messages): int {

@@ -8,7 +8,6 @@ use PhpcsChanged\CliOptions;
 use PhpcsChanged\Modes;
 use function PhpcsChanged\printError;
 use function PhpcsChanged\getDebug;
-use function PhpcsChanged\getPhpcsExecutable;
 
 /**
  * Module to perform file and shell operations
@@ -42,21 +41,67 @@ class UnixShell implements ShellOperator {
 		$this->svnInfo = [];
 	}
 
-	public function validateExecutableExists(string $name, string $command): void {
+	public function validateShellIsReady(): void {
+		if ($this->options->mode === Modes::MANUAL) {
+			$phpcs = $this->getPhpcsExecutable();
+			$this->validateExecutableExists('phpcs', $phpcs);
+		}
+
+		if ($this->options->mode === Modes::SVN) {
+			$cat = $this->options->getExecutablePath('cat');
+			$svn = $this->options->getExecutablePath('svn');
+			$this->validateExecutableExists('svn', $svn);
+			$this->validateExecutableExists('cat', $cat);
+			$phpcs = $this->getPhpcsExecutable();
+			$this->validateExecutableExists('phpcs', $phpcs);
+		}
+
+		if ($this->options->isGitMode()) {
+			$git = $this->options->getExecutablePath('git');
+			$this->validateExecutableExists('git', $git);
+			$phpcs = $this->getPhpcsExecutable();
+			$this->validateExecutableExists('phpcs', $phpcs);
+		}
+	}
+
+	protected function validateExecutableExists(string $name, string $command): void {
 		exec(sprintf("type %s > /dev/null 2>&1", escapeshellarg($command)), $ignore, $returnVal);
 		if ($returnVal != 0) {
 			throw new \Exception("Cannot find executable for {$name}, currently set to '{$command}'.");
 		}
 	}
 
-	public function executeCommand(string $command, int &$return_val = null): string {
+	private function getPhpcsExecutable(): string {
+		if (! empty($this->options->phpcsPath) || ! empty(getenv('PHPCS'))) {
+			return $this->options->getExecutablePath('phpcs');
+		}
+		if (! $this->options->noVendorPhpcs && $this->doesPhpcsExistInVendor()) {
+			return $this->getVendorPhpcsPath();
+		}
+		return 'phpcs';
+	}
+
+	private function doesPhpcsExistInVendor(): bool {
+		try {
+			$this->validateExecutableExists('phpcs', $this->getVendorPhpcsPath());
+		} catch (\Exception $err) {
+			return false;
+		}
+		return true;
+	}
+
+	private function getVendorPhpcsPath(): string {
+		return 'vendor/bin/phpcs';
+	}
+
+	protected function executeCommand(string $command, int &$return_val = null): string {
 		$output = [];
 		exec($command, $output, $return_val);
 		return implode(PHP_EOL, $output) . PHP_EOL;
 	}
 
 	public function getPhpcsStandards(): string {
-		$phpcs = getPhpcsExecutable($this->options, $this);
+		$phpcs = $this->getPhpcsExecutable();
 		$installedCodingStandardsPhpcsOutputCommand = "{$phpcs} -i";
 		return $this->executeCommand($installedCodingStandardsPhpcsOutputCommand);
 	}
@@ -271,7 +316,7 @@ class UnixShell implements ShellOperator {
 	}
 	
 	private function getPhpcsCommand(string $fileName): string {
-		$phpcs = getPhpcsExecutable($this->options, $this);
+		$phpcs = $this->getPhpcsExecutable();
 		return "{$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . ' --stdin-path=' .  escapeshellarg($fileName) . ' -';
 	}
 
@@ -359,5 +404,22 @@ class UnixShell implements ShellOperator {
 	public function getFileNameFromPath(string $path): string {
 		$parts = explode('/', $path);
 		return end($parts);
+	}
+
+	public function getPhpcsVersion(): string {
+		$phpcs = $this->getPhpcsExecutable();
+
+		$versionPhpcsOutputCommand = "{$phpcs} --version";
+		$versionPhpcsOutput = $this->executeCommand($versionPhpcsOutputCommand);
+		if (! $versionPhpcsOutput) {
+			throw new ShellException("Cannot get phpcs version");
+		}
+
+		$matched = preg_match('/version\\s([0-9.]+)/uim', $versionPhpcsOutput, $matches);
+		if (empty($matched) || empty($matches[1])) {
+			throw new ShellException("Cannot parse phpcs version output");
+		}
+
+		return $matches[1];
 	}
 }

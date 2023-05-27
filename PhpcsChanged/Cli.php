@@ -11,7 +11,6 @@ use PhpcsChanged\FullReporter;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\ShellException;
 use PhpcsChanged\ShellOperator;
-use PhpcsChanged\UnixShell;
 use PhpcsChanged\XmlReporter;
 use PhpcsChanged\CacheManager;
 use function PhpcsChanged\{getNewPhpcsMessages, getNewPhpcsMessagesFromFiles, getVersion};
@@ -66,9 +65,7 @@ EOF;
 	exit(0);
 }
 
-function printInstalledCodingStandards(): void {
-	$shell = new UnixShell();
-
+function printInstalledCodingStandards(ShellOperator $shell): void {
 	$installedCodingStandardsPhpcsOutput = $shell->getPhpcsStandards();
 	if (! $installedCodingStandardsPhpcsOutput) {
 		$errorMessage = "Cannot get installed coding standards";
@@ -185,40 +182,17 @@ Overrides:
 EOF;
 }
 
-function getReporter(string $reportType, CliOptions $options): Reporter {
+function getReporter(string $reportType, CliOptions $options, ShellOperator $shell): Reporter {
 	switch ($reportType) {
 		case 'full':
 			return new FullReporter();
 		case 'json':
 			return new JsonReporter();
 		case 'xml':
-			return new XmlReporter($options);
+			return new XmlReporter($options, $shell);
 	}
 	printErrorAndExit("Unknown Reporter '{$reportType}'");
 	throw new \Exception("Unknown Reporter '{$reportType}'"); // Just in case we don't exit for some reason.
-}
-
-function getPhpcsExecutable(CliOptions $options, ShellOperator $shell): string {
-	if (! empty($options->phpcsPath) || ! empty(getenv('PHPCS'))) {
-		return $options->getExecutablePath('phpcs');
-	}
-	if (! $options->noVendorPhpcs && doesPhpcsExistInVendor($shell)) {
-		return getVendorPhpcsPath();
-	}
-	return 'phpcs';
-}
-
-function doesPhpcsExistInVendor(ShellOperator $shell): bool {
-	try {
-		$shell->validateExecutableExists('phpcs', getVendorPhpcsPath());
-	} catch (\Exception $err) {
-		return false;
-	}
-	return true;
-}
-
-function getVendorPhpcsPath(): string {
-	return 'vendor/bin/phpcs';
 }
 
 function runManualWorkflow(string $diffFile, string $phpcsUnmodifiedFile, string $phpcsModifiedFile): PhpcsMessages {
@@ -236,15 +210,9 @@ function runManualWorkflow(string $diffFile, string $phpcsUnmodifiedFile, string
 }
 
 function runSvnWorkflow(array $svnFiles, CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
-	$svn = $options->getExecutablePath('svn');
-	$phpcs = getPhpcsExecutable($options, $shell);
-	$cat = $options->getExecutablePath('cat');
-
 	try {
 		$debug('validating executables');
-		$shell->validateExecutableExists('svn', $svn);
-		$shell->validateExecutableExists('phpcs', $phpcs);
-		$shell->validateExecutableExists('cat', $cat);
+		$shell->validateShellIsReady();
 		$debug('executables are valid');
 	} catch( \Exception $err ) {
 		$shell->printError($err->getMessage());
@@ -337,13 +305,9 @@ function runSvnWorkflowForFile(string $svnFile, CliOptions $options, ShellOperat
 }
 
 function runGitWorkflow(CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
-	$git = $options->getExecutablePath('git');
-	$phpcs = getPhpcsExecutable($options, $shell);
-
 	try {
 		$debug('validating executables');
-		$shell->validateExecutableExists('git', $git);
-		$shell->validateExecutableExists('phpcs', $phpcs);
+		$shell->validateShellIsReady();
 		$debug('executables are valid');
 		if ($options->gitBase) {
 			$options->gitBase = $shell->getGitMergeBase();
@@ -436,8 +400,8 @@ function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperat
 	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($unmodifiedFilePhpcsOutput, $fileName), $modifiedFilePhpcsMessages);
 }
 
-function reportMessagesAndExit(PhpcsMessages $messages, CliOptions $options): void {
-	$reporter = getReporter($options->reporter, $options);
+function reportMessagesAndExit(PhpcsMessages $messages, CliOptions $options, ShellOperator $shell): void {
+	$reporter = getReporter($options->reporter, $options, $shell);
 	echo $reporter->getFormattedMessages($messages, $options->toArray());
 	if ($options->alwaysExitZero) {
 		exit(0);
