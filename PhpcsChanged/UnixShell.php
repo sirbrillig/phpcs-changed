@@ -37,6 +37,11 @@ class UnixShell implements ShellOperator {
 		$this->options = $options;
 	}
 
+	public function clearCaches(): void {
+		$this->fullPaths = [];
+		$this->svnInfo = [];
+	}
+
 	public function validateExecutableExists(string $name, string $command): void {
 		exec(sprintf("type %s > /dev/null 2>&1", escapeshellarg($command)), $ignore, $returnVal);
 		if ($returnVal != 0) {

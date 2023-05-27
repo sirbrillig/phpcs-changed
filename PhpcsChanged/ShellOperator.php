@@ -9,6 +9,8 @@ use PhpcsChanged\CliOptions;
  * Interface to perform file and shell operations
  */
 interface ShellOperator {
+	public function clearCaches(): void;
+
 	public function validateExecutableExists(string $name, string $command): void;
 
 	// TODO: remove executeCommand from the interface and rely on the more specific methods.

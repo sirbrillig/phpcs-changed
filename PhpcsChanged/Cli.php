@@ -260,6 +260,7 @@ function runSvnWorkflow(array $svnFiles, CliOptions $options, ShellOperator $she
 
 	saveCache($cache, $shell, $options->toArray());
 
+	$shell->clearCaches();
 	return PhpcsMessages::merge($phpcsMessages);
 }
 
@@ -361,6 +362,7 @@ function runGitWorkflow(CliOptions $options, ShellOperator $shell, CacheManager 
 
 	saveCache($cache, $shell, $options->toArray());
 
+	$shell->clearCaches();
 	return PhpcsMessages::merge($phpcsMessages);
 }
 
