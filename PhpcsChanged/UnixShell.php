@@ -20,9 +20,18 @@ class UnixShell implements ShellOperator {
 	private $options;
 
 	/**
+	 * The git-absolute paths to each git file keyed by filename.
+	 *
 	 * @var Array<string, string>
 	 */
 	private $fullPaths = [];
+
+	/**
+	 * The output of `svn info` for each svn file keyed by filename.
+	 *
+	 * @var Array<string, string>
+	 */
+	private $svnInfo = [];
 
 	public function __construct(CliOptions $options) {
 		$this->options = $options;
@@ -291,7 +300,10 @@ class UnixShell implements ShellOperator {
 	}
 
 	private function getSvnFileInfo(string $fileName): string {
-		// TODO: cache this output
+		// Return cache if set.
+		if (array_key_exists($fileName, $this->svnInfo)) {
+			return $this->svnInfo[$fileName];
+		}
 		$debug = getDebug($this->options->debug);
 		$svn = $this->options->getExecutablePath('svn');
 		$svnStatusCommand = "{$svn} info " . escapeshellarg($fileName);
@@ -301,6 +313,8 @@ class UnixShell implements ShellOperator {
 		if (! $svnStatusOutput || false === strpos($svnStatusOutput, 'Schedule:')) {
 			throw new ShellException("Cannot get svn info for file '{$fileName}'");
 		}
+		// This will not change within a run so we can cache it.
+		$this->svnInfo[$fileName] = $svnStatusOutput;
 		return $svnStatusOutput;
 	}
 
