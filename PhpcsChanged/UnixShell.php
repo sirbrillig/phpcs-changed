@@ -190,34 +190,20 @@ class UnixShell implements ShellOperator {
 
 	public function getPhpcsOutputOfModifiedGitFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
-		$phpcs = getPhpcsExecutable($this->options, $this);
 		$fileContentsCommand = $this->getModifiedFileContentsCommand($fileName);
-		$modifiedFilePhpcsOutputCommand = "{$fileContentsCommand} | {$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . ' --stdin-path=' .  escapeshellarg($fileName) .' -';
+		$modifiedFilePhpcsOutputCommand = "{$fileContentsCommand} | " . $this->getPhpcsCommand($fileName);
 		$debug('running modified file phpcs command:', $modifiedFilePhpcsOutputCommand);
 		$modifiedFilePhpcsOutput = $this->executeCommand($modifiedFilePhpcsOutputCommand);
-		if (! $modifiedFilePhpcsOutput) {
-			throw new ShellException("Cannot get modified file phpcs output for file '{$fileName}'");
-		}
-		$debug('modified file phpcs command output:', $modifiedFilePhpcsOutput);
-		if (false !== strpos($modifiedFilePhpcsOutput, 'You must supply at least one file or directory to process')) {
-			$debug('phpcs output implies modified file is empty');
-			return '';
-		}
-		return $modifiedFilePhpcsOutput;
+		return $this->processPhpcsOutput($fileName, 'modified', $modifiedFilePhpcsOutput);
 	}
 
 	public function getPhpcsOutputOfUnmodifiedGitFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
-		$phpcs = getPhpcsExecutable($this->options, $this);
 		$unmodifiedFileContentsCommand = $this->getUnmodifiedFileContentsCommand($fileName);
-		$unmodifiedFilePhpcsOutputCommand = "{$unmodifiedFileContentsCommand} | {$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . ' --stdin-path=' .  escapeshellarg($fileName) . ' -';
+		$unmodifiedFilePhpcsOutputCommand = "{$unmodifiedFileContentsCommand} | " . $this->getPhpcsCommand($fileName);
 		$debug('running unmodified file phpcs command:', $unmodifiedFilePhpcsOutputCommand);
 		$unmodifiedFilePhpcsOutput = $this->executeCommand($unmodifiedFilePhpcsOutputCommand);
-		if (! $unmodifiedFilePhpcsOutput) {
-			throw new ShellException("Cannot get unmodified file phpcs output for file '{$fileName}'");
-		}
-		$debug('unmodified file phpcs command output:', $unmodifiedFilePhpcsOutput);
-		return $unmodifiedFilePhpcsOutput;
+		return $this->processPhpcsOutput($fileName, 'unmodified', $unmodifiedFilePhpcsOutput);
 	}
 
 	public function getGitUnifiedDiff(string $fileName): string {
