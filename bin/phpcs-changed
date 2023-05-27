@@ -7,7 +7,7 @@ if ('cli' !== php_sapi_name()) {
 
 require_once __DIR__ . '/../index.php';
 
-use function PhpcsChanged\Cli\{
+use function PhpcsChanged\{
 	printHelp,
 	printVersion,
 	printErrorAndExit,

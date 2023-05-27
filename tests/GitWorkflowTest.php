@@ -13,7 +13,7 @@ use PhpcsChangedTests\TestShell;
 use PhpcsChangedTests\GitFixture;
 use PhpcsChangedTests\PhpcsFixture;
 use PhpcsChangedTests\TestCache;
-use function PhpcsChanged\Cli\runGitWorkflow;
+use function PhpcsChanged\runGitWorkflow;
 
 final class GitWorkflowTest extends TestCase {
 	public $fixture;

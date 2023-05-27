@@ -6,7 +6,7 @@ namespace PhpcsChanged;
 use PhpcsChanged\Reporter;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\LintMessage;
-use function PhpcsChanged\Cli\getLongestString;
+use function PhpcsChanged\getLongestString;
 
 class FullReporter implements Reporter {
 	public function getFormattedMessages(PhpcsMessages $messages, array $options): string {

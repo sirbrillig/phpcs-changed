@@ -13,7 +13,7 @@ use PhpcsChangedTests\TestShell;
 use PhpcsChangedTests\TestCache;
 use PhpcsChangedTests\SvnFixture;
 use PhpcsChangedTests\PhpcsFixture;
-use function PhpcsChanged\Cli\runSvnWorkflow;
+use function PhpcsChanged\runSvnWorkflow;
 
 final class SvnWorkflowTest extends TestCase {
 	public $phpcs;

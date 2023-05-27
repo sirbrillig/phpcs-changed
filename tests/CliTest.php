@@ -4,7 +4,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/index.php';
 
 use PHPUnit\Framework\TestCase;
-use function PhpcsChanged\Cli\{fileHasValidExtension,shouldIgnorePath};
+use function PhpcsChanged\{fileHasValidExtension,shouldIgnorePath};
 
 class MockSplFileInfo extends \SplFileInfo {
 	private $isFile = false;
