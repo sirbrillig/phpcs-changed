@@ -304,6 +304,19 @@ class UnixShell implements ShellOperator {
 		return $svnStatusOutput;
 	}
 
+	public function getSvnUnifiedDiff(string $fileName): string {
+		$debug = getDebug($this->options->debug);
+		$svn = $this->options->getExecutablePath('svn');
+		$unifiedDiffCommand = "{$svn} diff " . escapeshellarg($fileName);
+		$debug('running diff command:', $unifiedDiffCommand);
+		$unifiedDiff = $this->executeCommand($unifiedDiffCommand);
+		if (! $unifiedDiff) {
+			throw new NoChangesException("Cannot get svn diff for file '{$fileName}'; skipping");
+		}
+		$debug('diff command output:', $unifiedDiff);
+		return $unifiedDiff;
+	}
+
 	public function isReadable(string $fileName): bool {
 		return is_readable($fileName);
 	}
