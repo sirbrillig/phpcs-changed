@@ -49,6 +49,7 @@ $options = getopt(
 		'git-branch:',
 		'git-base:',
 		'standard:',
+		'extensions:',
 		'report:',
 		'debug',
 		'ignore:',

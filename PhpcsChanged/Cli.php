@@ -142,6 +142,7 @@ EOF;
 
 	printTwoColumns([
 		'--standard <STANDARD>' => 'The phpcs standard to use.',
+		'--extensions <EXTENSIONS>' => 'A comma separated list of extensions to check',
 		'--report <REPORTER>' => 'The phpcs reporter to use. One of "full" (default), "json", or "xml".',
 		'-s' => 'Show sniff codes for each error when the reporter is "full".',
 		'--ignore <PATTERNS>' => 'A comma separated list of patterns to ignore files and directories.',

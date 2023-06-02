@@ -247,6 +247,12 @@ class UnixShell implements ShellOperator {
 		return $phpcsStandardOption;
 	}
 
+	private function getPhpcsExtensionsOption(): string {
+		$phpcsExtensions = $this->options->phpcsExtensions;
+		$phpcsExtensionsOption = $phpcsExtensions ? ' --extensions=' . escapeshellarg($phpcsExtensions) : '';
+		return $phpcsExtensionsOption;
+	}
+
 	public function getPhpcsOutputOfModifiedGitFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
 		$fileContentsCommand = $this->getModifiedFileContentsCommand($fileName);
@@ -314,10 +320,10 @@ class UnixShell implements ShellOperator {
 		$unmodifiedFilePhpcsOutput = $this->executeCommand($unmodifiedFilePhpcsOutputCommand);
 		return $this->processPhpcsOutput($fileName, 'unmodified', $unmodifiedFilePhpcsOutput);
 	}
-	
+
 	private function getPhpcsCommand(string $fileName): string {
 		$phpcs = $this->getPhpcsExecutable();
-		return "{$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . ' --stdin-path=' .  escapeshellarg($fileName) . ' -';
+		return "{$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . $this->getPhpcsExtensionsOption() . ' --stdin-path=' .  escapeshellarg($fileName) . ' -';
 	}
 
 	private function processPhpcsOutput(string $fileName, string $modifiedOrUnmodified, string $phpcsOutput): string {
