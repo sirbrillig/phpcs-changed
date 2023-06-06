@@ -104,6 +104,8 @@ You can use `--report` to customize the output type. `full` (the default) is hum
 
 You can use `--standard` to specify a specific phpcs standard to run. This matches the phpcs option of the same name.
 
+You can use `--extensions` to specify a list of valid file extensions that phpcs should check. These should be separated by commas. This matches the phpcs option of the same name.
+
 You can also use the `-s` option to Always show sniff codes after each error in the full reporter. This matches the phpcs option of the same name.
 
 The `--error-severity` and `--warning-severity` options can be used for instructing the `phpcs` command on what error and warning severity to report. Those values are being passed through to `phpcs` itself. Consult `phpcs` documentation for severity settings.

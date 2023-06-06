@@ -120,6 +120,11 @@ class CliOptions {
 	public $phpcsStandard = null;
 
 	/**
+	 * @var string|null
+	 */
+	public $phpcsExtensions = null;
+
+	/**
 	 * @var bool
 	 */
 	public $alwaysExitZero = false;
@@ -231,6 +236,9 @@ class CliOptions {
 		if (isset($options['standard'])) {
 			$cliOptions->phpcsStandard = $options['standard'];
 		}
+		if (isset($options['extensions'])) {
+			$cliOptions->phpcsExtensions = $options['extensions'];
+		}
 		if (isset($options['always-exit-zero'])) {
 			$cliOptions->alwaysExitZero = true;
 		}
@@ -256,6 +264,9 @@ class CliOptions {
 		$options['files'] = $this->files;
 		if ($this->phpcsStandard) {
 			$options['standard'] = $this->phpcsStandard;
+		}
+		if ($this->phpcsExtensions) {
+			$options['extensions'] = $this->phpcsExtensions;
 		}
 		if ($this->noVendorPhpcs) {
 			$options['no-vendor-phpcs'] = true;

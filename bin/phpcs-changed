@@ -49,6 +49,7 @@ $options = getopt(
 		'git-branch:',
 		'git-base:',
 		'standard:',
+		'extensions:',
 		'report:',
 		'debug',
 		'ignore:',
@@ -73,8 +74,8 @@ foreach( $fileNames as $file ) {
 		if (shouldIgnorePath($file, isset($options['ignore']) && is_string($options['ignore']) ? $options['ignore'] : null)) {
 			continue;
 		}
-		$iterator = new \RecursiveIteratorIterator(new \RecursiveCallbackFilterIterator(new \RecursiveDirectoryIterator($file, (\RecursiveDirectoryIterator::SKIP_DOTS | \FilesystemIterator::FOLLOW_SYMLINKS)), function($file, $key, $iterator){
-			if ($file->isFile() && !fileHasValidExtension($file)) {
+		$iterator = new \RecursiveIteratorIterator(new \RecursiveCallbackFilterIterator(new \RecursiveDirectoryIterator($file, (\RecursiveDirectoryIterator::SKIP_DOTS | \FilesystemIterator::FOLLOW_SYMLINKS)), function($file, $key, $iterator) use($options) {
+			if ($file->isFile() && !fileHasValidExtension($file, CliOptions::fromArray($options))) {
 				return false;
 			}
 			return $iterator->hasChildren() || $file->isFile() ? true : false;
