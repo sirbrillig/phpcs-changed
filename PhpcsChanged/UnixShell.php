@@ -131,6 +131,7 @@ class UnixShell implements ShellOperator {
 
 	private function isFileStagedForAdding(string $fileName): bool {
 		$gitStatusOutput = $this->getGitStatusForFile($fileName);
+		// The git status will be empty for tracked, unchanged files.
 		if (! $gitStatusOutput || false === strpos($gitStatusOutput, $fileName)) {
 			return false;
 		}
@@ -162,9 +163,7 @@ class UnixShell implements ShellOperator {
 		// know it exists).
 		if (! $this->options->noVerifyGitFile) {
 			$gitStatusOutput = $this->getGitStatusForFile($fileName);
-			if (! $gitStatusOutput || false === strpos($gitStatusOutput, $fileName)) {
-				throw new ShellException("File does not appear to be tracked by git: '{$fileName}'");
-			}
+			// The git status will be empty for tracked, unchanged files.
 			if (isset($gitStatusOutput[0]) && $gitStatusOutput[0] === '?') {
 				throw new ShellException("File does not appear to be tracked by git: '{$fileName}'");
 			}
