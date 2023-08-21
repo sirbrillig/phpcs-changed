@@ -28,7 +28,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForOneFile() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
@@ -48,7 +48,7 @@ final class SvnWorkflowTest extends TestCase {
 		$svnFile = 'foobar.php';
 		$svnPath = 'bin/foo/svn';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 			'svn-path' => $svnPath,
 		]);
@@ -69,7 +69,7 @@ final class SvnWorkflowTest extends TestCase {
 		$svnFile = 'foobar.php';
 		$catPath = 'bin/foo/cat';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 			'cat-path' => $catPath,
 		]);
@@ -90,7 +90,7 @@ final class SvnWorkflowTest extends TestCase {
 		$svnFile = 'foobar.php';
 		$phpcsPath = 'bin/foo/phpcs';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 			'phpcs-path' => $phpcsPath,
 		]);
@@ -111,7 +111,7 @@ final class SvnWorkflowTest extends TestCase {
 		$svnFile = 'foobar.php';
 		$phpcsPath = 'vendor/bin/phpcs';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
@@ -131,9 +131,9 @@ final class SvnWorkflowTest extends TestCase {
 		$svnFile = 'foobar.php';
 		$phpcsPath = 'vendor/bin/phpcs';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
-			'no-vendor-phpcs' => true,
+			'no-vendor-phpcs' => false, // getopt is weird and sets options to false
 		]);
 		$shell = new TestShell($options, [$svnFile]);
 		$shell->registerExecutable('svn');
@@ -152,7 +152,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForOneFileWithNoMessages() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
@@ -171,7 +171,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForOneFileWithCachingEnabledButNoCache() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'cache' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
@@ -191,7 +191,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForOneFileWithOldFileCached() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'cache' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
@@ -214,7 +214,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForOneFileUncachedThenCachesBothVersionsOfTheFile() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'cache' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
@@ -244,7 +244,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForOneDoesNotUseNewFileCacheWhenHashChanges() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'cache' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
@@ -285,7 +285,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForOneClearsCacheForFileWhenHashChanges() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'cache' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
@@ -334,7 +334,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForOneDoesNotClearCacheWhenStandardChanges() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'cache' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
@@ -384,7 +384,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForOneFileUncachedWhenCachingIsDisabled() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'no-cache' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
@@ -408,7 +408,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForOneFileWithOldCacheVersion() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'cache' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
@@ -433,7 +433,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForOneFileWithCacheThatHasDifferentStandard() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'cache' => false, // getopt is weird and sets options to false
 			'standard' => 'TestStandard1',
 			'files' => [$svnFile],
@@ -460,7 +460,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForOneFileWithCacheOfOldFileVersionDoesNotUseCache() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'cache' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
@@ -491,7 +491,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForUnchangedFileWithBothFilesCached() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'cache' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
@@ -515,7 +515,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForUnchangedFileWithOldFileCached() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'cache' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
@@ -538,7 +538,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForMultipleFiles() {
 		$svnFiles = ['foobar.php', 'baz.php'];
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'files' => $svnFiles,
 		]);
 		$shell = new TestShell($options, $svnFiles);
@@ -566,7 +566,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForUnchangedFileWithPhpCsMessages() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
@@ -585,7 +585,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForUnchangedFileWithoutPhpCsMessages() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
@@ -604,7 +604,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForChangedFileWithoutPhpCsMessagesLintsOnlyNewFile() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
@@ -625,7 +625,7 @@ final class SvnWorkflowTest extends TestCase {
 		$this->expectException(ShellException::class);
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
@@ -642,7 +642,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForNewFile() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
@@ -660,7 +660,7 @@ final class SvnWorkflowTest extends TestCase {
 	public function testFullSvnWorkflowForEmptyNewFile() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'files' => [$svnFile],
 		]);
 		$shell = new TestShell($options, [$svnFile]);
@@ -682,7 +682,7 @@ Run "phpcs --help" for usage information
 	public function testFullSvnWorkflowForOneFileWithSeveritySetToZero() {
 		$svnFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'svn' => true,
+			'svn' => false, // getopt is weird and sets options to false
 			'warning-severity' => '0',
 			'error-severity' => '0',
 			'cache' => false, // getopt is weird and sets options to false
