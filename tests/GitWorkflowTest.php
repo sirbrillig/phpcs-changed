@@ -27,7 +27,7 @@ final class GitWorkflowTest extends TestCase {
 
 	public function testFullGitWorkflowForOneFileStaged() {
 		$gitFile = 'foobar.php';
-		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-staged' => 1, 'files' => [$gitFile]]);
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
 		$shell->registerExecutable('git');
 		$shell->registerExecutable('phpcs');
@@ -48,8 +48,8 @@ final class GitWorkflowTest extends TestCase {
 		$gitFile = 'foobar.php';
 		$gitPath = 'bin/foo/git';
 		$options = CliOptions::fromArray([
-			'no-cache-git-root' => 1,
-			'git-staged' => 1,
+			'no-cache-git-root' => false,
+			'git-staged' => false,
 			'files' => [$gitFile],
 			'git-path' => $gitPath,
 		]);
@@ -73,8 +73,8 @@ final class GitWorkflowTest extends TestCase {
 		$gitFile = 'foobar.php';
 		$phpcsPath = 'bin/foo/phpcs';
 		$options = CliOptions::fromArray([
-			'no-cache-git-root' => 1,
-			'git-staged' => 1,
+			'no-cache-git-root' => false,
+			'git-staged' => false,
 			'files' => [$gitFile],
 			'phpcs-path' => $phpcsPath,
 		]);
@@ -98,8 +98,8 @@ final class GitWorkflowTest extends TestCase {
 		$gitFile = 'foobar.php';
 		$phpcsPath = 'vendor/bin/phpcs';
 		$options = CliOptions::fromArray([
-			'no-cache-git-root' => 1,
-			'git-staged' => 1,
+			'no-cache-git-root' => false,
+			'git-staged' => false,
 			'files' => [$gitFile],
 		]);
 		$shell = new TestShell($options, [$gitFile]);
@@ -122,10 +122,10 @@ final class GitWorkflowTest extends TestCase {
 		$gitFile = 'foobar.php';
 		$phpcsPath = 'vendor/bin/phpcs';
 		$options = CliOptions::fromArray([
-			'no-cache-git-root' => 1,
-			'git-staged' => 1,
+			'no-cache-git-root' => false, // getopt is weird and sets options to false
+			'git-staged' => false, // getopt is weird and sets options to false
 			'files' => [$gitFile],
-			'no-vendor-phpcs' => true,
+			'no-vendor-phpcs' => false, // getopt is weird and sets options to false
 		]);
 		$shell = new TestShell($options, [$gitFile]);
 		$shell->registerExecutable('git');
@@ -146,7 +146,7 @@ final class GitWorkflowTest extends TestCase {
 
 	public function testFullGitWorkflowForOneFileUnstaged() {
 		$gitFile = 'foobar.php';
-		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-unstaged' => '1', 'files' => [$gitFile]]);
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-unstaged' => false, 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
 		$shell->registerExecutable('git');
 		$shell->registerExecutable('phpcs');
@@ -166,8 +166,8 @@ final class GitWorkflowTest extends TestCase {
 	public function testFullGitWorkflowForOneChangedFileWithoutPhpcsMessagesLintsOnlyNewFile() {
 		$gitFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'no-cache-git-root' => 1,
-			'git-unstaged' => '1',
+			'no-cache-git-root' => false,
+			'git-unstaged' => false,
 			'files' => [$gitFile],
 		]);
 		$shell = new TestShell($options, [$gitFile]);
@@ -190,8 +190,8 @@ final class GitWorkflowTest extends TestCase {
 	public function testFullGitWorkflowForOneFileUnstagedCachesDataThenUsesCache() {
 		$gitFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'no-cache-git-root' => 1,
-			'git-unstaged' => '1',
+			'no-cache-git-root' => false,
+			'git-unstaged' => false,
 			'cache' => false, // getopt is weird and sets options to false
 			'files' => [$gitFile],
 		]);
@@ -222,8 +222,8 @@ final class GitWorkflowTest extends TestCase {
 	public function testFullGitWorkflowForOneFileUnstagedCachesDataThenUsesCacheWithSeveritySet() {
 		$gitFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'no-cache-git-root' => 1,
-			'git-unstaged' => '1',
+			'no-cache-git-root' => false,
+			'git-unstaged' => false,
 			'cache' => false, // getopt is weird and sets options to false
 			'standard' => 'standard',
 			'warning-severity' => '1',
@@ -262,8 +262,8 @@ final class GitWorkflowTest extends TestCase {
 	public function testFullGitWorkflowForOneFileUnstagedCachesDataThenUsesCacheWithSeveritySetToZero() {
 		$gitFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'no-cache-git-root' => 1,
-			'git-unstaged' => '1',
+			'no-cache-git-root' => false,
+			'git-unstaged' => false,
 			'cache' => false, // getopt is weird and sets options to false
 			'standard' => 'standard',
 			'warning-severity' => '0',
@@ -304,8 +304,8 @@ final class GitWorkflowTest extends TestCase {
 	public function testFullGitWorkflowForOneFileUnstagedCachesDataThenUsesCacheWithSeverityNotSet() {
 		$gitFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'no-cache-git-root' => 1,
-			'git-unstaged' => '1',
+			'no-cache-git-root' => false,
+			'git-unstaged' => false,
 			'cache' => false, // getopt is weird and sets options to false
 			'standard' => 'standard',
 			'files' => [$gitFile],
@@ -344,8 +344,8 @@ final class GitWorkflowTest extends TestCase {
 	public function testFullGitWorkflowForOneFileUnstagedCachesDataThenClearsOldCacheWhenOldFileChanges() {
 		$gitFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'no-cache-git-root' => 1,
-			'git-unstaged' => '1',
+			'no-cache-git-root' => false,
+			'git-unstaged' => false,
 			'cache' => false, // getopt is weird and sets options to false
 			'files' => [$gitFile],
 		]);
@@ -378,8 +378,8 @@ final class GitWorkflowTest extends TestCase {
 	public function testFullGitWorkflowForOneFileUnstagedCachesDataThenClearsNewCacheWhenFileChanges() {
 		$gitFile = 'foobar.php';
 		$options = CliOptions::fromArray([
-			'no-cache-git-root' => 1,
-			'git-unstaged' => '1',
+			'no-cache-git-root' => false,
+			'git-unstaged' => false,
 			'cache' => false, // getopt is weird and sets options to false
 			'files' => [$gitFile],
 		]);
@@ -411,7 +411,7 @@ final class GitWorkflowTest extends TestCase {
 
 	public function testFullGitWorkflowForMultipleFilesStaged() {
 		$gitFiles = ['foobar.php', 'baz.php'];
-		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-staged' => 1, 'files' => $gitFiles]);
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'files' => $gitFiles]);
 		$shell = new TestShell($options, $gitFiles);
 		$shell->registerExecutable('git');
 		$shell->registerExecutable('phpcs');
@@ -439,7 +439,7 @@ final class GitWorkflowTest extends TestCase {
 
 	public function testFullGitWorkflowForUnchangedFileWithPhpcsMessages() {
 		$gitFile = 'foobar.php';
-		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-staged' => 1, 'files' => [$gitFile]]);
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
 		$shell->registerExecutable('git');
 		$shell->registerExecutable('phpcs');
@@ -458,7 +458,7 @@ final class GitWorkflowTest extends TestCase {
 
 	public function testFullGitWorkflowForUnchangedFileWithoutPhpcsMessages() {
 		$gitFile = 'foobar.php';
-		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-staged' => 1, 'files' => [$gitFile]]);
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
 		$shell->registerExecutable('git');
 		$shell->registerExecutable('phpcs');
@@ -476,7 +476,7 @@ final class GitWorkflowTest extends TestCase {
 	public function testFullGitWorkflowForNonGitFile() {
 		$this->expectException(ShellException::class);
 		$gitFile = 'foobar.php';
-		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-staged' => 1, 'files' => [$gitFile]]);
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
 		$shell->registerExecutable('git');
 		$shell->registerExecutable('phpcs');
@@ -493,7 +493,7 @@ final class GitWorkflowTest extends TestCase {
 
 	public function testFullGitWorkflowForNewFile() {
 		$gitFile = 'foobar.php';
-		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-staged' => 1, 'files' => [$gitFile]]);
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
 		$shell->registerExecutable('git');
 		$shell->registerExecutable('phpcs');
@@ -511,7 +511,7 @@ final class GitWorkflowTest extends TestCase {
 
 	public function testFullGitWorkflowForEmptyNewFile() {
 		$gitFile = 'foobar.php';
-		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-staged' => 1, 'files' => [$gitFile]]);
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
 		$shell->registerExecutable('git');
 		$shell->registerExecutable('phpcs');
@@ -534,7 +534,7 @@ Run "phpcs --help" for usage information
 
 	public function testFullGitWorkflowForInterBranchDiff() {
 		$gitFile = 'bin/foobar.php';
-		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-base' => 'master', 'files' => [$gitFile]]);
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-base' => 'master', 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
 		$shell->registerExecutable('git');
 		$shell->registerExecutable('phpcs');
@@ -557,7 +557,7 @@ Run "phpcs --help" for usage information
 
 	public function testFullGitWorkflowForUnchangedFileForInterBranchDiff() {
 		$gitFile = 'bin/foobar.php';
-		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-base' => 'master', 'files' => [$gitFile]]);
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-base' => 'master', 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
 		$shell->registerExecutable('git');
 		$shell->registerExecutable('phpcs');
@@ -578,7 +578,7 @@ Run "phpcs --help" for usage information
 
 	public function testFullGitWorkflowWithUntrackedFileForInterBranchDiff() {
 		$gitFile = 'bin/foobar.php';
-		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-base' => 'master', 'files' => [$gitFile]]);
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-base' => 'master', 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
 		$shell->registerExecutable('git');
 		$shell->registerExecutable('phpcs');
@@ -601,7 +601,7 @@ Run "phpcs --help" for usage information
 
 	public function testNameDetectionInFullGitWorkflowForInterBranchDiff() {
 		$gitFile = 'test.php';
-		$options = CliOptions::fromArray(['no-cache-git-root' => 1, 'git-base' => 'master', 'files' => [$gitFile]]);
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-base' => 'master', 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
 		$shell->registerExecutable('git');
 		$shell->registerExecutable('phpcs');

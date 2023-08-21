@@ -173,7 +173,7 @@ class CliOptions {
 			$cliOptions->files = $options['files'];
 		}
 		if (isset($options['no-vendor-phpcs'])) {
-			$cliOptions->noVendorPhpcs = $options['no-vendor-phpcs'];
+			$cliOptions->noVendorPhpcs = true;
 		}
 		if (isset($options['phpcs-path'])) {
 			$cliOptions->phpcsPath = $options['phpcs-path'];
