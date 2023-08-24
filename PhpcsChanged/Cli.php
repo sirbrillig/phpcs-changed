@@ -410,11 +410,11 @@ function reportMessagesAndExit(PhpcsMessages $messages, CliOptions $options, She
 	exit($reporter->getExitCode($messages));
 }
 
-function fileHasValidExtension(\SplFileInfo $file, CliOptions $options = null): bool {
+function fileHasValidExtension(\SplFileInfo $file, string $phpcsExtensions = ''): bool {
 	// The following logic is copied from PHPCS itself. See https://github.com/squizlabs/PHP_CodeSniffer/blob/2ecd8dc15364cdd6e5089e82ffef2b205c98c412/src/Filters/Filter.php#L161
 	// phpcs:disable
 
-	if (empty($options->phpcsExtensions)) {
+	if (empty($phpcsExtensions)) {
 		$AllowedExtensions = [
 			'php',
 			'inc',
@@ -422,7 +422,7 @@ function fileHasValidExtension(\SplFileInfo $file, CliOptions $options = null): 
 			'css',
 		];
 	} else {
-		$AllowedExtensions = explode(',', $options->phpcsExtensions);
+		$AllowedExtensions = explode(',', $phpcsExtensions);
 	}
 
 	// Extensions can only be checked for files.
