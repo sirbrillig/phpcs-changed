@@ -10,7 +10,9 @@ class CliOptions {
 	 *
 	 * Use the `Modes` constants for this purpose rather than the strings.
 	 *
-	 * @var 'svn'|'manual'|'git-staged'|'git-unstaged'|'git-base'|null
+	 * If this is null, validation will fail.
+	 *
+	 * @var 'svn'|'manual'|'git-staged'|'git-unstaged'|'git-base'|'info'|null
 	 */
 	public $mode;
 
@@ -253,6 +255,9 @@ class CliOptions {
 		}
 		if (isset($options['error-severity'])) {
 			$cliOptions->errorSeverity = $options['error-severity'];
+		}
+		if (isset($options['i'])) {
+			$cliOptions->mode = Modes::INFO_ONLY;
 		}
 		$cliOptions->validate();
 		return $cliOptions;
