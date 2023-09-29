@@ -9,7 +9,7 @@ class LintMessage {
 	private $type;
 	private $otherProperties;
 
-	public function __construct(int $line, string $file, string $type, array $otherProperties) {
+	public function __construct(int $line, ?string $file, string $type, array $otherProperties) {
 		$this->line = $line;
 		$this->file = $file;
 		$this->type = $type;
