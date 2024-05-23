@@ -13,7 +13,7 @@ class JsonReporter implements Reporter {
 		$files = array_unique(array_map(function(LintMessage $message): string {
 			return $message->getFile() ?? 'STDIN';
 		}, $messages->getMessages()));
-		if (empty($files)) {
+		if (count($files) === 0) {
 			$files = ['STDIN'];
 		}
 

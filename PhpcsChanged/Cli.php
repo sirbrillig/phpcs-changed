@@ -260,7 +260,7 @@ function runSvnWorkflowForFile(string $svnFile, CliOptions $options, ShellOperat
 		}
 
 		$modifiedFilePhpcsMessages = PhpcsMessages::fromPhpcsJson($modifiedFilePhpcsOutput, $fileName);
-		$hasNewPhpcsMessages = !empty($modifiedFilePhpcsMessages->getMessages());
+		$hasNewPhpcsMessages = count($modifiedFilePhpcsMessages->getMessages()) > 0;
 
 		if (! $hasNewPhpcsMessages) {
 			throw new NoChangesException("Modified file '{$svnFile}' has no PHPCS messages; skipping");
@@ -357,7 +357,7 @@ function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperat
 		}
 
 		$modifiedFilePhpcsMessages = PhpcsMessages::fromPhpcsJson($modifiedFilePhpcsOutput, $fileName);
-		$hasNewPhpcsMessages = !empty($modifiedFilePhpcsMessages->getMessages());
+		$hasNewPhpcsMessages = count($modifiedFilePhpcsMessages->getMessages()) > 0;
 
 		$unifiedDiff = '';
 		$unmodifiedFilePhpcsOutput = '';
@@ -414,7 +414,7 @@ function fileHasValidExtension(\SplFileInfo $file, string $phpcsExtensions = '')
 	// The following logic is copied from PHPCS itself. See https://github.com/squizlabs/PHP_CodeSniffer/blob/2ecd8dc15364cdd6e5089e82ffef2b205c98c412/src/Filters/Filter.php#L161
 	// phpcs:disable
 
-	if (empty($phpcsExtensions)) {
+	if (! boolval($phpcsExtensions)) {
 		$AllowedExtensions = [
 			'php',
 			'inc',
@@ -443,7 +443,7 @@ function fileHasValidExtension(\SplFileInfo $file, string $phpcsExtensions = '')
 		array_shift($fileParts);
 	}
 	$matches = array_intersect($extensions, $AllowedExtensions);
-	if (empty($matches) === true) {
+	if (count($matches) === 0) {
 		return false;
 	}
 

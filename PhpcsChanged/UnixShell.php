@@ -72,7 +72,7 @@ class UnixShell implements ShellOperator {
 	}
 
 	private function getPhpcsExecutable(): string {
-		if (! empty($this->options->phpcsPath) || ! empty(getenv('PHPCS'))) {
+		if (boolval($this->options->phpcsPath) || boolval(getenv('PHPCS'))) {
 			return $this->options->getExecutablePath('phpcs');
 		}
 		if (! $this->options->noVendorPhpcs && $this->doesPhpcsExistInVendor()) {
@@ -274,7 +274,7 @@ class UnixShell implements ShellOperator {
 		$debug = getDebug($this->options->debug);
 		$git = $this->options->getExecutablePath('git');
 		$objectOption = $this->options->mode === Modes::GIT_BASE ? ' ' . escapeshellarg($this->options->gitBase) . '...' : '';
-		$stagedOption = empty($objectOption) && $this->options->mode !== Modes::GIT_UNSTAGED ? ' --staged' : '';
+		$stagedOption = ! boolval($objectOption) && $this->options->mode !== Modes::GIT_UNSTAGED ? ' --staged' : '';
 		$unifiedDiffCommand = "{$git} diff{$stagedOption}{$objectOption} --no-prefix " . escapeshellarg($fileName);
 		$debug('running diff command:', $unifiedDiffCommand);
 		$unifiedDiff = $this->executeCommand($unifiedDiffCommand);
@@ -421,7 +421,7 @@ class UnixShell implements ShellOperator {
 		}
 
 		$matched = preg_match('/version\\s([0-9.]+)/uim', $versionPhpcsOutput, $matches);
-		if (empty($matched) || empty($matches[1])) {
+		if ($matched === false || empty($matches[1])) {
 			throw new ShellException("Cannot parse phpcs version output");
 		}
 

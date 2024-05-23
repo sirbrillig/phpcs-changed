@@ -9,7 +9,7 @@ use PhpcsChanged\JsonReporter;
 
 class PhpcsMessagesHelpers {
 	public static function fromPhpcsJson(string $messages, string $forcedFileName = null): PhpcsMessages {
-		if (empty($messages)) {
+		if (! boolval($messages)) {
 			return self::fromArrays([], $forcedFileName ?? 'STDIN');
 		}
 		/**
