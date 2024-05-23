@@ -529,10 +529,10 @@ function shouldIgnorePath(string $path, string $patternOption = null): bool {
 }
 
 function isCachingEnabled(array $options): bool {
-	if (isset($options['no-cache'])) {
+	if (array_key_exists('no-cache', $options)) {
 		return false;
 	}
-	if (isset($options['cache'])) {
+	if (array_key_exists('cache', $options)) {
 		return true;
 	}
 	return false;
@@ -553,7 +553,7 @@ function loadCache(CacheManager $cache, ShellOperator $shell, array $options): v
 		}
 	}
 
-	if (isset($options['clear-cache'])) {
+	if (array_key_exists('clear-cache', $options)) {
 		$cache->clearCache();
 		try {
 			$cache->save();
