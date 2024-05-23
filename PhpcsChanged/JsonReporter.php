@@ -42,7 +42,7 @@ class JsonReporter implements Reporter {
 			'files' => array_merge([], ...$outputByFile),
 		];
 		$output = json_encode($dataForJson, JSON_UNESCAPED_SLASHES);
-		if (! $output) {
+		if (! boolval($output)) {
 			throw new \Exception('Failed to JSON-encode result messages');
 		}
 		return $output;
