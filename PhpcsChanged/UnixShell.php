@@ -237,8 +237,8 @@ class UnixShell implements ShellOperator {
 	}
 
 	private function getPhpcsStandardOption(): string {
-		$phpcsStandard = $this->options->phpcsStandard;
-		$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
+		$phpcsStandard = $this->options->phpcsStandard ?? '';
+		$phpcsStandardOption = strlen($phpcsStandard) > 0 ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
 		$warningSeverity = $this->options->warningSeverity ?? '';
 		$phpcsStandardOption .= strlen($warningSeverity) > 0 ? ' --warning-severity=' . escapeshellarg($warningSeverity) : '';
 		$errorSeverity = $this->options->errorSeverity ?? '';
@@ -247,8 +247,8 @@ class UnixShell implements ShellOperator {
 	}
 
 	private function getPhpcsExtensionsOption(): string {
-		$phpcsExtensions = $this->options->phpcsExtensions;
-		$phpcsExtensionsOption = $phpcsExtensions ? ' --extensions=' . escapeshellarg($phpcsExtensions) : '';
+		$phpcsExtensions = $this->options->phpcsExtensions ?? '';
+		$phpcsExtensionsOption = strlen($phpcsExtensions) > 0 ? ' --extensions=' . escapeshellarg($phpcsExtensions) : '';
 		return $phpcsExtensionsOption;
 	}
 
@@ -346,12 +346,8 @@ class UnixShell implements ShellOperator {
 	public function getSvnRevisionId(string $fileName): string {
 		$svnFileInfo = $this->getSvnFileInfo($fileName);
 		preg_match('/\bLast Changed Rev:\s([^\n]+)/', $svnFileInfo, $matches);
-		$version = $matches[1] ?? null;
-		if (! $version) {
-			// New files will not have a revision
-			return '';
-		}
-		return $version;
+		// New files will not have a revision
+		return $matches[1] ?? '';
 	}
 
 	private function getSvnFileInfo(string $fileName): string {
