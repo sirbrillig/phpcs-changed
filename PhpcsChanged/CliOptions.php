@@ -352,13 +352,25 @@ class CliOptions {
 	public function getExecutablePath(string $executableName): string {
 		switch ($executableName) {
 			case 'phpcs':
-				return $this->phpcsPath ?: getenv('PHPCS') ?: 'phpcs';
+				if (is_string($this->phpcsPath) && strlen($this->phpcsPath) > 0) {
+					return $this->phpcsPath;
+				}
+				return getenv('PHPCS') ?: 'phpcs';
 			case 'git':
-				return $this->gitPath ?: getenv('GIT') ?: 'git';
+				if (is_string($this->gitPath) && strlen($this->gitPath) > 0) {
+					return $this->gitPath;
+				}
+				return getenv('GIT') ?: 'git';
 			case 'cat':
-				return $this->catPath ?: getenv('CAT') ?: 'cat';
+				if (is_string($this->catPath) && strlen($this->catPath) > 0) {
+					return $this->catPath;
+				}
+				return getenv('CAT') ?: 'cat';
 			case 'svn':
-				return $this->svnPath ?: getenv('SVN') ?: 'svn';
+				if (is_string($this->svnPath) && strlen($this->svnPath) > 0) {
+					return $this->svnPath;
+				}
+				return getenv('SVN') ?: 'svn';
 			default:
 				throw new \Exception("No executable found called '{$executableName}'.");
 		}
