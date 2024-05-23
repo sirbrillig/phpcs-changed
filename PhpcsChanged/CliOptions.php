@@ -366,7 +366,7 @@ class CliOptions {
 			throw new InvalidOptionException('You must use either automatic or manual mode.');
 		}
 		if ($this->mode === Modes::MANUAL) {
-			if (empty($this->diff) || empty($this->phpcsUnmodified) || empty($this->phpcsModified)) {
+			if (empty($this->diffFile) || empty($this->phpcsUnmodified) || empty($this->phpcsModified)) {
 				throw new InvalidOptionException('Manual mode requires a diff, the unmodified file phpcs output, and the modified file phpcs output.');
 			}
 		}
