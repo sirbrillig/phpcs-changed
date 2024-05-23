@@ -417,7 +417,10 @@ class UnixShell implements ShellOperator {
 		}
 
 		$matched = preg_match('/version\\s([0-9.]+)/uim', $versionPhpcsOutput, $matches);
-		if ($matched === false || empty($matches[1])) {
+		if (
+			$matched === false
+			|| empty($matches[1])
+		) {
 			throw new ShellException("Cannot parse phpcs version output");
 		}
 
