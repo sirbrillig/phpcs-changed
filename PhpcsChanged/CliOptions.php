@@ -355,22 +355,38 @@ class CliOptions {
 				if (is_string($this->phpcsPath) && strlen($this->phpcsPath) > 0) {
 					return $this->phpcsPath;
 				}
-				return getenv('PHPCS') ?: 'phpcs';
+				$env = getenv('PHPCS');
+				if (is_string($env) && strlen($env) > 0) {
+					return $env;
+				}
+				return 'phpcs';
 			case 'git':
 				if (is_string($this->gitPath) && strlen($this->gitPath) > 0) {
 					return $this->gitPath;
 				}
-				return getenv('GIT') ?: 'git';
+				$env = getenv('GIT');
+				if (is_string($env) && strlen($env) > 0) {
+					return $env;
+				}
+				return 'git';
 			case 'cat':
 				if (is_string($this->catPath) && strlen($this->catPath) > 0) {
 					return $this->catPath;
 				}
-				return getenv('CAT') ?: 'cat';
+				$env = getenv('CAT');
+				if (is_string($env) && strlen($env) > 0) {
+					return $env;
+				}
+				return 'cat';
 			case 'svn':
 				if (is_string($this->svnPath) && strlen($this->svnPath) > 0) {
 					return $this->svnPath;
 				}
-				return getenv('SVN') ?: 'svn';
+				$env = getenv('SVN');
+				if (is_string($env) && strlen($env) > 0) {
+					return $env;
+				}
+				return 'svn';
 			default:
 				throw new \Exception("No executable found called '{$executableName}'.");
 		}
