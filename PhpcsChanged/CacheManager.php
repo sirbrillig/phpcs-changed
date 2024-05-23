@@ -162,13 +162,13 @@ class CacheManager {
 	public function addCacheEntry(CacheEntry $entry): void {
 		$this->hasBeenModified = true;
 		$this->pruneOldEntriesForFile($entry);
-		if (! isset($this->fileDataByPath[$entry->path])) {
+		if (! array_key_exists($entry->path, $this->fileDataByPath)) {
 			$this->fileDataByPath[$entry->path] = [];
 		}
-		if (! isset($this->fileDataByPath[$entry->path][$entry->type])) {
+		if (! array_key_exists($entry->type, $this->fileDataByPath[$entry->path])) {
 			$this->fileDataByPath[$entry->path][$entry->type] = [];
 		}
-		if (! isset($this->fileDataByPath[$entry->path][$entry->type][$entry->hash])) {
+		if (! array_key_exists($entry->hash, $this->fileDataByPath[$entry->path][$entry->type])) {
 			$this->fileDataByPath[$entry->path][$entry->type][$entry->hash] = [];
 		}
 		$this->fileDataByPath[$entry->path][$entry->type][$entry->hash][$entry->phpcsStandard] = $entry;
