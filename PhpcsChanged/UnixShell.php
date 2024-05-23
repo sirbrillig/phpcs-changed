@@ -239,10 +239,10 @@ class UnixShell implements ShellOperator {
 	private function getPhpcsStandardOption(): string {
 		$phpcsStandard = $this->options->phpcsStandard;
 		$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
-		$warningSeverity = $this->options->warningSeverity;
-		$phpcsStandardOption .= isset($warningSeverity) ? ' --warning-severity=' . escapeshellarg($warningSeverity) : '';
-		$errorSeverity = $this->options->errorSeverity;
-		$phpcsStandardOption .= isset($errorSeverity) ? ' --error-severity=' . escapeshellarg($errorSeverity) : '';
+		$warningSeverity = $this->options->warningSeverity ?? '';
+		$phpcsStandardOption .= strlen($warningSeverity) > 0 ? ' --warning-severity=' . escapeshellarg($warningSeverity) : '';
+		$errorSeverity = $this->options->errorSeverity ?? '';
+		$phpcsStandardOption .= strlen($errorSeverity) > 0 ? ' --error-severity=' . escapeshellarg($errorSeverity) : '';
 		return $phpcsStandardOption;
 	}
 
