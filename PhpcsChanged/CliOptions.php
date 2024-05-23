@@ -332,10 +332,13 @@ class CliOptions {
 		if ($this->noVerifyGitFile) {
 			$options['no-verify-git-file'] = true;
 		}
-		if (isset($this->warningSeverity)) {
+		// Note that both warningSeverity and errorSeverity can be the string '0'
+		// which is falsy in PHP but is a valid value here so we must be careful
+		// when testing for it.
+		if (is_string($this->warningSeverity) && strlen($this->warningSeverity) > 0) {
 			$options['warning-severity'] = $this->warningSeverity;
 		}
-		if (isset($this->errorSeverity)) {
+		if (is_string($this->errorSeverity) && strlen($this->errorSeverity) > 0) {
 			$options['error-severity'] = $this->errorSeverity;
 		}
 		return $options;
