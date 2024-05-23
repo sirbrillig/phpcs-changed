@@ -362,21 +362,21 @@ class CliOptions {
 	}
 
 	public function validate(): void {
-		if (empty($this->mode)) {
+		if (! boolval($this->mode)) {
 			throw new InvalidOptionException('You must use either automatic or manual mode.');
 		}
 		if ($this->mode === Modes::MANUAL) {
-			if (empty($this->diffFile) || empty($this->phpcsUnmodified) || empty($this->phpcsModified)) {
+			if ( ! boolval($this->diffFile) || ! boolval($this->phpcsUnmodified) || ! boolval($this->phpcsModified)) {
 				throw new InvalidOptionException('Manual mode requires a diff, the unmodified file phpcs output, and the modified file phpcs output.');
 			}
 		}
-		if ($this->mode === Modes::GIT_BASE && empty($this->gitBase)) {
+		if ($this->mode === Modes::GIT_BASE && ! boolval($this->gitBase)) {
 			throw new InvalidOptionException('git-base mode requires a git object.');
 		}
-		if ($this->isGitMode() && empty($this->files)) {
+		if ($this->isGitMode() && ! boolval($this->files)) {
 			throw new InvalidOptionException('You must supply at least one file or directory to run in git mode.');
 		}
-		if ($this->mode === Modes::SVN && empty($this->files)) {
+		if ($this->mode === Modes::SVN && ! boolval($this->files)) {
 			throw new InvalidOptionException('You must supply at least one file or directory to run in svn mode.');
 		}
 	}
