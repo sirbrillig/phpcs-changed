@@ -267,31 +267,31 @@ class CliOptions {
 		$options = [];
 		$options['report'] = $this->reporter;
 		$options['files'] = $this->files;
-		if ($this->phpcsStandard) {
+		if (boolval($this->phpcsStandard)) {
 			$options['standard'] = $this->phpcsStandard;
 		}
-		if ($this->phpcsExtensions) {
+		if (boolval($this->phpcsExtensions)) {
 			$options['extensions'] = $this->phpcsExtensions;
 		}
-		if ($this->noVendorPhpcs) {
+		if (boolval($this->noVendorPhpcs)) {
 			$options['no-vendor-phpcs'] = true;
 		}
-		if ($this->phpcsPath) {
+		if (boolval($this->phpcsPath)) {
 			$options['phpcs-path'] = $this->phpcsPath;
 		}
-		if ($this->gitPath) {
+		if (boolval($this->gitPath)) {
 			$options['git-path'] = $this->gitPath;
 		}
-		if ($this->catPath) {
+		if (boolval($this->catPath)) {
 			$options['cat-path'] = $this->catPath;
 		}
-		if ($this->svnPath) {
+		if (boolval($this->svnPath)) {
 			$options['svn-path'] = $this->svnPath;
 		}
-		if ($this->debug) {
+		if (boolval($this->debug)) {
 			$options['debug'] = true;
 		}
-		if ($this->showMessageCodes) {
+		if (boolval($this->showMessageCodes)) {
 			$options['s'] = true;
 		}
 		if ($this->mode === Modes::SVN) {
@@ -309,13 +309,13 @@ class CliOptions {
 			$options['git'] = true;
 			$options['git-base'] = $this->gitBase;
 		}
-		if ($this->useCache) {
+		if (boolval($this->useCache)) {
 			$options['cache'] = true;
 		}
-		if (! $this->useCache) {
+		if (! boolval($this->useCache)) {
 			$options['no-cache'] = true;
 		}
-		if ($this->clearCache) {
+		if (boolval($this->clearCache)) {
 			$options['clear-cache'] = true;
 		}
 		if ($this->mode === Modes::MANUAL) {
@@ -323,13 +323,13 @@ class CliOptions {
 			$options['phpcs-unmodified'] = $this->phpcsUnmodified;
 			$options['phpcs-modified'] = $this->phpcsModified;
 		}
-		if ($this->alwaysExitZero) {
+		if (boolval($this->alwaysExitZero)) {
 			$options['always-exit-zero'] = true;
 		}
-		if ($this->noCacheGitRoot) {
+		if (boolval($this->noCacheGitRoot)) {
 			$options['no-cache-git-root'] = true;
 		}
-		if ($this->noVerifyGitFile) {
+		if (boolval($this->noVerifyGitFile)) {
 			$options['no-verify-git-file'] = true;
 		}
 		// Note that both warningSeverity and errorSeverity can be the string '0'
