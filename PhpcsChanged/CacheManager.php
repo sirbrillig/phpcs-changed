@@ -45,7 +45,7 @@ class CacheManager {
 	 */
 	private $debug;
 
-	public function __construct(CacheInterface $cache, callable $debug = null) {
+	public function __construct(CacheInterface $cache, ?callable $debug = null) {
 		$this->cache = $cache;
 		$noopDebug =
 			/** @param string[] $output */

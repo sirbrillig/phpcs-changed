@@ -33,7 +33,7 @@ class LintMessages {
 	/**
 	 * @return static
 	 */
-	public static function fromLintMessages(array $messages, string $fileName = null) {
+	public static function fromLintMessages(array $messages, ?string $fileName = null) {
 		return new static(array_map(function(LintMessage $message) use ($fileName) {
 			if (is_string($fileName) && strlen($fileName) > 0) {
 				$message->setFile($fileName);

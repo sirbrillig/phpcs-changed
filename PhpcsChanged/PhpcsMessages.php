@@ -11,11 +11,11 @@ class PhpcsMessages extends LintMessages {
 		return PhpcsMessagesHelpers::toPhpcsJson($this);
 	}
 
-	public static function fromPhpcsJson(string $messages, string $forcedFileName = null): self {
+	public static function fromPhpcsJson(string $messages, ?string $forcedFileName = null): self {
 		return PhpcsMessagesHelpers::fromPhpcsJson($messages, $forcedFileName);
 	}
 
-	public static function fromArrays(array $messages, string $fileName = null): self {
+	public static function fromArrays(array $messages, ?string $fileName = null): self {
 		return PhpcsMessagesHelpers::fromArrays($messages, $fileName);
 	}
 }

@@ -451,7 +451,7 @@ function fileHasValidExtension(\SplFileInfo $file, string $phpcsExtensions = '')
 	// phpcs:enable
 }
 
-function shouldIgnorePath(string $path, string $patternOption = null): bool {
+function shouldIgnorePath(string $path, ?string $patternOption = null): bool {
 	if (null===$patternOption) {
 		return false;
 	}

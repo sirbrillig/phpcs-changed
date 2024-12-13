@@ -8,7 +8,7 @@ use PhpcsChanged\LintMessage;
 use PhpcsChanged\JsonReporter;
 
 class PhpcsMessagesHelpers {
-	public static function fromPhpcsJson(string $messages, string $forcedFileName = null): PhpcsMessages {
+	public static function fromPhpcsJson(string $messages, ?string $forcedFileName = null): PhpcsMessages {
 		if (! boolval($messages)) {
 			return self::fromArrays([], $forcedFileName ?? 'STDIN');
 		}
@@ -43,7 +43,7 @@ class PhpcsMessagesHelpers {
 		return $reporter->getFormattedMessages($messages, []);
 	}
 
-	public static function fromArrays(array $messages, string $fileName = null): PhpcsMessages {
+	public static function fromArrays(array $messages, ?string $fileName = null): PhpcsMessages {
 		return new PhpcsMessages(array_map(function(array $messageArray) use ($fileName) {
 			return new LintMessage($messageArray['line'] ?? 0, $fileName, $messageArray['type'] ?? 'ERROR', $messageArray);
 		}, $messages));

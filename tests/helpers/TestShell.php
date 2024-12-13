@@ -85,7 +85,7 @@ class TestShell extends UnixShell {
 		return $this->fileHashes[$fileName] ?? $fileName;
 	}
 
-	protected function executeCommand(string $command, int &$return_val = null): string {
+	protected function executeCommand(string $command, ?int &$return_val = null): string {
 		foreach ($this->commands as $registeredCommand => $return) {
 			if ($registeredCommand === substr($command, 0, strlen($registeredCommand)) ) {
 				$return_val = $return['return_val'];

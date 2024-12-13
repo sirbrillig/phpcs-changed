@@ -44,7 +44,7 @@ Added: svn:eol-style
 EOF;
 	}
 
-	public function getSvnInfo(string $filename, string $revision = '188280', string $lastChangedRevision = null): string {
+	public function getSvnInfo(string $filename, string $revision = '188280', ?string $lastChangedRevision = null): string {
 		$lastChangedRevision = $lastChangedRevision ?? $revision;
 		return <<<EOF
 Path: {$filename}
