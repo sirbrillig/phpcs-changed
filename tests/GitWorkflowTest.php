@@ -437,6 +437,32 @@ final class GitWorkflowTest extends TestCase {
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
+	public function testFullGitWorkflowForMultipleFilesStagedWithClashingFilenames() {
+		$gitFiles = ['foobar.php', 'baz/foobar.php'];
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'files' => $gitFiles]);
+		$shell = new TestShell($options, $gitFiles);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$fixture = $this->fixture->getAddedLineDiff('baz/foobar.php', 'use Baz;');
+		$shell->registerCommand("git diff --staged --no-prefix 'baz/foobar.php'", $fixture);
+		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getNewFileInfo('foobar.php'));
+		$shell->registerCommand("git status --porcelain 'baz/foobar.php'", $this->fixture->getNewFileInfo('baz/foobar.php'));
+		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
+		$shell->registerCommand("git ls-files --full-name 'baz/foobar.php'", "files/baz/foobar.php");
+		$shell->registerCommand("git show :0:'files/foobar.php'", $this->phpcs->getResults('foobar.php', [20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show :0:'files/baz/foobar.php'", $this->phpcs->getResults('baz/foobar.php', [20], 'Found unused symbol Baz.')->toPhpcsJson());
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
+		$cache = new CacheManager( new TestCache() );
+		$expected = PhpcsMessages::merge([
+			$this->phpcs->getResults('foobar.php', [20], 'Found unused symbol Foobar.'),
+			$this->phpcs->getResults('baz/foobar.php', [20], 'Found unused symbol Baz.'),
+		]);
+		$messages = runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
 	public function testFullGitWorkflowForUnchangedFileWithPhpcsMessages() {
 		$gitFile = 'foobar.php';
 		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'files' => [$gitFile]]);

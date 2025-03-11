@@ -335,7 +335,6 @@ function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperat
 	$phpcsStandard = $options->phpcsStandard;
 	$warningSeverity = $options->warningSeverity;
 	$errorSeverity = $options->errorSeverity;
-	$fileName = $shell->getFileNameFromPath($gitFile);
 
 	try {
 		if (! $shell->isReadable($gitFile)) {
@@ -356,7 +355,7 @@ function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperat
 			}
 		}
 
-		$modifiedFilePhpcsMessages = PhpcsMessages::fromPhpcsJson($modifiedFilePhpcsOutput, $fileName);
+		$modifiedFilePhpcsMessages = PhpcsMessages::fromPhpcsJson($modifiedFilePhpcsOutput, $gitFile);
 		$hasNewPhpcsMessages = count($modifiedFilePhpcsMessages->getMessages()) > 0;
 
 		$unifiedDiff = '';
@@ -398,7 +397,7 @@ function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperat
 	}
 
 	$debug('processing data...');
-	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($unmodifiedFilePhpcsOutput, $fileName), $modifiedFilePhpcsMessages);
+	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($unmodifiedFilePhpcsOutput, $gitFile), $modifiedFilePhpcsMessages);
 }
 
 function reportMessagesAndExit(PhpcsMessages $messages, CliOptions $options, ShellOperator $shell): void {
