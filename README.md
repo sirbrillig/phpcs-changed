@@ -203,13 +203,12 @@ You can create an instance of `PhpcsMessages` from real phpcs JSON output by usi
 
 ```php
 use function PhpcsChanged\getNewPhpcsMessages;
-use function PhpcsChanged\getNewPhpcsMessagesFromFiles;
 use PhpcsChanged\PhpcsMessages;
 
-$changedMessages = getNewPhpcsMessagesFromFiles(
-     $unifiedDiffFileName,
-     $oldFilePhpcsOutputFileName,
-     $newFilePhpcsOutputFileName
+$changedMessages = getNewPhpcsMessages(
+     $unifiedDiff,
+     PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutput),
+     PhpcsMessages::fromPhpcsJson($newFilePhpcsOutput)
 );
 
 echo $changedMessages->toPhpcsJson();
@@ -228,6 +227,7 @@ $changedMessagesA = getNewPhpcsMessages(
      $unifiedDiffA,
      PhpcsMessages::fromPhpcsJson($oldFilePhpcsOutputA),
      PhpcsMessages::fromPhpcsJson($newFilePhpcsOutputA)
+);
 $changedMessagesB = getNewPhpcsMessagesFromFiles(
      $unifiedDiffFileNameB,
      $oldFilePhpcsOutputFileNameB,
