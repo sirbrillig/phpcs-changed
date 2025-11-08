@@ -49,6 +49,7 @@ class CacheManager {
 		$this->cache = $cache;
 		$noopDebug =
 			/** @param string[] $output */
+			/** @psalm-suppress UnusedClosureParam, MissingClosureParamType */
 			function(...$output): void {}; // phpcs:ignore VariableAnalysis
 		$this->debug = $debug ?? $noopDebug;
 	}

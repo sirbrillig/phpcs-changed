@@ -67,6 +67,10 @@ $options = getopt(
 	$optind
 );
 
+if ($options === false) {
+	$options = [];
+}
+
 $fileNames = array_slice($argv, $optind);
 $fileNamesExpanded = [];
 foreach( $fileNames as $file ) {
@@ -134,7 +138,10 @@ $debug = getDebug(isset($options['debug']));
 run($options, $debug);
 
 function run(array $rawOptions, callable $debug): void {
-	$debug('Options: ' . json_encode($rawOptions));
+	$encodedOptions = json_encode($rawOptions);
+	if ($encodedOptions !== false) {
+		$debug('Options: ' . $encodedOptions);
+	}
 	try {
 		$options = CliOptions::fromArray($rawOptions);
 	} catch ( InvalidOptionException $err ) {

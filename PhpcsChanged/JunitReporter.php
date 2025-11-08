@@ -8,6 +8,7 @@ use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\LintMessage;
 
 class JunitReporter implements Reporter {
+	#[\Override]
 	public function getFormattedMessages(PhpcsMessages $messages, array $options): string { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
 		$files = array_unique(array_map(function(LintMessage $message): string {
 			return $message->getFile() ?? 'STDIN';
@@ -80,6 +81,7 @@ class JunitReporter implements Reporter {
 		return htmlspecialchars($string, ENT_XML1 | ENT_QUOTES, 'UTF-8');
 	}
 
+	#[\Override]
 	public function getExitCode(PhpcsMessages $messages): int {
 		return (count($messages->getMessages()) > 0) ? 1 : 0;
 	}

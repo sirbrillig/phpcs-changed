@@ -73,7 +73,7 @@ class LintMessages {
 			$unmodifiedMessagesContainingUnmodifiedLineNumber = array_values(array_filter($unmodifiedMessages->getMessages(), function($unmodifiedMessage) use ($unmodifiedLineNumber) {
 				return $unmodifiedMessage->getLineNumber() === $unmodifiedLineNumber;
 			}));
-			return ! count($unmodifiedMessagesContainingUnmodifiedLineNumber) > 0;
+			return ! (count($unmodifiedMessagesContainingUnmodifiedLineNumber) > 0);
 		})), $fileName);
 	}
 }

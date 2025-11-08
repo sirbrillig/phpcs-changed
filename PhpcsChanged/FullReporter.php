@@ -9,6 +9,7 @@ use PhpcsChanged\LintMessage;
 use function PhpcsChanged\getLongestString;
 
 class FullReporter implements Reporter {
+	#[\Override]
 	public function getFormattedMessages(PhpcsMessages $messages, array $options): string {
 		$files = array_unique(array_map(function(LintMessage $message): string {
 			return $message->getFile() ?? 'STDIN';
@@ -68,6 +69,7 @@ FOUND {$errorsCount} ERROR{$errorPlural} AND {$warningsCount} WARNING{$warningPl
 EOF;
 	}
 
+	#[\Override]
 	public function getExitCode(PhpcsMessages $messages): int {
 		return (count($messages->getMessages()) > 0) ? 1 : 0;
 	}
