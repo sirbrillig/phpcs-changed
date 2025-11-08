@@ -12,6 +12,11 @@ class LintMessages {
 	 */
 	private $messages = [];
 
+	/**
+	 * @var array<string, float> Per-file execution timing in seconds
+	 */
+	private $timingData = [];
+
 	final public function __construct(array $messages) {
 		foreach($messages as $message) {
 			if (! $message instanceof LintMessage) {
@@ -25,9 +30,18 @@ class LintMessages {
 	 * @return static
 	 */
 	public static function merge(array $messages) {
-		return self::fromLintMessages(array_merge([], ...array_map(function(self $message) {
+		$merged = self::fromLintMessages(array_merge([], ...array_map(function(self $message) {
 			return $message->getMessages();
 		}, $messages)));
+
+		// Merge timing data from all message sets
+		$mergedTiming = [];
+		foreach ($messages as $messageSet) {
+			$mergedTiming = array_merge($mergedTiming, $messageSet->getAllTiming());
+		}
+		$merged->setAllTiming($mergedTiming);
+
+		return $merged;
 	}
 
 	/**
@@ -64,7 +78,7 @@ class LintMessages {
 	public static function getNewMessages(string $unifiedDiff, self $unmodifiedMessages, self $modifiedMessages) {
 		$map = DiffLineMap::fromUnifiedDiff($unifiedDiff);
 		$fileName = DiffLineMap::getFileNameFromDiff($unifiedDiff);
-		return self::fromLintMessages(array_values(array_filter($modifiedMessages->getMessages(), function($newMessage) use ($unmodifiedMessages, $map) {
+		$newMessages = self::fromLintMessages(array_values(array_filter($modifiedMessages->getMessages(), function($newMessage) use ($unmodifiedMessages, $map) {
 			$lineNumber = $newMessage->getLineNumber();
 			if (! $lineNumber) {
 				return true;
@@ -75,5 +89,48 @@ class LintMessages {
 			}));
 			return ! (count($unmodifiedMessagesContainingUnmodifiedLineNumber) > 0);
 		})), $fileName);
+
+		// Preserve timing data from the modified messages
+		$newMessages->setAllTiming($modifiedMessages->getAllTiming());
+
+		return $newMessages;
+	}
+
+	/**
+	 * Set timing data for a file
+	 *
+	 * @param string $fileName The file name or path
+	 * @param float $duration Duration in seconds
+	 */
+	public function setTiming(string $fileName, float $duration): void {
+		$this->timingData[$fileName] = $duration;
+	}
+
+	/**
+	 * Get timing data for a specific file
+	 *
+	 * @param string $fileName The file name or path
+	 * @return float Duration in seconds, or 0.0 if not set
+	 */
+	public function getTiming(string $fileName): float {
+		return $this->timingData[$fileName] ?? 0.0;
+	}
+
+	/**
+	 * Get all timing data
+	 *
+	 * @return array<string, float> Array mapping file names to durations in seconds
+	 */
+	public function getAllTiming(): array {
+		return $this->timingData;
+	}
+
+	/**
+	 * Set all timing data at once
+	 *
+	 * @param array<string, float> $timingData Array mapping file names to durations
+	 */
+	public function setAllTiming(array $timingData): void {
+		$this->timingData = $timingData;
 	}
 }

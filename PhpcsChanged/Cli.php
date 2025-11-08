@@ -255,14 +255,18 @@ function runSvnWorkflowForFile(string $svnFile, CliOptions $options, ShellOperat
 			$modifiedFilePhpcsOutput = $cache->getCacheForFile($svnFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
 			$debug(($modifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for modified file '{$svnFile}' at hash '{$modifiedFileHash}', and standard '{$phpcsStandard}'");
 		}
+		$modifiedFileTiming = 0.0;
 		if (! $modifiedFilePhpcsOutput) {
+			$modifiedFileStartTime = microtime(true);
 			$modifiedFilePhpcsOutput = $shell->getPhpcsOutputOfModifiedSvnFile($svnFile);
+			$modifiedFileTiming = microtime(true) - $modifiedFileStartTime;
 			if (isCachingEnabled($options->toArray())) {
 				$cache->setCacheForFile($svnFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $modifiedFilePhpcsOutput);
 			}
 		}
 
 		$modifiedFilePhpcsMessages = PhpcsMessages::fromPhpcsJson($modifiedFilePhpcsOutput, $fileName);
+		$modifiedFilePhpcsMessages->setTiming($fileName, $modifiedFileTiming);
 		$hasNewPhpcsMessages = count($modifiedFilePhpcsMessages->getMessages()) > 0;
 
 		if (! $hasNewPhpcsMessages) {
@@ -282,12 +286,17 @@ function runSvnWorkflowForFile(string $svnFile, CliOptions $options, ShellOperat
 				$unmodifiedFilePhpcsOutput = $cache->getCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
 				$debug(($unmodifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for unmodified file '{$svnFile}' at revision '{$revisionId}', and standard '{$phpcsStandard}'");
 			}
+			$unmodifiedFileTiming = 0.0;
 			if (! $unmodifiedFilePhpcsOutput) {
+				$unmodifiedFileStartTime = microtime(true);
 				$unmodifiedFilePhpcsOutput = $shell->getPhpcsOutputOfUnmodifiedSvnFile($svnFile);
+				$unmodifiedFileTiming = microtime(true) - $unmodifiedFileStartTime;
 				if (isCachingEnabled($options->toArray())) {
 					$cache->setCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $unmodifiedFilePhpcsOutput);
 				}
 			}
+			// Add timing for the unmodified scan (accumulated with modified scan time)
+			$modifiedFileTiming += $unmodifiedFileTiming;
 		}
 	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());
@@ -351,14 +360,18 @@ function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperat
 			$modifiedFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
 			$debug(($modifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for modified file '{$gitFile}' at hash '{$modifiedFileHash}', and standard '{$phpcsStandard}'");
 		}
+		$modifiedFileTiming = 0.0;
 		if (! $modifiedFilePhpcsOutput) {
+			$modifiedFileStartTime = microtime(true);
 			$modifiedFilePhpcsOutput = $shell->getPhpcsOutputOfModifiedGitFile($gitFile);
+			$modifiedFileTiming = microtime(true) - $modifiedFileStartTime;
 			if (isCachingEnabled($options->toArray())) {
 				$cache->setCacheForFile($gitFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $modifiedFilePhpcsOutput);
 			}
 		}
 
 		$modifiedFilePhpcsMessages = PhpcsMessages::fromPhpcsJson($modifiedFilePhpcsOutput, $gitFile);
+		$modifiedFilePhpcsMessages->setTiming($gitFile, $modifiedFileTiming);
 		$hasNewPhpcsMessages = count($modifiedFilePhpcsMessages->getMessages()) > 0;
 
 		$unifiedDiff = '';
@@ -381,12 +394,17 @@ function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperat
 				$unmodifiedFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'old', $unmodifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
 				$debug(($unmodifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for unmodified file '{$gitFile}' at hash '{$unmodifiedFileHash}', and standard '{$phpcsStandard}'");
 			}
+			$unmodifiedFileTiming = 0.0;
 			if (! $unmodifiedFilePhpcsOutput) {
+				$unmodifiedFileStartTime = microtime(true);
 				$unmodifiedFilePhpcsOutput = $shell->getPhpcsOutputOfUnmodifiedGitFile($gitFile);
+				$unmodifiedFileTiming = microtime(true) - $unmodifiedFileStartTime;
 				if (isCachingEnabled($options->toArray())) {
 					$cache->setCacheForFile($gitFile, 'old', $unmodifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $unmodifiedFilePhpcsOutput);
 				}
 			}
+			// Add timing for the unmodified scan (accumulated with modified scan time)
+			$modifiedFileTiming += $unmodifiedFileTiming;
 		}
 	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());

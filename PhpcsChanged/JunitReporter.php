@@ -25,23 +25,26 @@ class JunitReporter implements Reporter {
 			return $message->getType() === 'ERROR';
 		}));
 
+		// Calculate total time from all files
+		$totalTime = array_sum($messages->getAllTiming());
+
 		$outputByFile = array_reduce($files, function(string $output, string $file) use ($messages): string {
 			$messagesForFile = array_values(array_filter($messages->getMessages(), static function(LintMessage $message) use ($file): bool {
 				return ($message->getFile() ?? 'STDIN') === $file;
 			}));
-			$output .= $this->getFormattedMessagesForFile($messagesForFile, $file);
+			$output .= $this->getFormattedMessagesForFile($messagesForFile, $file, $messages);
 			return $output;
 		}, '');
 
 		$output = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-		$output .= "<testsuites tests=\"{$totalTests}\" failures=\"{$totalFailures}\" errors=\"{$totalErrors}\">\n";
+		$output .= sprintf("<testsuites tests=\"%d\" failures=\"%d\" errors=\"%d\" time=\"%.3f\">\n", $totalTests, $totalFailures, $totalErrors, $totalTime);
 		$output .= $outputByFile;
 		$output .= "</testsuites>\n";
 
 		return $output;
 	}
 
-	private function getFormattedMessagesForFile(array $messages, string $file): string {
+	private function getFormattedMessagesForFile(array $messages, string $file, PhpcsMessages $allMessages): string {
 		$testCount = count($messages);
 		$errorCount = count(array_values(array_filter($messages, function(LintMessage $message) {
 			return $message->getType() === 'ERROR';
@@ -50,7 +53,11 @@ class JunitReporter implements Reporter {
 			return $message->getType() === 'WARNING';
 		})));
 
-		$xmlOutputForFile = "\t<testsuite name=\"{$file}\" tests=\"{$testCount}\" failures=\"{$failureCount}\" errors=\"{$errorCount}\">\n";
+		// Get timing for this specific file
+		$fileTime = $allMessages->getTiming($file);
+
+		$xmlOutputForFile = sprintf("\t<testsuite name=\"%s\" tests=\"%d\" failures=\"%d\" errors=\"%d\" time=\"%.3f\">\n",
+			$file, $testCount, $failureCount, $errorCount, $fileTime);
 		$xmlOutputForFile .= array_reduce($messages, function(string $output, LintMessage $message): string {
 			$line = $message->getLineNumber();
 			$column = $message->getColumn();
@@ -61,7 +68,7 @@ class JunitReporter implements Reporter {
 
 			// Create a unique test case name using line:column and source
 			$testCaseName = "line {$line}, column {$column}";
-			$output .= "\t\t<testcase name=\"{$testCaseName}\" classname=\"{$source}\">\n";
+			$output .= "\t\t<testcase name=\"{$testCaseName}\" classname=\"{$source}\" time=\"0\">\n";
 
 			if ($type === 'ERROR') {
 				$output .= "\t\t\t<error type=\"{$source}\" message=\"{$messageText}\">Line {$line}, Column {$column}: {$messageText} (Severity: {$severity})</error>\n";

@@ -23,9 +23,9 @@ final class JunitReporterTest extends TestCase {
 		], 'fileA.php');
 		$expected = <<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="1" failures="1" errors="0">
-	<testsuite name="fileA.php" tests="1" failures="1" errors="0">
-		<testcase name="line 15, column 5" classname="ImportDetection.Imports.RequireImports.Import">
+<testsuites tests="1" failures="1" errors="0" time="0.000">
+	<testsuite name="fileA.php" tests="1" failures="1" errors="0" time="0.000">
+		<testcase name="line 15, column 5" classname="ImportDetection.Imports.RequireImports.Import" time="0">
 			<failure type="ImportDetection.Imports.RequireImports.Import" message="Found unused symbol Foo.">Line 15, Column 5: Found unused symbol Foo. (Severity: 5)</failure>
 		</testcase>
 	</testsuite>
@@ -51,9 +51,9 @@ EOF;
 		], 'fileA.php');
 		$expected = <<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="1" failures="0" errors="1">
-	<testsuite name="fileA.php" tests="1" failures="0" errors="1">
-		<testcase name="line 15, column 5" classname="ImportDetection.Imports.RequireImports.Import">
+<testsuites tests="1" failures="0" errors="1" time="0.000">
+	<testsuite name="fileA.php" tests="1" failures="0" errors="1" time="0.000">
+		<testcase name="line 15, column 5" classname="ImportDetection.Imports.RequireImports.Import" time="0">
 			<error type="ImportDetection.Imports.RequireImports.Import" message="Found unused symbol Foo.">Line 15, Column 5: Found unused symbol Foo. (Severity: 5)</error>
 		</testcase>
 	</testsuite>
@@ -88,12 +88,12 @@ EOF;
 		], 'fileA.php');
 		$expected = <<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="2" failures="2" errors="0">
-	<testsuite name="fileA.php" tests="2" failures="2" errors="0">
-		<testcase name="line 133825, column 5" classname="ImportDetection.Imports.RequireImports.Import">
+<testsuites tests="2" failures="2" errors="0" time="0.000">
+	<testsuite name="fileA.php" tests="2" failures="2" errors="0" time="0.000">
+		<testcase name="line 133825, column 5" classname="ImportDetection.Imports.RequireImports.Import" time="0">
 			<failure type="ImportDetection.Imports.RequireImports.Import" message="Found unused symbol Foo.">Line 133825, Column 5: Found unused symbol Foo. (Severity: 5)</failure>
 		</testcase>
-		<testcase name="line 15, column 5" classname="ImportDetection.Imports.RequireImports.Import">
+		<testcase name="line 15, column 5" classname="ImportDetection.Imports.RequireImports.Import" time="0">
 			<failure type="ImportDetection.Imports.RequireImports.Import" message="Found unused symbol Bar.">Line 15, Column 5: Found unused symbol Bar. (Severity: 5)</failure>
 		</testcase>
 	</testsuite>
@@ -158,23 +158,23 @@ EOF;
 		$messages = PhpcsMessages::merge([$messagesA, $messagesB]);
 		$expected = <<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="5" failures="3" errors="2">
-	<testsuite name="fileA.php" tests="4" failures="2" errors="2">
-		<testcase name="line 12, column 2" classname="ImportDetection.Imports.RequireImports.Something">
+<testsuites tests="5" failures="3" errors="2" time="0.000">
+	<testsuite name="fileA.php" tests="4" failures="2" errors="2" time="0.000">
+		<testcase name="line 12, column 2" classname="ImportDetection.Imports.RequireImports.Something" time="0">
 			<error type="ImportDetection.Imports.RequireImports.Something" message="Found unused symbol Faa.">Line 12, Column 2: Found unused symbol Faa. (Severity: 5)</error>
 		</testcase>
-		<testcase name="line 15, column 5" classname="ImportDetection.Imports.RequireImports.Import">
+		<testcase name="line 15, column 5" classname="ImportDetection.Imports.RequireImports.Import" time="0">
 			<error type="ImportDetection.Imports.RequireImports.Import" message="Found unused symbol Foo.">Line 15, Column 5: Found unused symbol Foo. (Severity: 5)</error>
 		</testcase>
-		<testcase name="line 18, column 8" classname="ImportDetection.Imports.RequireImports.Boom">
+		<testcase name="line 18, column 8" classname="ImportDetection.Imports.RequireImports.Boom" time="0">
 			<failure type="ImportDetection.Imports.RequireImports.Boom" message="Found unused symbol Bar.">Line 18, Column 8: Found unused symbol Bar. (Severity: 5)</failure>
 		</testcase>
-		<testcase name="line 22, column 5" classname="ImportDetection.Imports.RequireImports.Import">
+		<testcase name="line 22, column 5" classname="ImportDetection.Imports.RequireImports.Import" time="0">
 			<failure type="ImportDetection.Imports.RequireImports.Import" message="Found unused symbol Foo.">Line 22, Column 5: Found unused symbol Foo. (Severity: 5)</failure>
 		</testcase>
 	</testsuite>
-	<testsuite name="fileB.php" tests="1" failures="1" errors="0">
-		<testcase name="line 30, column 5" classname="ImportDetection.Imports.RequireImports.Zoop">
+	<testsuite name="fileB.php" tests="1" failures="1" errors="0" time="0.000">
+		<testcase name="line 30, column 5" classname="ImportDetection.Imports.RequireImports.Zoop" time="0">
 			<failure type="ImportDetection.Imports.RequireImports.Zoop" message="Found unused symbol Hi.">Line 30, Column 5: Found unused symbol Hi. (Severity: 5)</failure>
 		</testcase>
 	</testsuite>
@@ -190,8 +190,8 @@ EOF;
 		$messages = PhpcsMessages::fromArrays([]);
 		$expected = <<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="0" failures="0" errors="0">
-	<testsuite name="STDIN" tests="0" failures="0" errors="0">
+<testsuites tests="0" failures="0" errors="0" time="0.000">
+	<testsuite name="STDIN" tests="0" failures="0" errors="0" time="0.000">
 	</testsuite>
 </testsuites>
 
@@ -215,9 +215,9 @@ EOF;
 		]);
 		$expected = <<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="1" failures="1" errors="0">
-	<testsuite name="STDIN" tests="1" failures="1" errors="0">
-		<testcase name="line 15, column 5" classname="ImportDetection.Imports.RequireImports.Import">
+<testsuites tests="1" failures="1" errors="0" time="0.000">
+	<testsuite name="STDIN" tests="1" failures="1" errors="0" time="0.000">
+		<testcase name="line 15, column 5" classname="ImportDetection.Imports.RequireImports.Import" time="0">
 			<failure type="ImportDetection.Imports.RequireImports.Import" message="Found unused symbol Foo.">Line 15, Column 5: Found unused symbol Foo. (Severity: 5)</failure>
 		</testcase>
 	</testsuite>
@@ -243,9 +243,9 @@ EOF;
 		], 'fileA.php');
 		$expected = <<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="1" failures="0" errors="1">
-	<testsuite name="fileA.php" tests="1" failures="0" errors="1">
-		<testcase name="line 15, column 5" classname="Test.Source&lt;&gt;&amp;&quot;">
+<testsuites tests="1" failures="0" errors="1" time="0.000">
+	<testsuite name="fileA.php" tests="1" failures="0" errors="1" time="0.000">
+		<testcase name="line 15, column 5" classname="Test.Source&lt;&gt;&amp;&quot;" time="0">
 			<error type="Test.Source&lt;&gt;&amp;&quot;" message="Message with &lt;xml&gt; &amp; &quot;quotes&quot;.">Line 15, Column 5: Message with &lt;xml&gt; &amp; &quot;quotes&quot;. (Severity: 5)</error>
 		</testcase>
 	</testsuite>
