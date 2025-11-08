@@ -8,6 +8,7 @@ use PhpcsChanged\NoChangesException;
 use PhpcsChanged\Reporter;
 use PhpcsChanged\JsonReporter;
 use PhpcsChanged\FullReporter;
+use PhpcsChanged\JunitReporter;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\ShellException;
 use PhpcsChanged\ShellOperator;
@@ -143,7 +144,7 @@ EOF;
 	printTwoColumns([
 		'--standard <STANDARD>' => 'The phpcs standard to use.',
 		'--extensions <EXTENSIONS>' => 'A comma separated list of extensions to check.',
-		'--report <REPORTER>' => 'The phpcs reporter to use. One of "full" (default), "json", or "xml".',
+		'--report <REPORTER>' => 'The phpcs reporter to use. One of "full" (default), "json", "xml", or "junit".',
 		'-s' => 'Show sniff codes for each error when the reporter is "full".',
 		'--ignore <PATTERNS>' => 'A comma separated list of patterns to ignore files and directories.',
 		'--warning-severity' => 'The phpcs warning severity to report. See phpcs documentation for usage.',
@@ -191,6 +192,8 @@ function getReporter(string $reportType, CliOptions $options, ShellOperator $she
 			return new JsonReporter();
 		case 'xml':
 			return new XmlReporter($options, $shell);
+		case 'junit':
+			return new JunitReporter();
 	}
 	printErrorAndExit("Unknown Reporter '{$reportType}'");
 	throw new \Exception("Unknown Reporter '{$reportType}'"); // Just in case we don't exit for some reason.
