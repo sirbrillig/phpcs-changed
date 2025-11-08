@@ -100,7 +100,7 @@ More than one file can be specified after a version control option, including gl
 
 You can use `--ignore` to ignore any directory, file, or paths matching provided pattern(s). For example.: `--ignore=bin/*,vendor/*` would ignore any files in bin directory, as well as in vendor.
 
-You can use `--report` to customize the output type. `full` (the default) is human-readable, `json` prints a JSON object as shown above, and 'xml' can be used by IDEs. These match the phpcs reporters of the same names. `junit` can also be used for [JUnit XML](https://github.com/testmoapp/junitxml) which can be helpful for test runners.
+You can use `--report` to customize the output type. `full` (the default) is human-readable, `json` prints a JSON object as shown above, and 'xml' can be used by IDEs. These match the phpcs reporters of the same names. `junit` can also be used for [JUnit XML](https://github.com/testmoapp/junitxml) which can be helpful for test runners. `checkstyle` will output Checkstyle format.
 
 You can use `--standard` to specify a specific phpcs standard to run. This matches the phpcs option of the same name.
 
