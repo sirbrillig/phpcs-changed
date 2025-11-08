@@ -29,6 +29,7 @@ class CacheEntry implements \JsonSerializable {
 	 */
 	public $data;
 
+	#[\Override]
 	public function jsonSerialize(): array {
 		return [
 			'path' => $this->path,

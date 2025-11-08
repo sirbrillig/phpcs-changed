@@ -15,6 +15,7 @@ class FileCache implements CacheInterface {
 	 */
 	public $cacheFilePath = DEFAULT_CACHE_FILE;
 
+	#[\Override]
 	public function load(): CacheObject {
 		if (! file_exists($this->cacheFilePath)) {
 			return new CacheObject();
@@ -39,12 +40,17 @@ class FileCache implements CacheInterface {
 		return $cacheObject;
 	}
 
+	#[\Override]
 	public function save(CacheObject $cacheObject): void {
 		$data = [
 			'cacheVersion' => $cacheObject->cacheVersion,
 			'entries' => $cacheObject->entries,
 		];
-		$result = file_put_contents($this->cacheFilePath, json_encode($data));
+		$encodedData = json_encode($data);
+		if ($encodedData === false) {
+			throw new \Exception('Failed to write cache file; encoding failed');
+		}
+		$result = file_put_contents($this->cacheFilePath, $encodedData);
 		if ($result === false) {
 			throw new \Exception('Failed to write cache file');
 		}

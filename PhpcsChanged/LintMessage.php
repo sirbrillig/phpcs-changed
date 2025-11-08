@@ -4,9 +4,24 @@ declare(strict_types=1);
 namespace PhpcsChanged;
 
 class LintMessage {
+	/**
+	 * @var int Line number where the message occurs
+	 */
 	private $line;
+
+	/**
+	 * @var string|null File path where the message occurs
+	 */
 	private $file;
+
+	/**
+	 * @var string Message type (e.g., 'ERROR', 'WARNING')
+	 */
 	private $type;
+
+	/**
+	 * @var array<string, mixed> Additional message properties (message, source, column, severity, fixable, etc.)
+	 */
 	private $otherProperties;
 
 	public function __construct(int $line, ?string $file, string $type, array $otherProperties) {

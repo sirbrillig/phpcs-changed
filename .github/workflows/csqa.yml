@@ -32,9 +32,9 @@ jobs:
           coverage: none
           tools: cs2pr
 
-      # Using PHPCS `master` as an early detection system for bugs upstream.
+      # Using PHPCS `3.x-dev` as an early detection system for bugs upstream.
       - name: 'Composer: adjust dependencies'
-        run: composer require --no-update squizlabs/php_codesniffer:"dev-master"
+        run: composer require --no-update squizlabs/php_codesniffer:"3.x-dev"
 
       # Install dependencies and handle caching in one go.
       # @link https://github.com/marketplace/actions/install-composer-dependencies

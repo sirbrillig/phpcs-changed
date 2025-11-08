@@ -9,6 +9,7 @@ use PhpcsChanged\PhpcsMessagesHelpers;
 use PhpcsChanged\LintMessage;
 
 class JsonReporter implements Reporter {
+	#[\Override]
 	public function getFormattedMessages(PhpcsMessages $messages, array $options): string { //phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
 		$files = array_unique(array_map(function(LintMessage $message): string {
 			return $message->getFile() ?? 'STDIN';
@@ -30,9 +31,6 @@ class JsonReporter implements Reporter {
 		$warnings = array_values(array_filter($messages->getMessages(), function($message) {
 			return $message->getType() === 'WARNING';
 		}));
-		$messages = array_map(function($message) {
-			return PhpcsMessagesHelpers::messageToPhpcsArray($message);
-		}, $messages->getMessages());
 		$dataForJson = [
 			'totals' => [
 				'errors' => count($errors),
@@ -42,7 +40,7 @@ class JsonReporter implements Reporter {
 			'files' => array_merge([], ...$outputByFile),
 		];
 		$output = json_encode($dataForJson, JSON_UNESCAPED_SLASHES);
-		if (! boolval($output)) {
+		if ($output === false) {
 			throw new \Exception('Failed to JSON-encode result messages');
 		}
 		return $output;
@@ -68,6 +66,7 @@ class JsonReporter implements Reporter {
 		return $dataForJson;
 	}
 
+	#[\Override]
 	public function getExitCode(PhpcsMessages $messages): int {
 		return (count($messages->getMessages()) > 0) ? 1 : 0;
 	}

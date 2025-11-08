@@ -27,6 +27,7 @@ class XmlReporter implements Reporter {
 		$this->shell = $shell;
 	}
 
+	#[\Override]
 	public function getFormattedMessages(PhpcsMessages $messages, array $options): string { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
 		$files = array_unique(array_map(function(LintMessage $message): string {
 			return $message->getFile() ?? 'STDIN';
@@ -80,6 +81,7 @@ class XmlReporter implements Reporter {
 		return $xmlOutputForFile;
 	}
 
+	#[\Override]
 	public function getExitCode(PhpcsMessages $messages): int {
 		return (count($messages->getMessages()) > 0) ? 1 : 0;
 	}

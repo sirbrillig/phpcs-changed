@@ -36,11 +36,13 @@ class UnixShell implements ShellOperator {
 		$this->options = $options;
 	}
 
+	#[\Override]
 	public function clearCaches(): void {
 		$this->fullPaths = [];
 		$this->svnInfo = [];
 	}
 
+	#[\Override]
 	public function validateShellIsReady(): void {
 		if ($this->options->mode === Modes::MANUAL) {
 			$phpcs = $this->getPhpcsExecutable();
@@ -100,6 +102,7 @@ class UnixShell implements ShellOperator {
 		return implode(PHP_EOL, $output) . PHP_EOL;
 	}
 
+	#[\Override]
 	public function getPhpcsStandards(): string {
 		$phpcs = $this->getPhpcsExecutable();
 		$installedCodingStandardsPhpcsOutputCommand = "{$phpcs} -i";
@@ -141,6 +144,7 @@ class UnixShell implements ShellOperator {
 		return isset($gitStatusOutput[0]) && $gitStatusOutput[0] === 'A';
 	}
 
+	#[\Override]
 	public function doesUnmodifiedFileExistInGit(string $fileName): bool {
 		if ($this->options->mode === Modes::GIT_BASE) {
 			return $this->doesFileExistInGitBase($fileName);
@@ -208,6 +212,7 @@ class UnixShell implements ShellOperator {
 		return "{$git} show {$rev}:" . escapeshellarg($fullPath);
 	}
 
+	#[\Override]
 	public function getGitHashOfModifiedFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
 		$git = $this->options->getExecutablePath('git');
@@ -222,6 +227,7 @@ class UnixShell implements ShellOperator {
 		return $hash;
 	}
 
+	#[\Override]
 	public function getGitHashOfUnmodifiedFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
 		$git = $this->options->getExecutablePath('git');
@@ -252,6 +258,7 @@ class UnixShell implements ShellOperator {
 		return $phpcsExtensionsOption;
 	}
 
+	#[\Override]
 	public function getPhpcsOutputOfModifiedGitFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
 		$fileContentsCommand = $this->getModifiedFileContentsCommand($fileName);
@@ -261,6 +268,7 @@ class UnixShell implements ShellOperator {
 		return $this->processPhpcsOutput($fileName, 'modified', $modifiedFilePhpcsOutput);
 	}
 
+	#[\Override]
 	public function getPhpcsOutputOfUnmodifiedGitFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
 		$unmodifiedFileContentsCommand = $this->getUnmodifiedFileContentsCommand($fileName);
@@ -270,6 +278,7 @@ class UnixShell implements ShellOperator {
 		return $this->processPhpcsOutput($fileName, 'unmodified', $unmodifiedFilePhpcsOutput);
 	}
 
+	#[\Override]
 	public function getGitUnifiedDiff(string $fileName): string {
 		$debug = getDebug($this->options->debug);
 		$git = $this->options->getExecutablePath('git');
@@ -285,6 +294,7 @@ class UnixShell implements ShellOperator {
 		return $unifiedDiff;
 	}
 
+	#[\Override]
 	public function getGitMergeBase(): string {
 		if ($this->options->mode !== Modes::GIT_BASE) {
 			return '';
@@ -302,6 +312,7 @@ class UnixShell implements ShellOperator {
 		return trim($mergeBase);
 	}
 
+	#[\Override]
 	public function getPhpcsOutputOfModifiedSvnFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
 		$cat = $this->options->getExecutablePath('cat');
@@ -311,6 +322,7 @@ class UnixShell implements ShellOperator {
 		return $this->processPhpcsOutput($fileName, 'modified', $modifiedFilePhpcsOutput);
 	}
 
+	#[\Override]
 	public function getPhpcsOutputOfUnmodifiedSvnFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
 		$svn = $this->options->getExecutablePath('svn');
@@ -338,11 +350,13 @@ class UnixShell implements ShellOperator {
 		return $phpcsOutput;
 	}
 
+	#[\Override]
 	public function doesUnmodifiedFileExistInSvn(string $fileName): bool {
 		$svnFileInfo = $this->getSvnFileInfo($fileName);
 		return (false !== strpos($svnFileInfo, 'Schedule: add'));
 	}
 
+	#[\Override]
 	public function getSvnRevisionId(string $fileName): string {
 		$svnFileInfo = $this->getSvnFileInfo($fileName);
 		preg_match('/\bLast Changed Rev:\s([^\n]+)/', $svnFileInfo, $matches);
@@ -369,6 +383,7 @@ class UnixShell implements ShellOperator {
 		return $svnStatusOutput;
 	}
 
+	#[\Override]
 	public function getSvnUnifiedDiff(string $fileName): string {
 		$debug = getDebug($this->options->debug);
 		$svn = $this->options->getExecutablePath('svn');
@@ -382,10 +397,12 @@ class UnixShell implements ShellOperator {
 		return $unifiedDiff;
 	}
 
+	#[\Override]
 	public function isReadable(string $fileName): bool {
 		return is_readable($fileName);
 	}
 
+	#[\Override]
 	public function getFileHash(string $fileName): string {
 		$result = md5_file($fileName);
 		if ($result === false) {
@@ -394,19 +411,23 @@ class UnixShell implements ShellOperator {
 		return $result;
 	}
 
+	#[\Override]
 	public function exitWithCode(int $code): void {
 		exit($code);
 	}
 
+	#[\Override]
 	public function printError(string $message): void {
 		printError($message);
 	}
 
+	#[\Override]
 	public function getFileNameFromPath(string $path): string {
 		$parts = explode('/', $path);
 		return end($parts);
 	}
 
+	#[\Override]
 	public function getPhpcsVersion(): string {
 		$phpcs = $this->getPhpcsExecutable();
 
