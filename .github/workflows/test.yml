@@ -30,7 +30,7 @@ jobs:
         # - PHP 8.0 needs PHPCS 3.5.7+ to run without errors.
         # - PHP 8.1 needs PHPCS 3.6.1+ to run without errors.
         php: ['7.1', '7.2', '7.3']
-        phpcs_version: ['3.5.6', 'dev-master']
+        phpcs_version: ['3.5.6', '3.x-dev']
 
         include:
           # Make the matrix complete without duplicating builds run in code coverage.
@@ -38,16 +38,16 @@ jobs:
             phpcs_version: '3.6.1'
 
           - php: '8.0'
-            phpcs_version: 'dev-master'
+            phpcs_version: '3.x-dev'
           - php: '8.0'
             phpcs_version: '3.5.7'
 
           - php: '7.4'
-            phpcs_version: 'dev-master'
+            phpcs_version: '3.x-dev'
 
           # Experimental builds.
           - php: '8.2' # Nightly.
-            phpcs_version: 'dev-master'
+            phpcs_version: '3.x-dev'
 
     name: "Test: PHP ${{ matrix.php }} on PHPCS ${{ matrix.phpcs_version }}"
 
@@ -62,7 +62,7 @@ jobs:
         run: |
           # On stable PHPCS versions, allow for PHP deprecation notices.
           # Unit tests don't need to fail on those for stable releases where those issues won't get fixed anymore.
-          if [ "${{ matrix.phpcs_version }}" != "dev-master" ]; then
+          if [ "${{ matrix.phpcs_version }}" != "3.x-dev" ]; then
             echo '::set-output name=PHP_INI::error_reporting=E_ALL & ~E_DEPRECATED, display_errors=On, zend.assertions=1'
           else
             echo '::set-output name=PHP_INI::error_reporting=-1, display_errors=On, zend.assertions=1'
