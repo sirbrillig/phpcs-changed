@@ -16,7 +16,7 @@ class UnixShell implements ShellOperator {
 	/**
 	 * @var CliOptions
 	 */
-	private $options;
+	protected $options;
 
 	/**
 	 * The git-absolute paths to each git file keyed by filename.
@@ -50,10 +50,9 @@ class UnixShell implements ShellOperator {
 		}
 
 		if ($this->options->mode === Modes::SVN) {
-			$cat = $this->options->getExecutablePath('cat');
 			$svn = $this->options->getExecutablePath('svn');
 			$this->validateExecutableExists('svn', $svn);
-			$this->validateExecutableExists('cat', $cat);
+			$this->validateCatExecutableExists();
 			$phpcs = $this->getPhpcsExecutable();
 			$this->validateExecutableExists('phpcs', $phpcs);
 		}
@@ -92,8 +91,22 @@ class UnixShell implements ShellOperator {
 		return true;
 	}
 
-	private function getVendorPhpcsPath(): string {
+	protected function getVendorPhpcsPath(): string {
 		return 'vendor/bin/phpcs';
+	}
+
+	protected function getDevNull(): string {
+		return '/dev/null';
+	}
+
+	protected function validateCatExecutableExists(): void {
+		$cat = $this->options->getExecutablePath('cat');
+		$this->validateExecutableExists('cat', $cat);
+	}
+
+	protected function getLocalFileContentsCommand(string $fileName): string {
+		$cat = $this->options->getExecutablePath('cat');
+		return "{$cat} " . escapeshellarg($fileName);
 	}
 
 	protected function executeCommand(string $command, ?int &$return_val = null): string {
@@ -112,7 +125,7 @@ class UnixShell implements ShellOperator {
 	private function doesFileExistInGitBase(string $fileName): bool {
 		$debug = getDebug($this->options->debug);
 		$git = $this->options->getExecutablePath('git');
-		$gitStatusCommand = "{$git} cat-file -e " . escapeshellarg($this->options->gitBase) . ':' . escapeshellarg($this->getFullGitPathToFile($fileName)) . ' 2>/dev/null';
+		$gitStatusCommand = "{$git} cat-file -e " . escapeshellarg($this->options->gitBase) . ':' . escapeshellarg($this->getFullGitPathToFile($fileName)) . ' 2>' . $this->getDevNull();
 		$debug('checking status of file with command:', $gitStatusCommand);
 		/** @var int */
 		$return_val = 1;
@@ -184,7 +197,6 @@ class UnixShell implements ShellOperator {
 
 	private function getModifiedFileContentsCommand(string $fileName): string {
 		$git = $this->options->getExecutablePath('git');
-		$cat = $this->options->getExecutablePath('cat');
 		$fullPath = $this->getFullGitPathToFile($fileName);
 		if ($this->options->mode === Modes::GIT_BASE) {
 			// for git-base mode, we get the contents of the file from the HEAD version of the file in the current branch
@@ -192,7 +204,7 @@ class UnixShell implements ShellOperator {
 		}
 		if ($this->options->mode === Modes::GIT_UNSTAGED) {
 			// for git-unstaged mode, we get the contents of the file from the current working copy
-			return "{$cat} " . escapeshellarg($fileName);
+			return $this->getLocalFileContentsCommand($fileName);
 		}
 		// default mode is git-staged, so we get the contents from the staged version of the file
 		return "{$git} show :0:" . escapeshellarg($fullPath);
@@ -315,8 +327,7 @@ class UnixShell implements ShellOperator {
 	#[\Override]
 	public function getPhpcsOutputOfModifiedSvnFile(string $fileName): string {
 		$debug = getDebug($this->options->debug);
-		$cat = $this->options->getExecutablePath('cat');
-		$modifiedFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($fileName) . ' | ' . $this->getPhpcsCommand($fileName);
+		$modifiedFilePhpcsOutputCommand = $this->getLocalFileContentsCommand($fileName) . ' | ' . $this->getPhpcsCommand($fileName);
 		$debug('running modified file phpcs command:', $modifiedFilePhpcsOutputCommand);
 		$modifiedFilePhpcsOutput = $this->executeCommand($modifiedFilePhpcsOutputCommand);
 		return $this->processPhpcsOutput($fileName, 'modified', $modifiedFilePhpcsOutput);

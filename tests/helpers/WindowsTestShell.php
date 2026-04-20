@@ -4,13 +4,9 @@ declare(strict_types=1);
 namespace PhpcsChangedTests;
 
 use PhpcsChanged\CliOptions;
-use PhpcsChanged\Modes;
-use PhpcsChanged\ShellOperator;
-use PhpcsChanged\ShellException;
-use PhpcsChanged\NoChangesException;
-use PhpcsChanged\UnixShell;
+use PhpcsChanged\WindowsShell;
 
-class TestShell extends UnixShell {
+class WindowsTestShell extends WindowsShell {
 
 	private $readableFileNames = [];
 
@@ -34,7 +30,7 @@ class TestShell extends UnixShell {
 	}
 
 	public function registerReadableFileName(string $fileName, bool $override = false): bool {
-		if (!isset($this->readableFileNames[$fileName]) || $override ) {
+		if (!isset($this->readableFileNames[$fileName]) || $override) {
 			$this->readableFileNames[$fileName] = true;
 			return true;
 		}
@@ -85,7 +81,7 @@ class TestShell extends UnixShell {
 
 	protected function executeCommand(string $command, ?int &$return_val = null): string {
 		foreach ($this->commands as $registeredCommand => $return) {
-			if ($registeredCommand === substr($command, 0, strlen($registeredCommand)) ) {
+			if ($registeredCommand === substr($command, 0, strlen($registeredCommand))) {
 				$return_val = $return['return_val'];
 				$this->commandsCalled[$registeredCommand] = $command;
 				return $return['output'];

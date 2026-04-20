@@ -21,6 +21,7 @@ use function PhpcsChanged\{
 	printInstalledCodingStandards
 };
 use PhpcsChanged\UnixShell;
+use PhpcsChanged\WindowsShell;
 use PhpcsChanged\CacheManager;
 use PhpcsChanged\FileCache;
 use PhpcsChanged\CliOptions;
@@ -106,7 +107,7 @@ if (isset($options['version'])) {
 
 if (isset($options['i'])) {
 	$cliOptions = CliOptions::fromArray($options);
-	$shell = new UnixShell($cliOptions);
+	$shell = PHP_OS_FAMILY === 'Windows' ? new WindowsShell($cliOptions) : new UnixShell($cliOptions);
 	printInstalledCodingStandards($shell);
 }
 
@@ -150,8 +151,9 @@ function run(array $rawOptions, callable $debug): void {
 	}
 	$debug('Running on filenames: ' . implode(', ', $options->files));
 
+	$shell = PHP_OS_FAMILY === 'Windows' ? new WindowsShell($options) : new UnixShell($options);
+
 	if ($options->mode === Modes::MANUAL) {
-		$shell = new UnixShell($options);
 		reportMessagesAndExit(
 			runManualWorkflow($options->diffFile, $options->phpcsUnmodified, $options->phpcsModified),
 			$options,
@@ -161,7 +163,6 @@ function run(array $rawOptions, callable $debug): void {
 	}
 
 	if ($options->mode === Modes::SVN) {
-		$shell = new UnixShell($options);
 		reportMessagesAndExit(
 			runSvnWorkflow($options->files, $options, $shell, new CacheManager(new FileCache(), $debug), $debug),
 			$options,
@@ -171,7 +172,6 @@ function run(array $rawOptions, callable $debug): void {
 	}
 
 	if ($options->isGitMode()) {
-		$shell = new UnixShell($options);
 		reportMessagesAndExit(
 			runGitWorkflow($options, $shell, new CacheManager(new FileCache(), $debug), $debug),
 			$options,
