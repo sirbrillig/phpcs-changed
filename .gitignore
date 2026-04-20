@@ -1,2 +1,4 @@
 vendor
 composer.lock
+.bench-trunk/
+benchmark-results.md
