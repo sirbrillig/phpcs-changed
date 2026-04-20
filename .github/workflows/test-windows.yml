@@ -1,0 +1,70 @@
+name: Test on Windows
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-windows:
+    runs-on: windows-latest
+
+    strategy:
+      matrix:
+        php: ['8.1', '8.2']
+
+    name: "Windows: PHP ${{ matrix.php }}"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v2
+
+      # Run the full PHPUnit suite on Windows.
+      # The Windows-specific tests use WindowsTestShell (mocked), so they run
+      # on any platform. This confirms the PHP code is Windows-compatible.
+      - name: Run PHPUnit tests
+        run: composer test
+
+      - name: Configure git for integration tests
+        run: |
+          git config user.email "test@example.com"
+          git config user.name "Test User"
+
+      # Stage a small change and run phpcs-changed in git-staged mode.
+      # This exercises on real Windows:
+      #   - 'where /q git' and 'where /q vendor/bin/phpcs.bat' (executable validation)
+      #   - 'git show HEAD:...' and 'git show :0:...' (file content via git)
+      #   - 'git diff --staged --no-prefix ...' (diff generation)
+      - name: Integration test - git-staged mode
+        shell: pwsh
+        run: |
+          Add-Content -Path "PhpcsChanged/WindowsShell.php" -Value "// integration test"
+          git add PhpcsChanged/WindowsShell.php
+          php bin/phpcs-changed --git-staged --always-exit-zero PhpcsChanged/WindowsShell.php
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          git restore --staged PhpcsChanged/WindowsShell.php
+          git restore PhpcsChanged/WindowsShell.php
+
+      # Make an unstaged change and run phpcs-changed in git-unstaged mode.
+      # This specifically exercises the Windows 'type' built-in, which is the
+      # key substitution for Unix 'cat' when reading local file contents.
+      - name: Integration test - git-unstaged mode (tests 'type' built-in)
+        shell: pwsh
+        run: |
+          Add-Content -Path "PhpcsChanged/WindowsShell.php" -Value "// integration test"
+          php bin/phpcs-changed --git-unstaged --always-exit-zero PhpcsChanged/WindowsShell.php
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          git restore PhpcsChanged/WindowsShell.php
