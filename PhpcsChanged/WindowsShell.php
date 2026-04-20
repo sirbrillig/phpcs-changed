@@ -212,4 +212,14 @@ class WindowsShell implements ShellOperator, ShellPlatform {
 	public function getPhpcsVersion(): string {
 		return $this->runner->getPhpcsVersion();
 	}
+
+	#[\Override]
+	public function getPhpcsOutputForGitBatch(array $modifiedFileNames, array $unmodifiedFileNames): array {
+		return $this->runner->getPhpcsOutputForGitBatch($modifiedFileNames, $unmodifiedFileNames);
+	}
+
+	#[\Override]
+	public function getPhpcsOutputForSvnBatch(array $modifiedFileNames, array $unmodifiedFileNames): array {
+		return $this->runner->getPhpcsOutputForSvnBatch($modifiedFileNames, $unmodifiedFileNames);
+	}
 }

@@ -82,6 +82,16 @@ class UnixShell implements ShellOperator, ShellPlatform {
 	}
 
 	#[\Override]
+	public function getPhpcsOutputForGitBatch(array $modifiedFileNames, array $unmodifiedFileNames): array {
+		return $this->runner->getPhpcsOutputForGitBatch($modifiedFileNames, $unmodifiedFileNames);
+	}
+
+	#[\Override]
+	public function getPhpcsOutputForSvnBatch(array $modifiedFileNames, array $unmodifiedFileNames): array {
+		return $this->runner->getPhpcsOutputForSvnBatch($modifiedFileNames, $unmodifiedFileNames);
+	}
+
+	#[\Override]
 	public function isReadable(string $fileName): bool {
 		return is_readable($fileName);
 	}

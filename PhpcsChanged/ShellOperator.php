@@ -50,4 +50,26 @@ interface ShellOperator {
 	public function getSvnRevisionId(string $fileName): string;
 
 	public function getSvnUnifiedDiff(string $fileName): string;
+
+	/**
+	 * Run phpcs once on all modified and unmodified versions of the given git files.
+	 * New files should not appear in $unmodifiedFileNames.
+	 *
+	 * @param string[] $modifiedFileNames  files needing modified (new) phpcs output
+	 * @param string[] $unmodifiedFileNames files needing unmodified (old) phpcs output
+	 * @return array{new: array<string,string>, old: array<string,string>}
+	 *   Each sub-array maps originalPath => single-file phpcs JSON string
+	 */
+	public function getPhpcsOutputForGitBatch(array $modifiedFileNames, array $unmodifiedFileNames): array;
+
+	/**
+	 * Run phpcs once on all modified and unmodified versions of the given svn files.
+	 * New files should not appear in $unmodifiedFileNames.
+	 *
+	 * @param string[] $modifiedFileNames  files needing modified (new) phpcs output
+	 * @param string[] $unmodifiedFileNames files needing unmodified (old) phpcs output
+	 * @return array{new: array<string,string>, old: array<string,string>}
+	 *   Each sub-array maps originalPath => single-file phpcs JSON string
+	 */
+	public function getPhpcsOutputForSvnBatch(array $modifiedFileNames, array $unmodifiedFileNames): array;
 }

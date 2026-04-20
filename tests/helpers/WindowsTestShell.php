@@ -101,4 +101,28 @@ class WindowsTestShell extends WindowsShell {
 	public function wasCommandCalled(string $registeredCommand): bool {
 		return isset($this->commandsCalled[$registeredCommand]);
 	}
+
+	public function getPhpcsOutputForGitBatch(array $modifiedFileNames, array $unmodifiedFileNames): array {
+		$new = [];
+		foreach ($modifiedFileNames as $fileName) {
+			$new[$fileName] = $this->getPhpcsOutputOfModifiedGitFile($fileName);
+		}
+		$old = [];
+		foreach ($unmodifiedFileNames as $fileName) {
+			$old[$fileName] = $this->getPhpcsOutputOfUnmodifiedGitFile($fileName);
+		}
+		return ['new' => $new, 'old' => $old];
+	}
+
+	public function getPhpcsOutputForSvnBatch(array $modifiedFileNames, array $unmodifiedFileNames): array {
+		$new = [];
+		foreach ($modifiedFileNames as $fileName) {
+			$new[$fileName] = $this->getPhpcsOutputOfModifiedSvnFile($fileName);
+		}
+		$old = [];
+		foreach ($unmodifiedFileNames as $fileName) {
+			$old[$fileName] = $this->getPhpcsOutputOfUnmodifiedSvnFile($fileName);
+		}
+		return ['new' => $new, 'old' => $old];
+	}
 }
