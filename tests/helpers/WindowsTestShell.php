@@ -80,8 +80,11 @@ class WindowsTestShell extends WindowsShell {
 	}
 
 	public function executeCommand(string $command, ?int &$return_val = null): string {
+		// Normalize double quotes to single quotes so commands registered with Unix-style
+		// quoting (single quotes) also match on Windows where escapeshellarg() uses double quotes.
+		$normalizedCommand = str_replace('"', "'", $command);
 		foreach ($this->commands as $registeredCommand => $return) {
-			if ($registeredCommand === substr($command, 0, strlen($registeredCommand))) {
+			if ($registeredCommand === substr($normalizedCommand, 0, strlen($registeredCommand))) {
 				$return_val = $return['return_val'];
 				$this->commandsCalled[$registeredCommand] = $command;
 				return $return['output'];
