@@ -23,6 +23,8 @@ require_once __DIR__ . '/PhpcsChanged/CheckstyleReporter.php';
 require_once __DIR__ . '/PhpcsChanged/NoChangesException.php';
 require_once __DIR__ . '/PhpcsChanged/ShellException.php';
 require_once __DIR__ . '/PhpcsChanged/ShellOperator.php';
+require_once __DIR__ . '/PhpcsChanged/ShellPlatform.php';
+require_once __DIR__ . '/PhpcsChanged/ShellRunner.php';
 require_once __DIR__ . '/PhpcsChanged/UnixShell.php';
 require_once __DIR__ . '/PhpcsChanged/WindowsShell.php';
 require_once __DIR__ . '/PhpcsChanged/CacheEntry.php';
