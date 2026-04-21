@@ -1,0 +1,59 @@
+name: Integration Test on Unix
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration-test-unix:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php: ['8.1', '8.2']
+
+    name: "Unix integration: PHP ${{ matrix.php }}"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v2
+
+      - name: Configure git for integration tests
+        run: |
+          git config user.email "test@example.com"
+          git config user.name "Test User"
+
+      # Stage a small change and run phpcs-changed in git-staged mode.
+      # This exercises on real Linux:
+      #   - 'type git' and 'type vendor/bin/phpcs' (executable validation)
+      #   - 'git show HEAD:...' and 'git show :0:...' (file content via git)
+      #   - 'git diff --staged --no-prefix ...' (diff generation)
+      - name: Integration test - git-staged mode
+        run: |
+          echo "// integration test" >> PhpcsChanged/UnixShell.php
+          git add PhpcsChanged/UnixShell.php
+          php bin/phpcs-changed --git-staged --always-exit-zero PhpcsChanged/UnixShell.php
+          git restore --staged PhpcsChanged/UnixShell.php
+          git restore PhpcsChanged/UnixShell.php
+
+      # Make an unstaged change and run phpcs-changed in git-unstaged mode.
+      # This exercises the Unix 'cat' command for reading local file contents.
+      - name: Integration test - git-unstaged mode
+        run: |
+          echo "// integration test" >> PhpcsChanged/UnixShell.php
+          php bin/phpcs-changed --git-unstaged --always-exit-zero PhpcsChanged/UnixShell.php
+          git restore PhpcsChanged/UnixShell.php
