@@ -4,13 +4,9 @@ declare(strict_types=1);
 namespace PhpcsChangedTests;
 
 use PhpcsChanged\CliOptions;
-use PhpcsChanged\Modes;
-use PhpcsChanged\ShellOperator;
-use PhpcsChanged\ShellException;
-use PhpcsChanged\NoChangesException;
-use PhpcsChanged\UnixShell;
+use PhpcsChanged\WindowsShell;
 
-class TestShell extends UnixShell {
+class WindowsTestShell extends WindowsShell {
 
 	private $readableFileNames = [];
 
@@ -34,7 +30,7 @@ class TestShell extends UnixShell {
 	}
 
 	public function registerReadableFileName(string $fileName, bool $override = false): bool {
-		if (!isset($this->readableFileNames[$fileName]) || $override ) {
+		if (!isset($this->readableFileNames[$fileName]) || $override) {
 			$this->readableFileNames[$fileName] = true;
 			return true;
 		}
@@ -88,7 +84,7 @@ class TestShell extends UnixShell {
 		// quoting (single quotes) also match on Windows where escapeshellarg() uses double quotes.
 		$normalizedCommand = str_replace('"', "'", $command);
 		foreach ($this->commands as $registeredCommand => $return) {
-			if ($registeredCommand === substr($normalizedCommand, 0, strlen($registeredCommand)) ) {
+			if ($registeredCommand === substr($normalizedCommand, 0, strlen($registeredCommand))) {
 				$return_val = $return['return_val'];
 				$this->commandsCalled[$registeredCommand] = $command;
 				return $return['output'];

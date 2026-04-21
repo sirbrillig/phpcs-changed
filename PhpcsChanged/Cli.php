@@ -531,16 +531,10 @@ function shouldIgnorePath(string $path, ?string $patternOption = null): bool {
 			'*'   => '.*',
 		];
 
-		// We assume a / directory separator, as do the exclude rules
-		// most developers write, so we need a special case for any system
-		// that is different.
-		if (DIRECTORY_SEPARATOR === '\\') {
-			$replacements['/'] = '\\\\';
-		}
-
 		$pattern = strtr(strval($pattern), $replacements);
 
-		$testPath = $path;
+		// Normalize to forward slashes so patterns like "bin/" work on all platforms.
+		$testPath = str_replace('\\', '/', $path);
 
 		$pattern = '`'.$pattern.'`i';
 		if (preg_match($pattern, $testPath) === 1) {

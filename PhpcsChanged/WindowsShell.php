@@ -9,12 +9,16 @@ use PhpcsChanged\CliOptions;
 use function PhpcsChanged\printError;
 
 /**
- * Unix ShellOperator implementation.
+ * Windows ShellOperator implementation (cmd.exe, no WSL required).
  *
- * Implements ShellPlatform with Unix-specific commands (cat, /dev/null, etc.)
- * and delegates all shared git/svn/phpcs workflow logic to ShellRunner.
+ * Implements ShellPlatform with Windows-specific commands:
+ * - 'type' built-in instead of 'cat' for reading local files
+ * - 'NUL' instead of '/dev/null' for stderr suppression
+ * - 'where /q' instead of 'type' for executable discovery
+ * - 'vendor/bin/phpcs.bat' for vendor-installed phpcs
+ * Delegates all shared git/svn/phpcs workflow logic to ShellRunner.
  */
-class UnixShell implements ShellOperator, ShellPlatform {
+class WindowsShell implements ShellOperator, ShellPlatform {
 	/**
 	 * @var CliOptions
 	 */
@@ -43,7 +47,16 @@ class UnixShell implements ShellOperator, ShellPlatform {
 
 	#[\Override]
 	public function validateExecutableExists(string $name, string $command): void {
-		exec(sprintf("type %s > /dev/null 2>&1", escapeshellarg($command)), $ignore, $returnVal);
+		// Full or relative path — check that the file exists on disk
+		if (strpos($command, '/') !== false || strpos($command, '\\') !== false) {
+			if (!file_exists($command)) {
+				throw new \Exception("Cannot find executable for {$name}, currently set to '{$command}'.");
+			}
+			return;
+		}
+		// Bare command name — search PATH using Windows 'where' command
+		$ignore = [];
+		exec(sprintf('where /q %s', escapeshellarg($command)), $ignore, $returnVal);
 		if ($returnVal != 0) {
 			throw new \Exception("Cannot find executable for {$name}, currently set to '{$command}'.");
 		}
@@ -52,23 +65,32 @@ class UnixShell implements ShellOperator, ShellPlatform {
 	#[\Override]
 	public function validateCatExecutableExists(): void {
 		$cat = $this->options->getExecutablePath('cat');
-		$this->validateExecutableExists('cat', $cat);
+		if ($cat !== 'cat') {
+			// User has configured a custom cat executable; validate it exists
+			$this->validateExecutableExists('cat', $cat);
+		}
+		// Otherwise: 'type' is a Windows shell built-in, no validation needed
 	}
 
 	#[\Override]
 	public function getDevNull(): string {
-		return '/dev/null';
+		return 'NUL';
 	}
 
 	#[\Override]
 	public function getLocalFileContentsCommand(string $fileName): string {
 		$cat = $this->options->getExecutablePath('cat');
-		return "{$cat} " . escapeshellarg($fileName);
+		if ($cat !== 'cat') {
+			// User has configured a custom cat executable; use it
+			return "{$cat} " . escapeshellarg($fileName);
+		}
+		// Use the Windows 'type' built-in command
+		return 'type ' . escapeshellarg($fileName);
 	}
 
 	#[\Override]
 	public function getVendorPhpcsPath(): string {
-		return 'vendor/bin/phpcs';
+		return 'vendor\\bin\\phpcs.bat';
 	}
 
 	// =========================================================================
@@ -77,7 +99,9 @@ class UnixShell implements ShellOperator, ShellPlatform {
 
 	#[\Override]
 	public function getFileNameFromPath(string $path): string {
-		$parts = explode('/', $path);
+		// Handle both forward and backslashes for Windows paths
+		$normalized = str_replace('\\', '/', $path);
+		$parts = explode('/', $normalized);
 		return end($parts);
 	}
 
