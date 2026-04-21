@@ -1,7 +1,7 @@
 # Benchmarking phpcs-changed
 
 `benchmark.sh` measures the wall-clock time of running `phpcs-changed --git-staged`
-against a set of changed PHP files, and compares the current branch to `trunk`.
+against a set of changed PHP files, comparing the **current branch** to `trunk`.
 
 It uses [hyperfine](https://github.com/sharkdp/hyperfine) for statistical
 measurement and a self-contained throwaway git repo for reproducible test inputs.
@@ -66,14 +66,10 @@ The worktree is created on the first run and reused on subsequent runs.
 
 ### What is being compared
 
-| Branch | phpcs invocations per run |
-|--------|--------------------------|
-| trunk | up to `2 × N_FILES` — one per file per version (modified + unmodified) |
-| feature branch | 1 — all file versions batched into a single phpcs call |
-
-The dominant cost in each phpcs invocation is **process startup** (~250–400 ms
-on typical hardware). The batch approach eliminates `2 × N_FILES − 1` of those
-startups.
+The script runs the same `phpcs-changed --git-staged` command against the same
+set of test files using two builds: the current branch and `trunk`. Hyperfine
+runs both commands back-to-back the same number of times, so any difference in
+wall-clock time reflects a real performance difference between the two builds.
 
 ## Interpreting results
 
@@ -81,21 +77,13 @@ Hyperfine reports mean time, standard deviation, and a relative speedup ratio.
 Example output for `N_FILES=10`:
 
 ```
-Benchmark 1: batch (a75e2c2): 1 phpcs call
+Benchmark 1: my-feature-branch (a75e2c2)
   Time (mean ± σ):      2.44 s ±  0.05 s
-Benchmark 2: trunk (5c9f6b2): 20 phpcs calls
+Benchmark 2: trunk (5c9f6b2)
   Time (mean ± σ):      5.74 s ±  0.11 s
 
-Summary: batch ran 2.36 ± 0.06 times faster than trunk
+Summary: my-feature-branch ran 2.36 ± 0.06 times faster than trunk
 ```
-
-The speedup scales roughly linearly with `N_FILES`. A project with 20 changed
-files should see approximately twice the speedup of a 10-file project.
-
-The batch variant carries its own overhead (temp directory creation, one file
-write per file version, one phpcs invocation on all files). This overhead
-appears as a baseline cost that does not scale with `N_FILES`, so the
-crossover point where batching wins is low — roughly 2 or more files.
 
 ## Artifacts
 
