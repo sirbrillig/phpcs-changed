@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# benchmark.sh — compare batch-phpcs-invocations branch vs trunk
+# benchmark.sh — compare the current branch vs trunk
 #
 # Usage:
 #   ./benchmark.sh
@@ -17,7 +17,7 @@ set -euo pipefail
 
 # ── Paths ──────────────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BATCH_BIN="$SCRIPT_DIR/bin/phpcs-changed"
+CURRENT_BIN="$SCRIPT_DIR/bin/phpcs-changed"
 TRUNK_WORKTREE="$SCRIPT_DIR/.bench-trunk"
 TRUNK_BIN="$TRUNK_WORKTREE/bin/phpcs-changed"
 PHPCS="$SCRIPT_DIR/vendor/bin/phpcs"
@@ -51,8 +51,8 @@ git -C "$BENCH_REPO" config user.email "bench@example.com"
 git -C "$BENCH_REPO" config user.name "Benchmark"
 
 # Create initial PHP files with PSR2 violations (uppercase TRUE / FALSE).
-# Both the committed and staged versions have violations so trunk will always
-# scan both file versions — giving it 2×N_FILES phpcs invocations.
+# Both the committed and staged versions have violations so both builds must
+# scan both file versions — this is the worst-case and ensures a fair comparison.
 echo "→ Preparing $N_FILES PHP test files …"
 FILES=()
 for i in $(seq 1 "$N_FILES"); do
@@ -98,16 +98,17 @@ done
 
 # ── 3. Run hyperfine ──────────────────────────────────────────────────────
 FILES_STR="${FILES[*]}"
-BATCH_SHA="$(git -C "$SCRIPT_DIR" rev-parse --short HEAD)"
+CURRENT_BRANCH="$(git -C "$SCRIPT_DIR" branch --show-current)"
+CURRENT_SHA="$(git -C "$SCRIPT_DIR" rev-parse --short HEAD)"
 TRUNK_SHA="$(git -C "$TRUNK_WORKTREE" rev-parse --short HEAD)"
 
-BATCH_CMD="php '$BATCH_BIN' --git-staged --phpcs-path='$PHPCS' --standard=PSR2 --always-exit-zero $FILES_STR"
+CURRENT_CMD="php '$CURRENT_BIN' --git-staged --phpcs-path='$PHPCS' --standard=PSR2 --always-exit-zero $FILES_STR"
 TRUNK_CMD="php '$TRUNK_BIN' --git-staged --phpcs-path='$PHPCS' --standard=PSR2 --always-exit-zero $FILES_STR"
 
 echo ""
 printf "Benchmark: %d staged PHP files, --standard=PSR2\n" "$N_FILES"
-printf "  batch  %s  — 1 phpcs invocation (all files in one shot)\n" "$BATCH_SHA"
-printf "  trunk  %s  — up to %d phpcs invocations (2 per file)\n" "$TRUNK_SHA" "$((N_FILES * 2))"
+printf "  %-30s  %s\n" "$CURRENT_BRANCH" "$CURRENT_SHA"
+printf "  %-30s  %s\n" "trunk" "$TRUNK_SHA"
 echo ""
 
 cd "$BENCH_REPO"
@@ -115,9 +116,9 @@ cd "$BENCH_REPO"
 hyperfine \
   --warmup "$WARMUP" \
   --runs   "$RUNS" \
-  -n "batch ($BATCH_SHA): 1 phpcs call" \
-  -n "trunk ($TRUNK_SHA): $((N_FILES * 2)) phpcs calls" \
-  "$BATCH_CMD" \
+  -n "$CURRENT_BRANCH ($CURRENT_SHA)" \
+  -n "trunk ($TRUNK_SHA)" \
+  "$CURRENT_CMD" \
   "$TRUNK_CMD" \
   --export-markdown "$RESULTS_FILE"
 
