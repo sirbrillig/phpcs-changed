@@ -188,4 +188,24 @@ class UnixShell implements ShellOperator, ShellPlatform {
 	public function getPhpcsVersion(): string {
 		return $this->runner->getPhpcsVersion();
 	}
+
+	#[\Override]
+	public function getPhpcsOutputForNewGitFiles(array $fileNames): array {
+		return $this->runner->getPhpcsOutputForNewGitFiles($fileNames);
+	}
+
+	#[\Override]
+	public function getPhpcsOutputForOldGitFiles(array $fileNames): array {
+		return $this->runner->getPhpcsOutputForOldGitFiles($fileNames);
+	}
+
+	#[\Override]
+	public function getPhpcsOutputForNewSvnFiles(array $fileNames): array {
+		return $this->runner->getPhpcsOutputForNewSvnFiles($fileNames);
+	}
+
+	#[\Override]
+	public function getPhpcsOutputForOldSvnFiles(array $fileNames): array {
+		return $this->runner->getPhpcsOutputForOldSvnFiles($fileNames);
+	}
 }

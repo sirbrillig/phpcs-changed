@@ -388,4 +388,178 @@ class ShellRunner {
 
 		return $matches[1];
 	}
+
+	private function writeTempFile(string $contentCommand, string $tempPath): void {
+		$dir = dirname($tempPath);
+		if (! is_dir($dir)) {
+			mkdir($dir, 0777, true);
+		}
+		$content = $this->platform->executeCommand($contentCommand);
+		file_put_contents($tempPath, $content);
+	}
+
+	/**
+	 * @param array<string,string> $tempToOriginal Maps temp file path => original file path
+	 * @return array<string,string> Maps original file path => single-file phpcs JSON string
+	 */
+	private function runBatchPhpcs(array $tempToOriginal): array {
+		if (empty($tempToOriginal)) {
+			return [];
+		}
+		$phpcs = $this->getPhpcsExecutable();
+		$args = implode(' ', array_map('escapeshellarg', array_keys($tempToOriginal)));
+		$command = "{$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . $this->getPhpcsExtensionsOption() . ' ' . $args;
+		$phpcsOutput = $this->platform->executeCommand($command);
+
+		if (! $phpcsOutput) {
+			return [];
+		}
+
+		$decoded = json_decode($phpcsOutput, true);
+		if (! is_array($decoded) || ! isset($decoded['files'])) {
+			return [];
+		}
+
+		$results = [];
+		foreach ($tempToOriginal as $tempPath => $originalPath) {
+			$realTempPath = ($resolved = realpath($tempPath)) !== false ? $resolved : $tempPath;
+			$fileData = $decoded['files'][$realTempPath] ?? $decoded['files'][$tempPath] ?? null;
+			if ($fileData === null) {
+				$results[$originalPath] = '';
+				continue;
+			}
+			$singleFileJson = json_encode([
+				'totals' => [
+					'errors' => $fileData['errors'] ?? 0,
+					'warnings' => $fileData['warnings'] ?? 0,
+					'fixable' => $fileData['fixable'] ?? 0,
+				],
+				'files' => [
+					$originalPath => $fileData,
+				],
+			]);
+			$results[$originalPath] = $singleFileJson !== false ? $singleFileJson : '';
+		}
+
+		return $results;
+	}
+
+	private function cleanupTempDir(string $dir): void {
+		if (! is_dir($dir)) {
+			return;
+		}
+		$files = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS),
+			\RecursiveIteratorIterator::CHILD_FIRST
+		);
+		foreach ($files as $file) {
+			if ($file->isDir()) {
+				rmdir($file->getPathname());
+			} else {
+				unlink($file->getPathname());
+			}
+		}
+		rmdir($dir);
+	}
+
+	/**
+	 * @param string[] $fileNames
+	 * @return array<string,string>
+	 */
+	public function getPhpcsOutputForNewGitFiles(array $fileNames): array {
+		if (empty($fileNames)) {
+			return [];
+		}
+
+		$tempDir = sys_get_temp_dir() . '/phpcs-changed-' . uniqid();
+		mkdir($tempDir);
+		$tempToOriginal = [];
+
+		try {
+			foreach ($fileNames as $fileName) {
+				$tempPath = $tempDir . '/new/' . ltrim($fileName, '/');
+				$this->writeTempFile($this->getModifiedFileContentsCommand($fileName), $tempPath);
+				$tempToOriginal[$tempPath] = $fileName;
+			}
+			return $this->runBatchPhpcs($tempToOriginal);
+		} finally {
+			$this->cleanupTempDir($tempDir);
+		}
+	}
+
+	/**
+	 * @param string[] $fileNames
+	 * @return array<string,string>
+	 */
+	public function getPhpcsOutputForOldGitFiles(array $fileNames): array {
+		if (empty($fileNames)) {
+			return [];
+		}
+
+		$tempDir = sys_get_temp_dir() . '/phpcs-changed-' . uniqid();
+		mkdir($tempDir);
+		$tempToOriginal = [];
+
+		try {
+			foreach ($fileNames as $fileName) {
+				$tempPath = $tempDir . '/old/' . ltrim($fileName, '/');
+				$this->writeTempFile($this->getUnmodifiedFileContentsCommand($fileName), $tempPath);
+				$tempToOriginal[$tempPath] = $fileName;
+			}
+			return $this->runBatchPhpcs($tempToOriginal);
+		} finally {
+			$this->cleanupTempDir($tempDir);
+		}
+	}
+
+	/**
+	 * @param string[] $fileNames
+	 * @return array<string,string>
+	 */
+	public function getPhpcsOutputForNewSvnFiles(array $fileNames): array {
+		if (empty($fileNames)) {
+			return [];
+		}
+
+		$tempDir = sys_get_temp_dir() . '/phpcs-changed-' . uniqid();
+		mkdir($tempDir);
+		$tempToOriginal = [];
+
+		try {
+			foreach ($fileNames as $fileName) {
+				$tempPath = $tempDir . '/new/' . ltrim($fileName, '/');
+				$this->writeTempFile($this->platform->getLocalFileContentsCommand($fileName), $tempPath);
+				$tempToOriginal[$tempPath] = $fileName;
+			}
+			return $this->runBatchPhpcs($tempToOriginal);
+		} finally {
+			$this->cleanupTempDir($tempDir);
+		}
+	}
+
+	/**
+	 * @param string[] $fileNames
+	 * @return array<string,string>
+	 */
+	public function getPhpcsOutputForOldSvnFiles(array $fileNames): array {
+		if (empty($fileNames)) {
+			return [];
+		}
+
+		$tempDir = sys_get_temp_dir() . '/phpcs-changed-' . uniqid();
+		mkdir($tempDir);
+		$tempToOriginal = [];
+
+		try {
+			$svn = $this->options->getExecutablePath('svn');
+			foreach ($fileNames as $fileName) {
+				$tempPath = $tempDir . '/old/' . ltrim($fileName, '/');
+				$this->writeTempFile("{$svn} cat " . escapeshellarg($fileName), $tempPath);
+				$tempToOriginal[$tempPath] = $fileName;
+			}
+			return $this->runBatchPhpcs($tempToOriginal);
+		} finally {
+			$this->cleanupTempDir($tempDir);
+		}
+	}
 }
