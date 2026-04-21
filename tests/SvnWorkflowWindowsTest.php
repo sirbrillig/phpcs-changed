@@ -67,8 +67,8 @@ final class SvnWorkflowWindowsTest extends TestCase {
 
 	public function testFullSvnWorkflowForOneFileWithVendorPhpcsBatOnWindows() {
 		$svnFile = 'foobar.php';
-		// On Windows, vendor phpcs uses .bat extension
-		$phpcsPath = 'vendor/bin/phpcs.bat';
+		// On Windows, vendor phpcs uses .bat extension with backslash path separators
+		$phpcsPath = 'vendor\\bin\\phpcs.bat';
 		$options = CliOptions::fromArray([
 			'svn' => false,
 			'files' => [$svnFile],

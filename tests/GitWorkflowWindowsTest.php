@@ -45,8 +45,8 @@ final class GitWorkflowWindowsTest extends TestCase {
 
 	public function testFullGitWorkflowForOneFileStagedWithVendorDefaultPhpcsOnWindows() {
 		$gitFile = 'foobar.php';
-		// On Windows, vendor phpcs uses .bat extension
-		$phpcsPath = 'vendor/bin/phpcs.bat';
+		// On Windows, vendor phpcs uses .bat extension with backslash path separators
+		$phpcsPath = 'vendor\\bin\\phpcs.bat';
 		$options = CliOptions::fromArray([
 			'no-cache-git-root' => false,
 			'git-staged' => false,

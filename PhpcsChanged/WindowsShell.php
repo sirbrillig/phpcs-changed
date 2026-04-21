@@ -90,7 +90,7 @@ class WindowsShell implements ShellOperator, ShellPlatform {
 
 	#[\Override]
 	public function getVendorPhpcsPath(): string {
-		return 'vendor/bin/phpcs.bat';
+		return 'vendor\\bin\\phpcs.bat';
 	}
 
 	// =========================================================================
