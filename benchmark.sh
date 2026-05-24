@@ -33,6 +33,10 @@ RUNS=${RUNS:-10}
 WARMUP=${WARMUP:-2}
 CURRENT_BRANCH_DEFAULT="$(git -C "$SCRIPT_DIR" branch --show-current)"
 CANDIDATES=${CANDIDATES:-$CURRENT_BRANCH_DEFAULT}
+# CACHE_MODE: cold (no --cache), hot (--cache, warmups prime everything),
+# partial (--cache, but modified side is dirtied each iteration so only the
+# unmodified side hits).
+CACHE_MODE=${CACHE_MODE:-cold}
 
 # ── Sanity checks ─────────────────────────────────────────────────────────
 command -v hyperfine >/dev/null 2>&1 \
@@ -128,10 +132,27 @@ echo "→ Actual line count per file (staged): $ACTUAL_LINES"
 FILES_STR="${FILES[*]}"
 TRUNK_SHA="$(git -C "$TRUNK_WORKTREE" rev-parse --short HEAD)"
 
+case "$CACHE_MODE" in
+  cold)    CACHE_FLAG="" ;;
+  hot)     CACHE_FLAG="--cache" ;;
+  partial) CACHE_FLAG="--cache" ;;
+  *) echo "ERROR: CACHE_MODE must be cold, hot, or partial"; exit 1 ;;
+esac
+
 HF_ARGS=(--warmup "$WARMUP" --runs "$RUNS")
 
+# Ensure each benchmark starts from a clean cache so the first warmup populates
+# it consistently rather than inheriting the previous branch's cache file.
+HF_ARGS+=(--setup "rm -f $BENCH_REPO/.phpcs-changed-cache")
+
+# In partial mode, dirty file1.php before each iteration so the modified-side
+# cache misses while the unmodified-side cache (keyed on git revision) still hits.
+if [ "$CACHE_MODE" = "partial" ]; then
+  HF_ARGS+=(--prepare "echo '// noise' >> $BENCH_REPO/file1.php && git -C $BENCH_REPO add file1.php")
+fi
+
 # Trunk baseline first so it appears at the top of the table.
-TRUNK_CMD="php '$TRUNK_BIN' --git-staged --phpcs-path='$PHPCS' --standard=PSR2 --always-exit-zero $FILES_STR"
+TRUNK_CMD="php '$TRUNK_BIN' --git-staged --phpcs-path='$PHPCS' --standard=PSR2 --always-exit-zero $CACHE_FLAG $FILES_STR"
 HF_ARGS+=(-n "trunk ($TRUNK_SHA)" "$TRUNK_CMD")
 
 for idx in "${!CANDIDATE_PATHS[@]}"; do
@@ -139,12 +160,12 @@ for idx in "${!CANDIDATE_PATHS[@]}"; do
   name="${CANDIDATE_NAMES[$idx]}"
   sha="$(git -C "$path" rev-parse --short HEAD)"
   bin="$path/bin/phpcs-changed"
-  cmd="php '$bin' --git-staged --phpcs-path='$PHPCS' --standard=PSR2 --always-exit-zero $FILES_STR"
+  cmd="php '$bin' --git-staged --phpcs-path='$PHPCS' --standard=PSR2 --always-exit-zero $CACHE_FLAG $FILES_STR"
   HF_ARGS+=(-n "$name ($sha)" "$cmd")
 done
 
 echo ""
-printf "Benchmark: %d staged PHP files, ~%d lines/file, --standard=PSR2\n" "$N_FILES" "$ACTUAL_LINES"
+printf "Benchmark: %d staged PHP files, ~%d lines/file, cache=%s, --standard=PSR2\n" "$N_FILES" "$ACTUAL_LINES" "$CACHE_MODE"
 printf "  baseline: trunk (%s)\n" "$TRUNK_SHA"
 for idx in "${!CANDIDATE_NAMES[@]}"; do
   path="${CANDIDATE_PATHS[$idx]}"
