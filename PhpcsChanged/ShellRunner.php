@@ -353,16 +353,24 @@ class ShellRunner {
 
 	/**
 	 * @param array<string,string> $tempToOriginal Maps temp file path => original file path
+	 * @param string $tempDir The batch temp directory; the --file-list file is written here so it is cleaned up with the rest of the batch
 	 * @return array<string,string> Maps temp file path => single-file phpcs JSON string
 	 */
-	private function runBatchPhpcs(array $tempToOriginal): array {
+	private function runBatchPhpcs(array $tempToOriginal, string $tempDir): array {
 		if (empty($tempToOriginal)) {
 			return [];
 		}
 		$debug = getDebug($this->options->debug);
 		$phpcs = $this->getPhpcsExecutable();
-		$args = implode(' ', array_map('escapeshellarg', array_keys($tempToOriginal)));
-		$command = "{$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . $this->getPhpcsExtensionsOption() . ' ' . $args;
+		// Pass the files to scan via a phpcs --file-list file rather than as command-line
+		// arguments. Inlining one argument per file overflows the OS ARG_MAX limit (and fails
+		// with a cryptic "Argument list too long") once a batch reaches thousands of files; a
+		// file list keeps the command line a constant size regardless of how many files we scan.
+		$listFile = $tempDir . '/phpcs-file-list.txt';
+		if (file_put_contents($listFile, implode("\n", array_keys($tempToOriginal))) === false) {
+			throw new ShellException("Cannot write phpcs file list to '{$listFile}'");
+		}
+		$command = "{$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . $this->getPhpcsExtensionsOption() . ' --file-list=' . escapeshellarg($listFile);
 		$debug('running batch phpcs command:', $command);
 		$phpcsOutput = $this->platform->executeCommand($command);
 		$debug('batch phpcs command output:', $phpcsOutput);
@@ -447,7 +455,7 @@ class ShellRunner {
 				$unmodifiedTempToOriginal[$tempPath] = $fileName;
 			}
 			$allTempToOriginal = $modifiedTempToOriginal + $unmodifiedTempToOriginal;
-			$allResults = $this->runBatchPhpcs($allTempToOriginal);
+			$allResults = $this->runBatchPhpcs($allTempToOriginal, $tempDir);
 			return [
 				'new' => $this->mapBatchResultsToOriginalFiles($allResults, $modifiedTempToOriginal),
 				'old' => $this->mapBatchResultsToOriginalFiles($allResults, $unmodifiedTempToOriginal),
@@ -485,7 +493,7 @@ class ShellRunner {
 				$unmodifiedTempToOriginal[$tempPath] = $fileName;
 			}
 			$allTempToOriginal = $modifiedTempToOriginal + $unmodifiedTempToOriginal;
-			$allResults = $this->runBatchPhpcs($allTempToOriginal);
+			$allResults = $this->runBatchPhpcs($allTempToOriginal, $tempDir);
 			return [
 				'new' => $this->mapBatchResultsToOriginalFiles($allResults, $modifiedTempToOriginal),
 				'old' => $this->mapBatchResultsToOriginalFiles($allResults, $unmodifiedTempToOriginal),

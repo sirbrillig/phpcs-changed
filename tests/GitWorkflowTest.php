@@ -44,6 +44,32 @@ final class GitWorkflowTest extends TestCase {
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
+	public function testFullGitWorkflowBatchesPhpcsViaFileListNotCommandLineArgs() {
+		// Files to scan must be passed to phpcs through a --file-list file, never inlined as
+		// command-line arguments. Inlining one argument per file overflows the OS ARG_MAX limit
+		// once a batch reaches thousands of files; the file list keeps the command line a
+		// constant size regardless of how many files are scanned.
+		$gitFile = 'foobar.php';
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'files' => [$gitFile]]);
+		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
+		$shell->registerCommand("git show HEAD:'files/foobar.php'", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
+		$shell->registerCommand("git show :0:'files/foobar.php'", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
+		$cache = new CacheManager( new TestCache() );
+		runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
+		$this->assertTrue($shell->wasCommandCalledContaining('--report=json'), 'expected a batch phpcs invocation');
+		$this->assertTrue($shell->wasCommandCalledContaining('--file-list='), 'batch phpcs must pass files via --file-list');
+		// The temp file paths live under the batch temp dir; none of them should appear inline as
+		// command-line arguments alongside --report=json.
+		$this->assertFalse($shell->wasCommandCalledContaining("/new/foobar.php"), 'temp file paths must not be inlined as phpcs arguments');
+	}
+
 	public function testFullGitWorkflowThrowsWhenBatchPhpcsErrors() {
 		// When phpcs cannot run (eg: an uninstalled standard) it writes a non-JSON error to
 		// stdout and exits non-zero. The batch path must surface this as a failure rather than

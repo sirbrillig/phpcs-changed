@@ -21,9 +21,9 @@ function debugWithOutput(...$messages) {
  * JSON-splitting logic is exercised for real rather than mocked away.
  */
 function buildBatchPhpcsOutput(string $command): string {
-	preg_match_all('#[^\s\'"]*phpcs-changed-[^\s\'"]*#', $command, $matches);
+	$tempPaths = readBatchPhpcsFileList($command);
 	$files = [];
-	foreach ($matches[0] as $tempPath) {
+	foreach ($tempPaths as $tempPath) {
 		if (! is_file($tempPath)) {
 			continue;
 		}
@@ -43,4 +43,28 @@ function buildBatchPhpcsOutput(string $command): string {
 	}
 	$output = json_encode(['totals' => ['errors' => 0, 'warnings' => 0, 'fixable' => 0], 'files' => $files]);
 	return $output !== false ? $output : '';
+}
+
+/**
+ * Extract the temp file paths a batched phpcs invocation will scan.
+ *
+ * The real ShellRunner passes the files to scan via a phpcs --file-list file (rather than as
+ * command-line arguments) so the batch never overflows ARG_MAX. Read that list back so the test
+ * shells see exactly the files phpcs would, regardless of how many there are.
+ *
+ * @return string[]
+ */
+function readBatchPhpcsFileList(string $command): array {
+	if (! preg_match('#--file-list=([\'"]?)(.+?)\1(?:\s|$)#', $command, $match)) {
+		return [];
+	}
+	$listFile = $match[2];
+	if (! is_file($listFile)) {
+		return [];
+	}
+	$contents = file_get_contents($listFile);
+	if ($contents === false || $contents === '') {
+		return [];
+	}
+	return array_values(array_filter(explode("\n", $contents), 'strlen'));
 }
