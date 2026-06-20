@@ -574,12 +574,10 @@ final class GitWorkflowTest extends TestCase {
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getNewFileInfo('foobar.php'));
 		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
-		$fixture ='ERROR: You must supply at least one file or directory to process.
-
-Run "phpcs --help" for usage information
-';
 		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
-		$shell->registerCommand("git show :0:'files/foobar.php", $fixture, 1);
+		// An empty staged new file: `git show :0:` succeeds (exit 0) with empty content, so the
+		// batch path writes an empty temp file and phpcs reports no messages for it.
+		$shell->registerCommand("git show :0:'files/foobar.php", '', 0);
 
 		$cache = new CacheManager( new TestCache() );
 		$expected = PhpcsMessages::fromArrays([], '/dev/null');

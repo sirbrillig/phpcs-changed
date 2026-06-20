@@ -341,8 +341,14 @@ class ShellRunner {
 		if (! is_dir($dir)) {
 			mkdir($dir, 0777, true);
 		}
-		$content = $this->platform->executeCommand($contentCommand);
-		file_put_contents($tempPath, $content);
+		// Redirect the content command's stdout straight to the temp file rather than
+		// round-tripping through the line-oriented executeCommand(), which would force a
+		// trailing newline and collapse trailing blank lines. phpcs must scan the file's
+		// exact bytes so that eg: PSR2.Files.EndFileNewline violations are detected.
+		$returnVal = $this->platform->writeCommandOutputToFile($contentCommand, $tempPath);
+		if ($returnVal !== 0) {
+			throw new ShellException("Cannot get file contents for temp file '{$tempPath}'; command failed with code {$returnVal}: {$contentCommand}");
+		}
 	}
 
 	/**

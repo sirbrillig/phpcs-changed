@@ -42,6 +42,14 @@ class UnixShell implements ShellOperator, ShellPlatform {
 	}
 
 	#[\Override]
+	public function writeCommandOutputToFile(string $command, string $filePath): int {
+		$output = [];
+		$return_val = 0;
+		exec($command . ' > ' . escapeshellarg($filePath), $output, $return_val);
+		return $return_val;
+	}
+
+	#[\Override]
 	public function validateExecutableExists(string $name, string $command): void {
 		exec(sprintf("type %s > /dev/null 2>&1", escapeshellarg($command)), $ignore, $returnVal);
 		if ($returnVal != 0) {

@@ -46,6 +46,14 @@ class WindowsShell implements ShellOperator, ShellPlatform {
 	}
 
 	#[\Override]
+	public function writeCommandOutputToFile(string $command, string $filePath): int {
+		$output = [];
+		$return_val = 0;
+		exec($command . ' > ' . escapeshellarg($filePath), $output, $return_val);
+		return $return_val;
+	}
+
+	#[\Override]
 	public function validateExecutableExists(string $name, string $command): void {
 		// Full or relative path — check that the file exists on disk
 		if (strpos($command, '/') !== false || strpos($command, '\\') !== false) {

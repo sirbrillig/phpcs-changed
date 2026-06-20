@@ -79,6 +79,16 @@ class WindowsTestShell extends WindowsShell {
 		return $this->fileHashes[$fileName] ?? $fileName;
 	}
 
+	public function writeCommandOutputToFile(string $command, string $filePath): int {
+		// The real shell redirects the content command's stdout to the file to preserve exact
+		// bytes. Here we capture the registered output and write it verbatim (file_put_contents
+		// does not alter bytes), keeping the batch test harness working.
+		$return_val = 0;
+		$content = $this->executeCommand($command, $return_val);
+		file_put_contents($filePath, $content);
+		return $return_val;
+	}
+
 	public function executeCommand(string $command, ?int &$return_val = null): string {
 		// The real ShellRunner batch path writes each file's content to a temp file and runs a
 		// single phpcs over all of them. Intercept that combined invocation and synthesize its
