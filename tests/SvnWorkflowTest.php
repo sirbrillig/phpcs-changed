@@ -667,12 +667,20 @@ final class SvnWorkflowTest extends TestCase {
 		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNewFileDiff('foobar.php'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfoNewFile('foobar.php'));
-		$fixture = 'ERROR: You must supply at least one file or directory to process.
-
-Run "phpcs --help" for usage information
-';
-		$shell->registerCommand( "cat 'foobar.php'", $fixture);
-		$expected = PhpcsMessages::fromArrays([], 'STDIN');
+		// An empty new file: `cat` succeeds (exit 0) with empty content, so the batch path writes
+		// an empty temp file. phpcs then reports an "Internal.NoCodeFound" warning for the empty
+		// file, and since the file is new that warning is a new message.
+		$noCodeFound = [[
+			'type' => 'WARNING',
+			'severity' => 5,
+			'fixable' => false,
+			'column' => 1,
+			'source' => 'Internal.NoCodeFound',
+			'line' => 1,
+			'message' => 'No PHP code was found in this file and short open tags are not allowed by this install of PHP. This file may be using short open tags but PHP does not allow them.',
+		]];
+		$shell->registerCommand("cat 'foobar.php'", PhpcsMessages::fromArrays($noCodeFound, 'STDIN')->toPhpcsJson());
+		$expected = PhpcsMessages::fromArrays($noCodeFound, 'foobar.php');
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
