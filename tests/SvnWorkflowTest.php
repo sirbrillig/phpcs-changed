@@ -754,6 +754,8 @@ Run "phpcs --help" for usage information
 		$cache = new CacheManager(new TestCache());
 		runSvnWorkflow([$svnFile], $options, $shell, $cache, '\PhpcsChangedTests\debug' );
 		
+		$this->assertTrue($shell->wasCommandCalledContaining("--standard='standard'"));
+
 		$cacheEntries = $cache->getEntries();
 		$this->assertNotEmpty($cacheEntries);
 		foreach( $cacheEntries as $entry ) {

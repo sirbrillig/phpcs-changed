@@ -248,6 +248,8 @@ final class GitWorkflowTest extends TestCase {
 
 		runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
 
+		$this->assertTrue($shell->wasCommandCalledContaining("--standard='standard'"));
+
 		$shell->resetCommandsCalled();
 		$messages = runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
 
@@ -288,6 +290,8 @@ final class GitWorkflowTest extends TestCase {
 
 		runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
 
+		$this->assertTrue($shell->wasCommandCalledContaining("--standard='standard'"));
+
 		$shell->resetCommandsCalled();
 		$messages = runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
 
@@ -327,6 +331,8 @@ final class GitWorkflowTest extends TestCase {
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
 
 		runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
+
+		$this->assertTrue($shell->wasCommandCalledContaining("--standard='standard'"));
 
 		$shell->resetCommandsCalled();
 		$messages = runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');

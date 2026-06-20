@@ -4,10 +4,6 @@ declare(strict_types=1);
 namespace PhpcsChangedTests;
 
 use PhpcsChanged\CliOptions;
-use PhpcsChanged\Modes;
-use PhpcsChanged\ShellOperator;
-use PhpcsChanged\ShellException;
-use PhpcsChanged\NoChangesException;
 use PhpcsChanged\UnixShell;
 
 class TestShell extends UnixShell {
@@ -89,6 +85,7 @@ class TestShell extends UnixShell {
 		// output from the temp files so the production batch + JSON-splitting logic runs for real.
 		if (strpos($command, 'phpcs-changed-') !== false && strpos($command, '--report=json') !== false) {
 			$return_val = 0;
+			$this->commandsCalled[$command] = $command;
 			return buildBatchPhpcsOutput($command);
 		}
 		// Normalize double quotes to single quotes so commands registered with Unix-style
@@ -118,5 +115,14 @@ class TestShell extends UnixShell {
 
 	public function wasCommandCalled(string $registeredCommand): bool {
 		return isset($this->commandsCalled[$registeredCommand]);
+	}
+
+	public function wasCommandCalledContaining(string $needle): bool {
+		foreach ($this->commandsCalled as $calledCommand) {
+			if (strpos($calledCommand, $needle) !== false) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
