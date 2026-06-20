@@ -400,7 +400,7 @@ class ShellRunner {
 
 	/**
 	 * @param array<string,string> $tempToOriginal Maps temp file path => original file path
-	 * @return array<string,string> Maps original file path => single-file phpcs JSON string
+	 * @return array<string,string> Maps temp file path => single-file phpcs JSON string
 	 */
 	private function runBatchPhpcs(array $tempToOriginal): array {
 		if (empty($tempToOriginal)) {
@@ -425,7 +425,7 @@ class ShellRunner {
 			$realTempPath = ($resolved = realpath($tempPath)) !== false ? $resolved : $tempPath;
 			$fileData = $decoded['files'][$realTempPath] ?? $decoded['files'][$tempPath] ?? null;
 			if ($fileData === null) {
-				$results[$originalPath] = '';
+				$results[$tempPath] = '';
 				continue;
 			}
 			$singleFileJson = json_encode([
@@ -438,7 +438,7 @@ class ShellRunner {
 					$originalPath => $fileData,
 				],
 			]);
-			$results[$originalPath] = $singleFileJson !== false ? $singleFileJson : '';
+			$results[$tempPath] = $singleFileJson !== false ? $singleFileJson : '';
 		}
 
 		return $results;
@@ -491,8 +491,8 @@ class ShellRunner {
 			$allTempToOriginal = $modifiedTempToOriginal + $unmodifiedTempToOriginal;
 			$allResults = $this->runBatchPhpcs($allTempToOriginal);
 			return [
-				'new' => array_intersect_key($allResults, array_flip($modifiedFileNames)),
-				'old' => array_intersect_key($allResults, array_flip($unmodifiedFileNames)),
+				'new' => $this->mapBatchResultsToOriginalFiles($allResults, $modifiedTempToOriginal),
+				'old' => $this->mapBatchResultsToOriginalFiles($allResults, $unmodifiedTempToOriginal),
 			];
 		} finally {
 			$this->cleanupTempDir($tempDir);
@@ -529,11 +529,28 @@ class ShellRunner {
 			$allTempToOriginal = $modifiedTempToOriginal + $unmodifiedTempToOriginal;
 			$allResults = $this->runBatchPhpcs($allTempToOriginal);
 			return [
-				'new' => array_intersect_key($allResults, array_flip($modifiedFileNames)),
-				'old' => array_intersect_key($allResults, array_flip($unmodifiedFileNames)),
+				'new' => $this->mapBatchResultsToOriginalFiles($allResults, $modifiedTempToOriginal),
+				'old' => $this->mapBatchResultsToOriginalFiles($allResults, $unmodifiedTempToOriginal),
 			];
 		} finally {
 			$this->cleanupTempDir($tempDir);
 		}
+	}
+
+	/**
+	 * Re-key batch phpcs results (keyed by temp path) to original file paths for one side
+	 * (modified or unmodified). Keying by temp path keeps the two sides separate even when
+	 * the same original file appears in both.
+	 *
+	 * @param array<string,string> $resultsByTempPath Maps temp file path => single-file phpcs JSON string
+	 * @param array<string,string> $tempToOriginal Maps temp file path => original file path
+	 * @return array<string,string> Maps original file path => single-file phpcs JSON string
+	 */
+	private function mapBatchResultsToOriginalFiles(array $resultsByTempPath, array $tempToOriginal): array {
+		$results = [];
+		foreach ($tempToOriginal as $tempPath => $originalPath) {
+			$results[$originalPath] = $resultsByTempPath[$tempPath] ?? '';
+		}
+		return $results;
 	}
 }
