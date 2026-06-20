@@ -576,11 +576,21 @@ final class GitWorkflowTest extends TestCase {
 		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
 		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
 		// An empty staged new file: `git show :0:` succeeds (exit 0) with empty content, so the
-		// batch path writes an empty temp file and phpcs reports no messages for it.
-		$shell->registerCommand("git show :0:'files/foobar.php", '', 0);
+		// batch path writes an empty temp file. phpcs then reports an "Internal.NoCodeFound"
+		// warning for the empty file, and since the file is new that warning is a new message.
+		$noCodeFound = [[
+			'type' => 'WARNING',
+			'severity' => 5,
+			'fixable' => false,
+			'column' => 1,
+			'source' => 'Internal.NoCodeFound',
+			'line' => 1,
+			'message' => 'No PHP code was found in this file and short open tags are not allowed by this install of PHP. This file may be using short open tags but PHP does not allow them.',
+		]];
+		$shell->registerCommand("git show :0:'files/foobar.php'", PhpcsMessages::fromArrays($noCodeFound, 'STDIN')->toPhpcsJson(), 0);
 
 		$cache = new CacheManager( new TestCache() );
-		$expected = PhpcsMessages::fromArrays([], '/dev/null');
+		$expected = PhpcsMessages::fromArrays($noCodeFound, 'foobar.php');
 		$messages = runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
