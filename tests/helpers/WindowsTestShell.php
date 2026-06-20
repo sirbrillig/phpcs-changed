@@ -119,7 +119,9 @@ class WindowsTestShell extends WindowsShell {
 
 	public function wasCommandCalledContaining(string $needle): bool {
 		foreach ($this->commandsCalled as $calledCommand) {
-			if (strpos($calledCommand, $needle) !== false) {
+			// Normalize double quotes to single quotes so a needle written with Unix-style
+			// quoting also matches on Windows where escapeshellarg() uses double quotes.
+			if (strpos(str_replace('"', "'", $calledCommand), $needle) !== false) {
 				return true;
 			}
 		}
