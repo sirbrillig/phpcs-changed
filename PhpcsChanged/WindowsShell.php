@@ -169,26 +169,6 @@ class WindowsShell implements ShellOperator, ShellPlatform {
 	}
 
 	#[\Override]
-	public function getPhpcsOutputOfModifiedGitFile(string $fileName): string {
-		return $this->runner->getPhpcsOutputOfModifiedGitFile($fileName);
-	}
-
-	#[\Override]
-	public function getPhpcsOutputOfUnmodifiedGitFile(string $fileName): string {
-		return $this->runner->getPhpcsOutputOfUnmodifiedGitFile($fileName);
-	}
-
-	#[\Override]
-	public function getPhpcsOutputOfModifiedSvnFile(string $fileName): string {
-		return $this->runner->getPhpcsOutputOfModifiedSvnFile($fileName);
-	}
-
-	#[\Override]
-	public function getPhpcsOutputOfUnmodifiedSvnFile(string $fileName): string {
-		return $this->runner->getPhpcsOutputOfUnmodifiedSvnFile($fileName);
-	}
-
-	#[\Override]
 	public function getGitUnifiedDiff(string $fileName): string {
 		return $this->runner->getGitUnifiedDiff($fileName);
 	}

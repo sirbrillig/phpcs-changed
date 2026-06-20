@@ -35,14 +35,6 @@ interface ShellOperator {
 
 	public function getGitHashOfUnmodifiedFile(string $fileName): string;
 
-	public function getPhpcsOutputOfModifiedGitFile(string $fileName): string;
-
-	public function getPhpcsOutputOfUnmodifiedGitFile(string $fileName): string;
-
-	public function getPhpcsOutputOfModifiedSvnFile(string $fileName): string;
-
-	public function getPhpcsOutputOfUnmodifiedSvnFile(string $fileName): string;
-
 	public function getGitUnifiedDiff(string $fileName): string;
 
 	public function getGitMergeBase(): string;

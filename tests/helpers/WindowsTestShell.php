@@ -80,9 +80,23 @@ class WindowsTestShell extends WindowsShell {
 	}
 
 	public function executeCommand(string $command, ?int &$return_val = null): string {
+		// The real ShellRunner batch path writes each file's content to a temp file and runs a
+		// single phpcs over all of them. Intercept that combined invocation and synthesize its
+		// output from the temp files so the production batch + JSON-splitting logic runs for real.
+		if (strpos($command, 'phpcs-changed-') !== false && strpos($command, '--report=json') !== false) {
+			$return_val = 0;
+			return buildBatchPhpcsOutput($command);
+		}
 		// Normalize double quotes to single quotes so commands registered with Unix-style
 		// quoting (single quotes) also match on Windows where escapeshellarg() uses double quotes.
 		$normalizedCommand = str_replace('"', "'", $command);
+		// Prefer an exact match so a short command (e.g. a file-contents command) does not shadow
+		// a longer command that has it as a prefix (e.g. that same command piped to git hash-object).
+		if (isset($this->commands[$normalizedCommand])) {
+			$return_val = $this->commands[$normalizedCommand]['return_val'];
+			$this->commandsCalled[$normalizedCommand] = $command;
+			return $this->commands[$normalizedCommand]['output'];
+		}
 		foreach ($this->commands as $registeredCommand => $return) {
 			if ($registeredCommand === substr($normalizedCommand, 0, strlen($registeredCommand))) {
 				$return_val = $return['return_val'];
@@ -100,29 +114,5 @@ class WindowsTestShell extends WindowsShell {
 
 	public function wasCommandCalled(string $registeredCommand): bool {
 		return isset($this->commandsCalled[$registeredCommand]);
-	}
-
-	public function getPhpcsOutputForGitBatch(array $modifiedFileNames, array $unmodifiedFileNames): array {
-		$new = [];
-		foreach ($modifiedFileNames as $fileName) {
-			$new[$fileName] = $this->getPhpcsOutputOfModifiedGitFile($fileName);
-		}
-		$old = [];
-		foreach ($unmodifiedFileNames as $fileName) {
-			$old[$fileName] = $this->getPhpcsOutputOfUnmodifiedGitFile($fileName);
-		}
-		return ['new' => $new, 'old' => $old];
-	}
-
-	public function getPhpcsOutputForSvnBatch(array $modifiedFileNames, array $unmodifiedFileNames): array {
-		$new = [];
-		foreach ($modifiedFileNames as $fileName) {
-			$new[$fileName] = $this->getPhpcsOutputOfModifiedSvnFile($fileName);
-		}
-		$old = [];
-		foreach ($unmodifiedFileNames as $fileName) {
-			$old[$fileName] = $this->getPhpcsOutputOfUnmodifiedSvnFile($fileName);
-		}
-		return ['new' => $new, 'old' => $old];
 	}
 }

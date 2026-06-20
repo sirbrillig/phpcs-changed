@@ -241,24 +241,6 @@ class ShellRunner {
 		return strlen($phpcsExtensions) > 0 ? ' --extensions=' . escapeshellarg($phpcsExtensions) : '';
 	}
 
-	public function getPhpcsOutputOfModifiedGitFile(string $fileName): string {
-		$debug = getDebug($this->options->debug);
-		$fileContentsCommand = $this->getModifiedFileContentsCommand($fileName);
-		$command = "{$fileContentsCommand} | " . $this->getPhpcsCommand($fileName);
-		$debug('running modified file phpcs command:', $command);
-		$modifiedFilePhpcsOutput = $this->platform->executeCommand($command);
-		return $this->processPhpcsOutput($fileName, 'modified', $modifiedFilePhpcsOutput);
-	}
-
-	public function getPhpcsOutputOfUnmodifiedGitFile(string $fileName): string {
-		$debug = getDebug($this->options->debug);
-		$unmodifiedFileContentsCommand = $this->getUnmodifiedFileContentsCommand($fileName);
-		$command = "{$unmodifiedFileContentsCommand} | " . $this->getPhpcsCommand($fileName);
-		$debug('running unmodified file phpcs command:', $command);
-		$unmodifiedFilePhpcsOutput = $this->platform->executeCommand($command);
-		return $this->processPhpcsOutput($fileName, 'unmodified', $unmodifiedFilePhpcsOutput);
-	}
-
 	public function getGitUnifiedDiff(string $fileName): string {
 		$debug = getDebug($this->options->debug);
 		$git = $this->options->getExecutablePath('git');
@@ -289,41 +271,6 @@ class ShellRunner {
 		}
 		$debug('merge-base command output:', $mergeBase);
 		return trim($mergeBase);
-	}
-
-	public function getPhpcsOutputOfModifiedSvnFile(string $fileName): string {
-		$debug = getDebug($this->options->debug);
-		$command = $this->platform->getLocalFileContentsCommand($fileName) . ' | ' . $this->getPhpcsCommand($fileName);
-		$debug('running modified file phpcs command:', $command);
-		$modifiedFilePhpcsOutput = $this->platform->executeCommand($command);
-		return $this->processPhpcsOutput($fileName, 'modified', $modifiedFilePhpcsOutput);
-	}
-
-	public function getPhpcsOutputOfUnmodifiedSvnFile(string $fileName): string {
-		$debug = getDebug($this->options->debug);
-		$svn = $this->options->getExecutablePath('svn');
-		$command = "{$svn} cat " . escapeshellarg($fileName) . " | " . $this->getPhpcsCommand($fileName);
-		$debug('running unmodified file phpcs command:', $command);
-		$unmodifiedFilePhpcsOutput = $this->platform->executeCommand($command);
-		return $this->processPhpcsOutput($fileName, 'unmodified', $unmodifiedFilePhpcsOutput);
-	}
-
-	private function getPhpcsCommand(string $fileName): string {
-		$phpcs = $this->getPhpcsExecutable();
-		return "{$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . $this->getPhpcsExtensionsOption() . ' --stdin-path=' . escapeshellarg($fileName) . ' -';
-	}
-
-	private function processPhpcsOutput(string $fileName, string $modifiedOrUnmodified, string $phpcsOutput): string {
-		$debug = getDebug($this->options->debug);
-		if (! $phpcsOutput) {
-			throw new ShellException("Cannot get {$modifiedOrUnmodified} file phpcs output for file '{$fileName}'");
-		}
-		$debug("{$modifiedOrUnmodified} file phpcs command output:", $phpcsOutput);
-		if (false !== strpos($phpcsOutput, 'You must supply at least one file or directory to process')) {
-			$debug("phpcs output implies {$modifiedOrUnmodified} file is empty");
-			return '';
-		}
-		return $phpcsOutput;
 	}
 
 	public function doesUnmodifiedFileExistInSvn(string $fileName): bool {
