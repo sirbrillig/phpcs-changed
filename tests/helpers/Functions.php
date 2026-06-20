@@ -28,6 +28,12 @@ function buildBatchPhpcsOutput(string $command): string {
 			continue;
 		}
 		$perFileJson = file_get_contents($tempPath);
+		// A file's content beginning with this sentinel simulates phpcs failing on the whole
+		// batch (eg: an uninstalled standard), where phpcs writes a non-JSON error to stdout
+		// instead of valid JSON. Emit the raw error as the entire batch output.
+		if (is_string($perFileJson) && strpos($perFileJson, 'BATCH_PHPCS_RAW:') === 0) {
+			return substr($perFileJson, strlen('BATCH_PHPCS_RAW:'));
+		}
 		$decoded = $perFileJson ? json_decode($perFileJson, true) : null;
 		if (! is_array($decoded) || empty($decoded['files'])) {
 			continue;

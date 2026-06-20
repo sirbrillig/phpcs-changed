@@ -353,18 +353,23 @@ class ShellRunner {
 		if (empty($tempToOriginal)) {
 			return [];
 		}
+		$debug = getDebug($this->options->debug);
 		$phpcs = $this->getPhpcsExecutable();
 		$args = implode(' ', array_map('escapeshellarg', array_keys($tempToOriginal)));
 		$command = "{$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . $this->getPhpcsExtensionsOption() . ' ' . $args;
+		$debug('running batch phpcs command:', $command);
 		$phpcsOutput = $this->platform->executeCommand($command);
+		$debug('batch phpcs command output:', $phpcsOutput);
 
-		if (! $phpcsOutput) {
-			return [];
-		}
-
+		// When phpcs cannot run (eg: a missing coding standard) it writes a plain-text
+		// error to stdout rather than valid JSON. We do not key off the exit code because
+		// phpcs exits non-zero (1/2) as its normal "found errors/warnings" result, while a
+		// non-decodable JSON response reliably means phpcs failed to produce a report. Treat
+		// any output that is not JSON with a 'files' key as a failure so we surface the phpcs
+		// error instead of silently reporting success.
 		$decoded = json_decode($phpcsOutput, true);
 		if (! is_array($decoded) || ! isset($decoded['files'])) {
-			return [];
+			throw new ShellException("Failed to run phpcs on batch of files; phpcs output: " . var_export($phpcsOutput, true));
 		}
 
 		$results = [];

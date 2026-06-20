@@ -44,6 +44,28 @@ final class GitWorkflowTest extends TestCase {
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
 
+	public function testFullGitWorkflowThrowsWhenBatchPhpcsErrors() {
+		// When phpcs cannot run (eg: an uninstalled standard) it writes a non-JSON error to
+		// stdout and exits non-zero. The batch path must surface this as a failure rather than
+		// silently reporting a bogus success with zero messages.
+		$gitFile = 'foobar.php';
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'files' => [$gitFile]]);
+		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
+		$phpcsError = 'BATCH_PHPCS_RAW:ERROR: the "WordPress-Core" coding standard is not installed.';
+		$shell->registerCommand("git show HEAD:'files/foobar.php'", $phpcsError);
+		$shell->registerCommand("git show :0:'files/foobar.php'", $phpcsError);
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
+		$cache = new CacheManager( new TestCache() );
+		$this->expectException(ShellException::class);
+		runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
+	}
+
 	public function testFullGitWorkflowForOneFileStagedWithReplacedGit() {
 		$gitFile = 'foobar.php';
 		$gitPath = 'bin/foo/git';
