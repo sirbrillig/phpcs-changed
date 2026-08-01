@@ -33,6 +33,11 @@ final class UnixShellTest extends TestCase {
 		return $path;
 	}
 
+	private function isWindows(): bool {
+		// PHP_OS_FAMILY is only available in PHP 7.2+.
+		return strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+	}
+
 	private function shell(): UnixShell {
 		return new UnixShell(CliOptions::fromArray(['git-staged' => true, 'files' => ['foo.php']]));
 	}
@@ -41,7 +46,7 @@ final class UnixShellTest extends TestCase {
 	 * @dataProvider provideExactByteContents
 	 */
 	public function testWriteCommandOutputToFilePreservesExactBytes(string $contents) {
-		if (PHP_OS_FAMILY === 'Windows') {
+		if ($this->isWindows()) {
 			$this->markTestSkipped('UnixShell test does not run on Windows');
 		}
 		$source = $this->makeTempFile($contents);
@@ -65,7 +70,7 @@ final class UnixShellTest extends TestCase {
 	}
 
 	public function testWriteCommandOutputToFileReturnsNonZeroWhenCommandFails() {
-		if (PHP_OS_FAMILY === 'Windows') {
+		if ($this->isWindows()) {
 			$this->markTestSkipped('UnixShell test does not run on Windows');
 		}
 		$dest = tempnam(sys_get_temp_dir(), 'phpcs-changed-test-out-');
