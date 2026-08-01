@@ -89,11 +89,16 @@ class WindowsShell implements ShellOperator, ShellPlatform {
 	public function getLocalFileContentsCommand(string $fileName): string {
 		$cat = $this->options->getExecutablePath('cat');
 		if ($cat !== 'cat') {
-			// User has configured a custom cat executable; use it
+			// User has configured a custom cat executable; use it. Leave the path
+			// untouched since a user-supplied executable may be a Unix-style tool
+			// (eg: from Git Bash) that expects forward slashes.
 			return "{$cat} " . escapeshellarg($fileName);
 		}
-		// Use the Windows 'type' built-in command
-		return 'type ' . escapeshellarg($fileName);
+		// Use the Windows 'type' built-in command. Unlike git, which happily takes
+		// forward slashes, cmd.exe's built-ins cannot read a path containing them and
+		// fail with "The system cannot find the file specified.", so normalize the
+		// separators to backslashes first.
+		return 'type ' . escapeshellarg(str_replace('/', '\\', $fileName));
 	}
 
 	#[\Override]
