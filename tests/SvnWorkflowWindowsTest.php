@@ -35,9 +35,9 @@ final class SvnWorkflowWindowsTest extends TestCase {
 		// Note: no 'cat' registration needed on Windows — 'type' is a built-in
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
-		$shell->registerCommand("svn cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		// Windows uses 'type' instead of 'cat' for reading the modified local file
-		$shell->registerCommand("type 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$shell->registerCommand("type 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -57,9 +57,9 @@ final class SvnWorkflowWindowsTest extends TestCase {
 		$shell->registerExecutable($catPath);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
-		$shell->registerCommand("svn cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		// Custom cat path is used instead of 'type'
-		$shell->registerCommand("{$catPath} 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$shell->registerCommand("{$catPath} 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -78,8 +78,8 @@ final class SvnWorkflowWindowsTest extends TestCase {
 		$shell->registerExecutable($phpcsPath);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
-		$shell->registerCommand("svn cat 'foobar.php' | {$phpcsPath}", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
-		$shell->registerCommand("type 'foobar.php' | {$phpcsPath}", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("type 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());

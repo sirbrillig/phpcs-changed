@@ -37,8 +37,8 @@ final class SvnWorkflowTest extends TestCase {
 		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
-		$shell->registerCommand("svn cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
-		$shell->registerCommand("cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -58,8 +58,8 @@ final class SvnWorkflowTest extends TestCase {
 		$shell->registerExecutable('cat');
 		$shell->registerCommand("{$svnPath} diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("{$svnPath} info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
-		$shell->registerCommand("{$svnPath} cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
-		$shell->registerCommand("cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$shell->registerCommand("{$svnPath} cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -79,8 +79,8 @@ final class SvnWorkflowTest extends TestCase {
 		$shell->registerExecutable($catPath);
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
-		$shell->registerCommand("svn cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
-		$shell->registerCommand("{$catPath} 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("{$catPath} 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -100,8 +100,8 @@ final class SvnWorkflowTest extends TestCase {
 		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
-		$shell->registerCommand("svn cat 'foobar.php' | {$phpcsPath}", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
-		$shell->registerCommand("cat 'foobar.php' | {$phpcsPath}", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -120,8 +120,8 @@ final class SvnWorkflowTest extends TestCase {
 		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
-		$shell->registerCommand("svn cat 'foobar.php' | {$phpcsPath}", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
-		$shell->registerCommand("cat 'foobar.php' | {$phpcsPath}", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -142,8 +142,8 @@ final class SvnWorkflowTest extends TestCase {
 		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
-		$shell->registerCommand("svn cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
-		$shell->registerCommand("cat 'foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20]);
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
@@ -161,11 +161,11 @@ final class SvnWorkflowTest extends TestCase {
 		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
 		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getEmptyResults()->toPhpcsJson());
 		$expected = $this->phpcs->getEmptyResults();
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
-		$this->assertFalse($shell->wasCommandCalled("svn cat 'foobar.php'"));
 	}
 
 	public function testFullSvnWorkflowForOneFileWithCachingEnabledButNoCache() {
@@ -617,8 +617,6 @@ final class SvnWorkflowTest extends TestCase {
 		$shell->registerCommand("cat 'foobar.php'", '{"totals":{"errors":0,"warnings":0,"fixable":0},"files":{"STDIN":{"errors":0,"warnings":0,"messages":[]}}}');
 		runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertFalse($shell->wasCommandCalled("svn diff 'foobar.php'"));
-		$this->assertFalse($shell->wasCommandCalled("svn cat 'foobar.php'"));
-		$this->assertFalse($shell->wasCommandCalled("svn info 'foobar.php'"));
 	}
 
 	public function testFullSvnWorkflowForNonSvnFile() {
@@ -669,14 +667,78 @@ final class SvnWorkflowTest extends TestCase {
 		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getNewFileDiff('foobar.php'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfoNewFile('foobar.php'));
-		$fixture = 'ERROR: You must supply at least one file or directory to process.
-
-Run "phpcs --help" for usage information
-';
-		$shell->registerCommand( "cat 'foobar.php'", $fixture);
-		$expected = PhpcsMessages::fromArrays([], 'STDIN');
+		// An empty new file: `cat` succeeds (exit 0) with empty content, so the batch path writes
+		// an empty temp file. phpcs then reports an "Internal.NoCodeFound" warning for the empty
+		// file, and since the file is new that warning is a new message.
+		$noCodeFound = [[
+			'type' => 'WARNING',
+			'severity' => 5,
+			'fixable' => false,
+			'column' => 1,
+			'source' => 'Internal.NoCodeFound',
+			'line' => 1,
+			'message' => 'No PHP code was found in this file and short open tags are not allowed by this install of PHP. This file may be using short open tags but PHP does not allow them.',
+		]];
+		$shell->registerCommand("cat 'foobar.php'", PhpcsMessages::fromArrays($noCodeFound, 'STDIN')->toPhpcsJson());
+		$expected = PhpcsMessages::fromArrays($noCodeFound, 'foobar.php');
 		$messages = runSvnWorkflow([$svnFile], $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	public function testFullSvnWorkflowBatchTwoFilesOneNewOneExisting() {
+		$svnFiles = ['foobar.php', 'newfile.php'];
+		$options = CliOptions::fromArray([
+			'svn' => false,
+			'files' => $svnFiles,
+		]);
+		$shell = new TestShell($options, $svnFiles);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
+		// Existing file
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		// New file (scheduled for adding)
+		$shell->registerCommand("svn diff 'newfile.php'", $this->fixture->getNewFileDiff('newfile.php'));
+		$shell->registerCommand("svn info 'newfile.php'", $this->fixture->getSvnInfoNewFile('newfile.php'));
+		$shell->registerCommand("cat 'newfile.php'", $this->phpcs->getResults('STDIN', [5, 6])->toPhpcsJson());
+		$messages = runSvnWorkflow($svnFiles, $options, $shell, new CacheManager(new TestCache()), '\PhpcsChangedTests\debug');
+		$this->assertNotEmpty($messages->getMessages());
+		// Existing file: unmodified scan should be called
+		$this->assertTrue($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		// New file: unmodified scan should NOT be called
+		$this->assertFalse($shell->wasCommandCalled("svn cat 'newfile.php'"));
+	}
+
+	public function testFullSvnWorkflowBatchTwoFilesWithCacheHitsSkipsPhpcs() {
+		$svnFiles = ['foobar.php', 'baz.php'];
+		$options = CliOptions::fromArray([
+			'svn' => false,
+			'cache' => false, // getopt is weird and sets options to false
+			'files' => $svnFiles,
+		]);
+		$shell = new TestShell($options, $svnFiles);
+		$shell->registerExecutable('svn');
+		$shell->registerExecutable('phpcs');
+		$shell->registerExecutable('cat');
+		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
+		$shell->registerCommand("svn diff 'baz.php'", $this->fixture->getAddedLineDiff('baz.php', 'use Baz;'));
+		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php', '188280'));
+		$shell->registerCommand("svn info 'baz.php'", $this->fixture->getSvnInfo('baz.php', '188280'));
+		$testCache = new TestCache();
+		$testCache->setEntry('foobar.php', 'new', 'foobar.php', '', $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$testCache->setEntry('foobar.php', 'old', '188280', '', $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$testCache->setEntry('baz.php', 'new', 'baz.php', '', $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Baz.')->toPhpcsJson());
+		$testCache->setEntry('baz.php', 'old', '188280', '', $this->phpcs->getResults('STDIN', [20, 99], 'Found unused symbol Baz.')->toPhpcsJson());
+		$messages = runSvnWorkflow($svnFiles, $options, $shell, new CacheManager($testCache), '\PhpcsChangedTests\debug');
+		$this->assertNotEmpty($messages->getMessages());
+		// No phpcs invocations needed since all were cached
+		$this->assertFalse($shell->wasCommandCalled("cat 'foobar.php'"));
+		$this->assertFalse($shell->wasCommandCalled("svn cat 'foobar.php'"));
+		$this->assertFalse($shell->wasCommandCalled("cat 'baz.php'"));
+		$this->assertFalse($shell->wasCommandCalled("svn cat 'baz.php'"));
 	}
 
 	public function testFullSvnWorkflowForOneFileWithSeveritySetToZero() {
@@ -695,11 +757,13 @@ Run "phpcs --help" for usage information
 		$shell->registerExecutable('cat');
 		$shell->registerCommand("svn diff 'foobar.php'", $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;'));
 		$shell->registerCommand("svn info 'foobar.php'", $this->fixture->getSvnInfo('foobar.php'));
-		$shell->registerCommand("svn cat 'foobar.php' | phpcs --report=json -q --standard='standard' --warning-severity='0' --error-severity='0'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
-		$shell->registerCommand("cat 'foobar.php' | phpcs --report=json -q --standard='standard' --warning-severity='0' --error-severity='0'" , $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
+		$shell->registerCommand("svn cat 'foobar.php'", $this->phpcs->getResults('STDIN', [20, 99])->toPhpcsJson());
+		$shell->registerCommand("cat 'foobar.php'" , $this->phpcs->getResults('STDIN', [20, 21])->toPhpcsJson());
 		$cache = new CacheManager(new TestCache());
 		runSvnWorkflow([$svnFile], $options, $shell, $cache, '\PhpcsChangedTests\debug' );
 		
+		$this->assertTrue($shell->wasCommandCalledContaining("--standard='standard'"));
+
 		$cacheEntries = $cache->getEntries();
 		$this->assertNotEmpty($cacheEntries);
 		foreach( $cacheEntries as $entry ) {

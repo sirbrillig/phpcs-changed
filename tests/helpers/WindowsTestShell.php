@@ -79,10 +79,35 @@ class WindowsTestShell extends WindowsShell {
 		return $this->fileHashes[$fileName] ?? $fileName;
 	}
 
+	public function writeCommandOutputToFile(string $command, string $filePath): int {
+		// The real shell redirects the content command's stdout to the file to preserve exact
+		// bytes. Here we capture the registered output and write it verbatim (file_put_contents
+		// does not alter bytes), keeping the batch test harness working.
+		$return_val = 0;
+		$content = $this->executeCommand($command, $return_val);
+		file_put_contents($filePath, $content);
+		return $return_val;
+	}
+
 	public function executeCommand(string $command, ?int &$return_val = null): string {
+		// The real ShellRunner batch path writes each file's content to a temp file and runs a
+		// single phpcs over all of them. Intercept that combined invocation and synthesize its
+		// output from the temp files so the production batch + JSON-splitting logic runs for real.
+		if (strpos($command, 'phpcs-changed-') !== false && strpos($command, '--report=json') !== false) {
+			$return_val = 0;
+			$this->commandsCalled[$command] = $command;
+			return buildBatchPhpcsOutput($command);
+		}
 		// Normalize double quotes to single quotes so commands registered with Unix-style
 		// quoting (single quotes) also match on Windows where escapeshellarg() uses double quotes.
 		$normalizedCommand = str_replace('"', "'", $command);
+		// Prefer an exact match so a short command (e.g. a file-contents command) does not shadow
+		// a longer command that has it as a prefix (e.g. that same command piped to git hash-object).
+		if (isset($this->commands[$normalizedCommand])) {
+			$return_val = $this->commands[$normalizedCommand]['return_val'];
+			$this->commandsCalled[$normalizedCommand] = $command;
+			return $this->commands[$normalizedCommand]['output'];
+		}
 		foreach ($this->commands as $registeredCommand => $return) {
 			if ($registeredCommand === substr($normalizedCommand, 0, strlen($registeredCommand))) {
 				$return_val = $return['return_val'];
@@ -100,5 +125,16 @@ class WindowsTestShell extends WindowsShell {
 
 	public function wasCommandCalled(string $registeredCommand): bool {
 		return isset($this->commandsCalled[$registeredCommand]);
+	}
+
+	public function wasCommandCalledContaining(string $needle): bool {
+		foreach ($this->commandsCalled as $calledCommand) {
+			// Normalize double quotes to single quotes so a needle written with Unix-style
+			// quoting also matches on Windows where escapeshellarg() uses double quotes.
+			if (strpos(str_replace('"', "'", $calledCommand), $needle) !== false) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

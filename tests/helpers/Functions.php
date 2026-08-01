@@ -10,3 +10,61 @@ function debugWithOutput(...$messages) {
 		var_dump($message);
 	}
 }
+
+/**
+ * Synthesize the output of a batched phpcs invocation for the test shells.
+ *
+ * The real ShellRunner batch path writes each file's content to a temp file (here, the
+ * mocked per-file phpcs JSON registered for that file's content command) and runs a single
+ * phpcs over all of them, keyed by temp path. We read those temp files back and re-key each
+ * file's data under its temp path exactly as phpcs would, so the production batch and
+ * JSON-splitting logic is exercised for real rather than mocked away.
+ */
+function buildBatchPhpcsOutput(string $command): string {
+	$tempPaths = readBatchPhpcsFileList($command);
+	$files = [];
+	foreach ($tempPaths as $tempPath) {
+		if (! is_file($tempPath)) {
+			continue;
+		}
+		$perFileJson = file_get_contents($tempPath);
+		// A file's content beginning with this sentinel simulates phpcs failing on the whole
+		// batch (eg: an uninstalled standard), where phpcs writes a non-JSON error to stdout
+		// instead of valid JSON. Emit the raw error as the entire batch output.
+		if (is_string($perFileJson) && strpos($perFileJson, 'BATCH_PHPCS_RAW:') === 0) {
+			return substr($perFileJson, strlen('BATCH_PHPCS_RAW:'));
+		}
+		$decoded = $perFileJson ? json_decode($perFileJson, true) : null;
+		if (! is_array($decoded) || empty($decoded['files'])) {
+			continue;
+		}
+		$key = realpath($tempPath) ?: $tempPath;
+		$files[$key] = reset($decoded['files']);
+	}
+	$output = json_encode(['totals' => ['errors' => 0, 'warnings' => 0, 'fixable' => 0], 'files' => $files]);
+	return $output !== false ? $output : '';
+}
+
+/**
+ * Extract the temp file paths a batched phpcs invocation will scan.
+ *
+ * The real ShellRunner passes the files to scan via a phpcs --file-list file (rather than as
+ * command-line arguments) so the batch never overflows ARG_MAX. Read that list back so the test
+ * shells see exactly the files phpcs would, regardless of how many there are.
+ *
+ * @return string[]
+ */
+function readBatchPhpcsFileList(string $command): array {
+	if (! preg_match('#--file-list=([\'"]?)(.+?)\1(?:\s|$)#', $command, $match)) {
+		return [];
+	}
+	$listFile = $match[2];
+	if (! is_file($listFile)) {
+		return [];
+	}
+	$contents = file_get_contents($listFile);
+	if ($contents === false || $contents === '') {
+		return [];
+	}
+	return array_values(array_filter(explode("\n", $contents), 'strlen'));
+}

@@ -15,6 +15,17 @@ interface ShellPlatform {
 	public function executeCommand(string $command, ?int &$return_val = null): string;
 
 	/**
+	 * Run $command and write its stdout to $filePath, preserving the exact bytes.
+	 *
+	 * Unlike executeCommand(), which is line-oriented and normalizes trailing
+	 * newlines, this redirects the command's stdout straight to the file so that
+	 * file content (e.g. from `git show` or `cat`) reaches phpcs byte-for-byte.
+	 *
+	 * @return int The command's exit code.
+	 */
+	public function writeCommandOutputToFile(string $command, string $filePath): int;
+
+	/**
 	 * Validate that an executable exists and is runnable.
 	 *
 	 * @throws \Exception if the executable cannot be found.

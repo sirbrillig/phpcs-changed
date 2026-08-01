@@ -46,6 +46,14 @@ class WindowsShell implements ShellOperator, ShellPlatform {
 	}
 
 	#[\Override]
+	public function writeCommandOutputToFile(string $command, string $filePath): int {
+		$output = [];
+		$return_val = 0;
+		exec($command . ' > ' . escapeshellarg($filePath), $output, $return_val);
+		return $return_val;
+	}
+
+	#[\Override]
 	public function validateExecutableExists(string $name, string $command): void {
 		// Full or relative path — check that the file exists on disk
 		if (strpos($command, '/') !== false || strpos($command, '\\') !== false) {
@@ -81,11 +89,16 @@ class WindowsShell implements ShellOperator, ShellPlatform {
 	public function getLocalFileContentsCommand(string $fileName): string {
 		$cat = $this->options->getExecutablePath('cat');
 		if ($cat !== 'cat') {
-			// User has configured a custom cat executable; use it
+			// User has configured a custom cat executable; use it. Leave the path
+			// untouched since a user-supplied executable may be a Unix-style tool
+			// (eg: from Git Bash) that expects forward slashes.
 			return "{$cat} " . escapeshellarg($fileName);
 		}
-		// Use the Windows 'type' built-in command
-		return 'type ' . escapeshellarg($fileName);
+		// Use the Windows 'type' built-in command. Unlike git, which happily takes
+		// forward slashes, cmd.exe's built-ins cannot read a path containing them and
+		// fail with "The system cannot find the file specified.", so normalize the
+		// separators to backslashes first.
+		return 'type ' . escapeshellarg(str_replace('/', '\\', $fileName));
 	}
 
 	#[\Override]
@@ -169,26 +182,6 @@ class WindowsShell implements ShellOperator, ShellPlatform {
 	}
 
 	#[\Override]
-	public function getPhpcsOutputOfModifiedGitFile(string $fileName): string {
-		return $this->runner->getPhpcsOutputOfModifiedGitFile($fileName);
-	}
-
-	#[\Override]
-	public function getPhpcsOutputOfUnmodifiedGitFile(string $fileName): string {
-		return $this->runner->getPhpcsOutputOfUnmodifiedGitFile($fileName);
-	}
-
-	#[\Override]
-	public function getPhpcsOutputOfModifiedSvnFile(string $fileName): string {
-		return $this->runner->getPhpcsOutputOfModifiedSvnFile($fileName);
-	}
-
-	#[\Override]
-	public function getPhpcsOutputOfUnmodifiedSvnFile(string $fileName): string {
-		return $this->runner->getPhpcsOutputOfUnmodifiedSvnFile($fileName);
-	}
-
-	#[\Override]
 	public function getGitUnifiedDiff(string $fileName): string {
 		return $this->runner->getGitUnifiedDiff($fileName);
 	}
@@ -211,5 +204,15 @@ class WindowsShell implements ShellOperator, ShellPlatform {
 	#[\Override]
 	public function getPhpcsVersion(): string {
 		return $this->runner->getPhpcsVersion();
+	}
+
+	#[\Override]
+	public function getPhpcsOutputForGitBatch(array $modifiedFileNames, array $unmodifiedFileNames): array {
+		return $this->runner->getPhpcsOutputForGitBatch($modifiedFileNames, $unmodifiedFileNames);
+	}
+
+	#[\Override]
+	public function getPhpcsOutputForSvnBatch(array $modifiedFileNames, array $unmodifiedFileNames): array {
+		return $this->runner->getPhpcsOutputForSvnBatch($modifiedFileNames, $unmodifiedFileNames);
 	}
 }

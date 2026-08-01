@@ -42,6 +42,14 @@ class UnixShell implements ShellOperator, ShellPlatform {
 	}
 
 	#[\Override]
+	public function writeCommandOutputToFile(string $command, string $filePath): int {
+		$output = [];
+		$return_val = 0;
+		exec($command . ' > ' . escapeshellarg($filePath), $output, $return_val);
+		return $return_val;
+	}
+
+	#[\Override]
 	public function validateExecutableExists(string $name, string $command): void {
 		exec(sprintf("type %s > /dev/null 2>&1", escapeshellarg($command)), $ignore, $returnVal);
 		if ($returnVal != 0) {
@@ -79,6 +87,16 @@ class UnixShell implements ShellOperator, ShellPlatform {
 	public function getFileNameFromPath(string $path): string {
 		$parts = explode('/', $path);
 		return end($parts);
+	}
+
+	#[\Override]
+	public function getPhpcsOutputForGitBatch(array $modifiedFileNames, array $unmodifiedFileNames): array {
+		return $this->runner->getPhpcsOutputForGitBatch($modifiedFileNames, $unmodifiedFileNames);
+	}
+
+	#[\Override]
+	public function getPhpcsOutputForSvnBatch(array $modifiedFileNames, array $unmodifiedFileNames): array {
+		return $this->runner->getPhpcsOutputForSvnBatch($modifiedFileNames, $unmodifiedFileNames);
 	}
 
 	#[\Override]
@@ -142,26 +160,6 @@ class UnixShell implements ShellOperator, ShellPlatform {
 	#[\Override]
 	public function getGitHashOfUnmodifiedFile(string $fileName): string {
 		return $this->runner->getGitHashOfUnmodifiedFile($fileName);
-	}
-
-	#[\Override]
-	public function getPhpcsOutputOfModifiedGitFile(string $fileName): string {
-		return $this->runner->getPhpcsOutputOfModifiedGitFile($fileName);
-	}
-
-	#[\Override]
-	public function getPhpcsOutputOfUnmodifiedGitFile(string $fileName): string {
-		return $this->runner->getPhpcsOutputOfUnmodifiedGitFile($fileName);
-	}
-
-	#[\Override]
-	public function getPhpcsOutputOfModifiedSvnFile(string $fileName): string {
-		return $this->runner->getPhpcsOutputOfModifiedSvnFile($fileName);
-	}
-
-	#[\Override]
-	public function getPhpcsOutputOfUnmodifiedSvnFile(string $fileName): string {
-		return $this->runner->getPhpcsOutputOfUnmodifiedSvnFile($fileName);
 	}
 
 	#[\Override]

@@ -34,8 +34,8 @@ final class GitWorkflowWindowsTest extends TestCase {
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
 		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
-		$shell->registerCommand("git show HEAD:'files/foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
-		$shell->registerCommand("git show :0:'files/foobar.php' | phpcs", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show HEAD:'files/foobar.php'", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
+		$shell->registerCommand("git show :0:'files/foobar.php'", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Foobar.')->toPhpcsJson());
 		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
 		$cache = new CacheManager(new TestCache());
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
@@ -59,8 +59,8 @@ final class GitWorkflowWindowsTest extends TestCase {
 		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
 		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
 		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
-		$shell->registerCommand("git show HEAD:'files/foobar.php' | {$phpcsPath}", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
-		$shell->registerCommand("git show :0:'files/foobar.php' | {$phpcsPath}", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git show HEAD:'files/foobar.php'", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
+		$shell->registerCommand("git show :0:'files/foobar.php'", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Foobar.')->toPhpcsJson());
 		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
 		$cache = new CacheManager(new TestCache());
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
@@ -86,6 +86,38 @@ final class GitWorkflowWindowsTest extends TestCase {
 		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
 		$messages = runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	public function testFullGitWorkflowForOneFileInSubdirectoryUnstagedUsesBackslashesForTypeOnWindows() {
+		// cmd.exe's 'type' built-in cannot read a path containing forward slashes, so the
+		// separators must be normalized even though git itself is given forward slashes.
+		$gitFile = 'src/foobar.php';
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-unstaged' => false, 'files' => [$gitFile]]);
+		$shell = new WindowsTestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --no-prefix 'src/foobar.php'", $fixture);
+		$shell->registerCommand("git status --porcelain 'src/foobar.php'", $this->fixture->getModifiedFileInfo('src/foobar.php'));
+		$shell->registerCommand("git ls-files --full-name 'src/foobar.php'", "src/foobar.php");
+		$shell->registerCommand("git show :0:'src/foobar.php'", $this->phpcs->getResults('STDIN', [20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("type 'src\\foobar.php'", $this->phpcs->getResults('STDIN', [21, 20], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
+		$cache = new CacheManager(new TestCache());
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
+		$messages = runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertTrue($shell->wasCommandCalled("type 'src\\foobar.php'"));
+	}
+
+	public function testGetLocalFileContentsCommandLeavesCustomCatPathAlone() {
+		$options = CliOptions::fromArray([
+			'git-unstaged' => false,
+			'files' => ['src/foobar.php'],
+			'cat-path' => 'C:/tools/cat.exe',
+		]);
+		$shell = new WindowsShell($options);
+		$this->assertEquals("C:/tools/cat.exe " . escapeshellarg('src/foobar.php'), $shell->getLocalFileContentsCommand('src/foobar.php'));
 	}
 
 	public function testFullGitWorkflowForOneFileUnstagedWithCustomCatOnWindows() {

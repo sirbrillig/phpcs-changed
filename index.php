@@ -12,6 +12,8 @@ require_once __DIR__ . '/PhpcsChanged/DiffLineType.php';
 require_once __DIR__ . '/PhpcsChanged/DiffLineMap.php';
 require_once __DIR__ . '/PhpcsChanged/LintMessage.php';
 require_once __DIR__ . '/PhpcsChanged/LintMessages.php';
+require_once __DIR__ . '/PhpcsChanged/ScanPlan.php';
+require_once __DIR__ . '/PhpcsChanged/BatchScanResult.php';
 require_once __DIR__ . '/PhpcsChanged/PhpcsMessages.php';
 require_once __DIR__ . '/PhpcsChanged/PhpcsMessagesHelpers.php';
 require_once __DIR__ . '/PhpcsChanged/Reporter.php';

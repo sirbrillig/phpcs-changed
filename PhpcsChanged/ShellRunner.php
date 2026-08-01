@@ -241,24 +241,6 @@ class ShellRunner {
 		return strlen($phpcsExtensions) > 0 ? ' --extensions=' . escapeshellarg($phpcsExtensions) : '';
 	}
 
-	public function getPhpcsOutputOfModifiedGitFile(string $fileName): string {
-		$debug = getDebug($this->options->debug);
-		$fileContentsCommand = $this->getModifiedFileContentsCommand($fileName);
-		$command = "{$fileContentsCommand} | " . $this->getPhpcsCommand($fileName);
-		$debug('running modified file phpcs command:', $command);
-		$modifiedFilePhpcsOutput = $this->platform->executeCommand($command);
-		return $this->processPhpcsOutput($fileName, 'modified', $modifiedFilePhpcsOutput);
-	}
-
-	public function getPhpcsOutputOfUnmodifiedGitFile(string $fileName): string {
-		$debug = getDebug($this->options->debug);
-		$unmodifiedFileContentsCommand = $this->getUnmodifiedFileContentsCommand($fileName);
-		$command = "{$unmodifiedFileContentsCommand} | " . $this->getPhpcsCommand($fileName);
-		$debug('running unmodified file phpcs command:', $command);
-		$unmodifiedFilePhpcsOutput = $this->platform->executeCommand($command);
-		return $this->processPhpcsOutput($fileName, 'unmodified', $unmodifiedFilePhpcsOutput);
-	}
-
 	public function getGitUnifiedDiff(string $fileName): string {
 		$debug = getDebug($this->options->debug);
 		$git = $this->options->getExecutablePath('git');
@@ -289,41 +271,6 @@ class ShellRunner {
 		}
 		$debug('merge-base command output:', $mergeBase);
 		return trim($mergeBase);
-	}
-
-	public function getPhpcsOutputOfModifiedSvnFile(string $fileName): string {
-		$debug = getDebug($this->options->debug);
-		$command = $this->platform->getLocalFileContentsCommand($fileName) . ' | ' . $this->getPhpcsCommand($fileName);
-		$debug('running modified file phpcs command:', $command);
-		$modifiedFilePhpcsOutput = $this->platform->executeCommand($command);
-		return $this->processPhpcsOutput($fileName, 'modified', $modifiedFilePhpcsOutput);
-	}
-
-	public function getPhpcsOutputOfUnmodifiedSvnFile(string $fileName): string {
-		$debug = getDebug($this->options->debug);
-		$svn = $this->options->getExecutablePath('svn');
-		$command = "{$svn} cat " . escapeshellarg($fileName) . " | " . $this->getPhpcsCommand($fileName);
-		$debug('running unmodified file phpcs command:', $command);
-		$unmodifiedFilePhpcsOutput = $this->platform->executeCommand($command);
-		return $this->processPhpcsOutput($fileName, 'unmodified', $unmodifiedFilePhpcsOutput);
-	}
-
-	private function getPhpcsCommand(string $fileName): string {
-		$phpcs = $this->getPhpcsExecutable();
-		return "{$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . $this->getPhpcsExtensionsOption() . ' --stdin-path=' . escapeshellarg($fileName) . ' -';
-	}
-
-	private function processPhpcsOutput(string $fileName, string $modifiedOrUnmodified, string $phpcsOutput): string {
-		$debug = getDebug($this->options->debug);
-		if (! $phpcsOutput) {
-			throw new ShellException("Cannot get {$modifiedOrUnmodified} file phpcs output for file '{$fileName}'");
-		}
-		$debug("{$modifiedOrUnmodified} file phpcs command output:", $phpcsOutput);
-		if (false !== strpos($phpcsOutput, 'You must supply at least one file or directory to process')) {
-			$debug("phpcs output implies {$modifiedOrUnmodified} file is empty");
-			return '';
-		}
-		return $phpcsOutput;
 	}
 
 	public function doesUnmodifiedFileExistInSvn(string $fileName): bool {
@@ -387,5 +334,189 @@ class ShellRunner {
 		}
 
 		return $matches[1];
+	}
+
+	private function writeTempFile(string $contentCommand, string $tempPath): void {
+		$dir = dirname($tempPath);
+		if (! is_dir($dir)) {
+			mkdir($dir, 0777, true);
+		}
+		// Redirect the content command's stdout straight to the temp file rather than
+		// round-tripping through the line-oriented executeCommand(), which would force a
+		// trailing newline and collapse trailing blank lines. phpcs must scan the file's
+		// exact bytes so that eg: PSR2.Files.EndFileNewline violations are detected.
+		$returnVal = $this->platform->writeCommandOutputToFile($contentCommand, $tempPath);
+		if ($returnVal !== 0) {
+			throw new ShellException("Cannot get file contents for temp file '{$tempPath}'; command failed with code {$returnVal}: {$contentCommand}");
+		}
+	}
+
+	/**
+	 * @param array<string,string> $tempToOriginal Maps temp file path => original file path
+	 * @param string $tempDir The batch temp directory; the --file-list file is written here so it is cleaned up with the rest of the batch
+	 * @return array<string,string> Maps temp file path => single-file phpcs JSON string
+	 */
+	private function runBatchPhpcs(array $tempToOriginal, string $tempDir): array {
+		if (empty($tempToOriginal)) {
+			return [];
+		}
+		$debug = getDebug($this->options->debug);
+		$phpcs = $this->getPhpcsExecutable();
+		// Pass the files to scan via a phpcs --file-list file rather than as command-line
+		// arguments. Inlining one argument per file overflows the OS ARG_MAX limit (and fails
+		// with a cryptic "Argument list too long") once a batch reaches thousands of files; a
+		// file list keeps the command line a constant size regardless of how many files we scan.
+		$listFile = $tempDir . '/phpcs-file-list.txt';
+		if (file_put_contents($listFile, implode("\n", array_keys($tempToOriginal))) === false) {
+			throw new ShellException("Cannot write phpcs file list to '{$listFile}'");
+		}
+		$command = "{$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . $this->getPhpcsExtensionsOption() . ' --file-list=' . escapeshellarg($listFile);
+		$debug('running batch phpcs command:', $command);
+		$phpcsOutput = $this->platform->executeCommand($command);
+		$debug('batch phpcs command output:', $phpcsOutput);
+
+		// When phpcs cannot run (eg: a missing coding standard) it writes a plain-text
+		// error to stdout rather than valid JSON. We do not key off the exit code because
+		// phpcs exits non-zero (1/2) as its normal "found errors/warnings" result, while a
+		// non-decodable JSON response reliably means phpcs failed to produce a report. Treat
+		// any output that is not JSON with a 'files' key as a failure so we surface the phpcs
+		// error instead of silently reporting success.
+		$decoded = json_decode($phpcsOutput, true);
+		if (! is_array($decoded) || ! isset($decoded['files'])) {
+			throw new ShellException("Failed to run phpcs on batch of files; phpcs output: " . var_export($phpcsOutput, true));
+		}
+
+		$results = [];
+		foreach ($tempToOriginal as $tempPath => $originalPath) {
+			$realTempPath = ($resolved = realpath($tempPath)) !== false ? $resolved : $tempPath;
+			$fileData = $decoded['files'][$realTempPath] ?? $decoded['files'][$tempPath] ?? null;
+			if ($fileData === null) {
+				$results[$tempPath] = '';
+				continue;
+			}
+			$singleFileJson = json_encode([
+				'totals' => [
+					'errors' => $fileData['errors'] ?? 0,
+					'warnings' => $fileData['warnings'] ?? 0,
+					'fixable' => $fileData['fixable'] ?? 0,
+				],
+				'files' => [
+					$originalPath => $fileData,
+				],
+			]);
+			$results[$tempPath] = $singleFileJson !== false ? $singleFileJson : '';
+		}
+
+		return $results;
+	}
+
+	private function cleanupTempDir(string $dir): void {
+		if (! is_dir($dir)) {
+			return;
+		}
+		$files = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS),
+			\RecursiveIteratorIterator::CHILD_FIRST
+		);
+		foreach ($files as $file) {
+			if ($file->isDir()) {
+				rmdir($file->getPathname());
+			} else {
+				unlink($file->getPathname());
+			}
+		}
+		rmdir($dir);
+	}
+
+	/**
+	 * @param string[] $modifiedFileNames
+	 * @param string[] $unmodifiedFileNames
+	 * @return array{new: array<string,string>, old: array<string,string>}
+	 */
+	public function getPhpcsOutputForGitBatch(array $modifiedFileNames, array $unmodifiedFileNames): array {
+		if (empty($modifiedFileNames) && empty($unmodifiedFileNames)) {
+			return ['new' => [], 'old' => []];
+		}
+
+		$tempDir = sys_get_temp_dir() . '/phpcs-changed-' . uniqid();
+		mkdir($tempDir);
+		$modifiedTempToOriginal = [];
+		$unmodifiedTempToOriginal = [];
+
+		try {
+			foreach ($modifiedFileNames as $fileName) {
+				$tempPath = $tempDir . '/new/' . ltrim($fileName, '/');
+				$this->writeTempFile($this->getModifiedFileContentsCommand($fileName), $tempPath);
+				$modifiedTempToOriginal[$tempPath] = $fileName;
+			}
+			foreach ($unmodifiedFileNames as $fileName) {
+				$tempPath = $tempDir . '/old/' . ltrim($fileName, '/');
+				$this->writeTempFile($this->getUnmodifiedFileContentsCommand($fileName), $tempPath);
+				$unmodifiedTempToOriginal[$tempPath] = $fileName;
+			}
+			$allTempToOriginal = $modifiedTempToOriginal + $unmodifiedTempToOriginal;
+			$allResults = $this->runBatchPhpcs($allTempToOriginal, $tempDir);
+			return [
+				'new' => $this->mapBatchResultsToOriginalFiles($allResults, $modifiedTempToOriginal),
+				'old' => $this->mapBatchResultsToOriginalFiles($allResults, $unmodifiedTempToOriginal),
+			];
+		} finally {
+			$this->cleanupTempDir($tempDir);
+		}
+	}
+
+	/**
+	 * @param string[] $modifiedFileNames
+	 * @param string[] $unmodifiedFileNames
+	 * @return array{new: array<string,string>, old: array<string,string>}
+	 */
+	public function getPhpcsOutputForSvnBatch(array $modifiedFileNames, array $unmodifiedFileNames): array {
+		if (empty($modifiedFileNames) && empty($unmodifiedFileNames)) {
+			return ['new' => [], 'old' => []];
+		}
+
+		$tempDir = sys_get_temp_dir() . '/phpcs-changed-' . uniqid();
+		mkdir($tempDir);
+		$modifiedTempToOriginal = [];
+		$unmodifiedTempToOriginal = [];
+
+		try {
+			$svn = $this->options->getExecutablePath('svn');
+			foreach ($modifiedFileNames as $fileName) {
+				$tempPath = $tempDir . '/new/' . ltrim($fileName, '/');
+				$this->writeTempFile($this->platform->getLocalFileContentsCommand($fileName), $tempPath);
+				$modifiedTempToOriginal[$tempPath] = $fileName;
+			}
+			foreach ($unmodifiedFileNames as $fileName) {
+				$tempPath = $tempDir . '/old/' . ltrim($fileName, '/');
+				$this->writeTempFile("{$svn} cat " . escapeshellarg($fileName), $tempPath);
+				$unmodifiedTempToOriginal[$tempPath] = $fileName;
+			}
+			$allTempToOriginal = $modifiedTempToOriginal + $unmodifiedTempToOriginal;
+			$allResults = $this->runBatchPhpcs($allTempToOriginal, $tempDir);
+			return [
+				'new' => $this->mapBatchResultsToOriginalFiles($allResults, $modifiedTempToOriginal),
+				'old' => $this->mapBatchResultsToOriginalFiles($allResults, $unmodifiedTempToOriginal),
+			];
+		} finally {
+			$this->cleanupTempDir($tempDir);
+		}
+	}
+
+	/**
+	 * Re-key batch phpcs results (keyed by temp path) to original file paths for one side
+	 * (modified or unmodified). Keying by temp path keeps the two sides separate even when
+	 * the same original file appears in both.
+	 *
+	 * @param array<string,string> $resultsByTempPath Maps temp file path => single-file phpcs JSON string
+	 * @param array<string,string> $tempToOriginal Maps temp file path => original file path
+	 * @return array<string,string> Maps original file path => single-file phpcs JSON string
+	 */
+	private function mapBatchResultsToOriginalFiles(array $resultsByTempPath, array $tempToOriginal): array {
+		$results = [];
+		foreach ($tempToOriginal as $tempPath => $originalPath) {
+			$results[$originalPath] = $resultsByTempPath[$tempPath] ?? '';
+		}
+		return $results;
 	}
 }

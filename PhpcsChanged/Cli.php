@@ -11,6 +11,8 @@ use PhpcsChanged\FullReporter;
 use PhpcsChanged\JunitReporter;
 use PhpcsChanged\CheckstyleReporter;
 use PhpcsChanged\PhpcsMessages;
+use PhpcsChanged\ScanPlan;
+use PhpcsChanged\BatchScanResult;
 use PhpcsChanged\ShellException;
 use PhpcsChanged\ShellOperator;
 use PhpcsChanged\XmlReporter;
@@ -229,95 +231,179 @@ function runSvnWorkflow(array $svnFiles, CliOptions $options, ShellOperator $she
 
 	loadCache($cache, $shell, $options->toArray());
 
-	$phpcsMessages = array_map(function(string $svnFile) use ($options, $shell, $cache, $debug): PhpcsMessages {
-		return runSvnWorkflowForFile($svnFile, $options, $shell, $cache, $debug);
-	}, $svnFiles);
+	$plan = prepareSvnScanPlan($svnFiles, $options, $shell, $cache, $debug);
+	$outputs = runSvnBatchScan($plan, $options, $shell, $cache);
+	$phpcsMessages = getNewSvnMessagesForFiles($svnFiles, $plan, $outputs, $shell, $debug);
 
 	saveCache($cache, $shell, $options->toArray());
-
 	$shell->clearCaches();
 	return PhpcsMessages::merge($phpcsMessages);
 }
 
-function runSvnWorkflowForFile(string $svnFile, CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
+/**
+ * Determine which files need fresh phpcs scans and which can be served from the cache.
+ *
+ * @param string[] $svnFiles
+ */
+function prepareSvnScanPlan(array $svnFiles, CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): ScanPlan {
 	$phpcsStandard = $options->phpcsStandard;
-
 	$warningSeverity = $options->warningSeverity;
 	$errorSeverity = $options->errorSeverity;
-	$fileName = $shell->getFileNameFromPath($svnFile);
 
-	try {
-		if (! $shell->isReadable($svnFile)) {
-			throw new ShellException("Cannot read file '{$svnFile}'");
-		}
+	$needsModifiedPhpcs = [];
+	$needsUnmodifiedPhpcs = [];
+	$modifiedOutputs = [];
+	$unmodifiedOutputs = [];
+	$isNewFileMap = [];
+	$modifiedHashMap = [];
+	$revisionIdMap = [];
 
-		$modifiedFileHash = '';
-		$modifiedFilePhpcsOutput = null;
-		if (isCachingEnabled($options->toArray())) {
-			$modifiedFileHash = $shell->getFileHash($svnFile);
-			$modifiedFilePhpcsOutput = $cache->getCacheForFile($svnFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
-			$debug(($modifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for modified file '{$svnFile}' at hash '{$modifiedFileHash}', and standard '{$phpcsStandard}'");
-		}
-		$modifiedFileTiming = 0.0;
-		if (! $modifiedFilePhpcsOutput) {
-			$modifiedFileStartTime = microtime(true);
-			$modifiedFilePhpcsOutput = $shell->getPhpcsOutputOfModifiedSvnFile($svnFile);
-			$modifiedFileTiming = microtime(true) - $modifiedFileStartTime;
-			if (isCachingEnabled($options->toArray())) {
-				$cache->setCacheForFile($svnFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $modifiedFilePhpcsOutput);
+	foreach ($svnFiles as $svnFile) {
+		try {
+			if (! $shell->isReadable($svnFile)) {
+				throw new ShellException("Cannot read file '{$svnFile}'");
 			}
-		}
 
-		$modifiedFilePhpcsMessages = PhpcsMessages::fromPhpcsJson($modifiedFilePhpcsOutput, $fileName);
-		$modifiedFilePhpcsMessages->setTiming($fileName, $modifiedFileTiming);
-		$hasNewPhpcsMessages = count($modifiedFilePhpcsMessages->getMessages()) > 0;
-
-		if (! $hasNewPhpcsMessages) {
-			throw new NoChangesException("Modified file '{$svnFile}' has no PHPCS messages; skipping");
-		}
-
-		$unifiedDiff = $shell->getSvnUnifiedDiff($svnFile);
-
-		$revisionId = $shell->getSvnRevisionId($svnFile);
-		$isNewFile = $shell->doesUnmodifiedFileExistInSvn($svnFile);
-		if ($isNewFile) {
-			$debug('Skipping the linting of the unmodified file as it is a new file.');
-		}
-		$unmodifiedFilePhpcsOutput = '';
-		if (! $isNewFile) {
+			$modifiedFileHash = '';
+			$modifiedCached = null;
 			if (isCachingEnabled($options->toArray())) {
-				$unmodifiedFilePhpcsOutput = $cache->getCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
-				$debug(($unmodifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for unmodified file '{$svnFile}' at revision '{$revisionId}', and standard '{$phpcsStandard}'");
+				$modifiedFileHash = $shell->getFileHash($svnFile);
+				$modifiedCached = $cache->getCacheForFile($svnFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
+				$debug(($modifiedCached !== null ? 'Using' : 'Not using') . " cache for modified file '{$svnFile}' at hash '{$modifiedFileHash}', and standard '{$phpcsStandard}'");
 			}
-			$unmodifiedFileTiming = 0.0;
-			if (! $unmodifiedFilePhpcsOutput) {
-				$unmodifiedFileStartTime = microtime(true);
-				$unmodifiedFilePhpcsOutput = $shell->getPhpcsOutputOfUnmodifiedSvnFile($svnFile);
-				$unmodifiedFileTiming = microtime(true) - $unmodifiedFileStartTime;
+			$modifiedHashMap[$svnFile] = $modifiedFileHash;
+
+			if ($modifiedCached !== null) {
+				$modifiedOutputs[$svnFile] = $modifiedCached;
+			} else {
+				$needsModifiedPhpcs[] = $svnFile;
+			}
+
+			$revisionId = $shell->getSvnRevisionId($svnFile);
+			$isNewFile = $shell->doesUnmodifiedFileExistInSvn($svnFile);
+			$isNewFileMap[$svnFile] = $isNewFile;
+			$revisionIdMap[$svnFile] = $revisionId;
+			if ($isNewFile) {
+				$debug("File '{$svnFile}' is new; unmodified version will not be scanned.");
+			}
+
+			if (! $isNewFile) {
+				$unmodifiedCached = null;
 				if (isCachingEnabled($options->toArray())) {
-					$cache->setCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $unmodifiedFilePhpcsOutput);
+					$unmodifiedCached = $cache->getCacheForFile($svnFile, 'old', $revisionId, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
+					$debug(($unmodifiedCached !== null ? 'Using' : 'Not using') . " cache for unmodified file '{$svnFile}' at revision '{$revisionId}', and standard '{$phpcsStandard}'");
+				}
+
+				if ($unmodifiedCached !== null) {
+					$unmodifiedOutputs[$svnFile] = $unmodifiedCached;
+				} else {
+					$needsUnmodifiedPhpcs[] = $svnFile;
 				}
 			}
-			// Add timing for the unmodified scan (accumulated with modified scan time)
-			$modifiedFileTiming += $unmodifiedFileTiming;
+		} catch( ShellException $err ) {
+			$shell->printError($err->getMessage());
+			$shell->exitWithCode(1);
+			throw $err; // Just in case we do not actually exit, like in tests
 		}
-	} catch( NoChangesException $err ) {
-		$debug($err->getMessage());
-		$unifiedDiff = '';
-		$unmodifiedFilePhpcsOutput = '';
-		$modifiedFilePhpcsMessages = PhpcsMessages::fromPhpcsJson('');
-	} catch( \Exception $err ) {
-		$shell->printError($err->getMessage());
-		$shell->exitWithCode(1);
-		throw $err; // Just in case we do not actually exit, like in tests
 	}
 
-	$debug('processing data...');
-	return getNewPhpcsMessages(
-		$unifiedDiff,
-		PhpcsMessages::fromPhpcsJson($unmodifiedFilePhpcsOutput, $fileName),
-		$modifiedFilePhpcsMessages
-	);
+	return new ScanPlan($needsModifiedPhpcs, $needsUnmodifiedPhpcs, $modifiedOutputs, $unmodifiedOutputs, $isNewFileMap, $modifiedHashMap, $revisionIdMap);
+}
+
+/**
+ * Run a single phpcs invocation for all uncached files in the plan and merge the
+ * results with the outputs already served from the cache.
+ */
+function runSvnBatchScan(ScanPlan $plan, CliOptions $options, ShellOperator $shell, CacheManager $cache): BatchScanResult {
+	$phpcsStandard = $options->phpcsStandard;
+	$warningSeverity = $options->warningSeverity;
+	$errorSeverity = $options->errorSeverity;
+
+	$needsModifiedPhpcs = $plan->getNeedsModifiedPhpcs();
+	$needsUnmodifiedPhpcs = $plan->getNeedsUnmodifiedPhpcs();
+	$modifiedOutputs = $plan->getModifiedOutputs();
+	$unmodifiedOutputs = $plan->getUnmodifiedOutputs();
+
+	$batchTime = 0.0;
+	$batchSize = count($needsModifiedPhpcs) + count($needsUnmodifiedPhpcs);
+	if ($batchSize > 0) {
+		try {
+			$batchStartTime = microtime(true);
+			$batchResults = $shell->getPhpcsOutputForSvnBatch($needsModifiedPhpcs, $needsUnmodifiedPhpcs);
+			$batchTime = microtime(true) - $batchStartTime;
+		} catch( \Exception $err ) {
+			$shell->printError($err->getMessage());
+			$shell->exitWithCode(1);
+			throw $err; // Just in case we do not actually exit, like in tests
+		}
+
+		foreach ($needsModifiedPhpcs as $svnFile) {
+			$modifiedOutputs[$svnFile] = $batchResults['new'][$svnFile] ?? '';
+			if (isCachingEnabled($options->toArray())) {
+				$cache->setCacheForFile($svnFile, 'new', $plan->getModifiedCacheKey($svnFile), $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $modifiedOutputs[$svnFile]);
+			}
+		}
+
+		foreach ($needsUnmodifiedPhpcs as $svnFile) {
+			$unmodifiedOutputs[$svnFile] = $batchResults['old'][$svnFile] ?? '';
+			if (isCachingEnabled($options->toArray())) {
+				$cache->setCacheForFile($svnFile, 'old', $plan->getUnmodifiedCacheKey($svnFile), $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $unmodifiedOutputs[$svnFile]);
+			}
+		}
+	}
+
+	return new BatchScanResult($modifiedOutputs, $unmodifiedOutputs, $batchSize > 0 ? $batchTime / $batchSize : 0.0);
+}
+
+/**
+ * Compute the new phpcs messages for each file from its modified/unmodified phpcs output.
+ *
+ * @param string[] $svnFiles
+ *
+ * @return PhpcsMessages[]
+ */
+function getNewSvnMessagesForFiles(array $svnFiles, ScanPlan $plan, BatchScanResult $outputs, ShellOperator $shell, callable $debug): array {
+	$phpcsMessages = [];
+	foreach ($svnFiles as $svnFile) {
+		$fileName = $shell->getFileNameFromPath($svnFile);
+		try {
+			$modifiedOutput = $outputs->getModifiedOutput($svnFile);
+			$modifiedFilePhpcsMessages = PhpcsMessages::fromPhpcsJson($modifiedOutput, $fileName);
+			$modifiedFilePhpcsMessages->setTiming($fileName, $outputs->getTimePerFile());
+			$hasNewPhpcsMessages = count($modifiedFilePhpcsMessages->getMessages()) > 0;
+
+			if (! $hasNewPhpcsMessages) {
+				throw new NoChangesException("Modified file '{$svnFile}' has no PHPCS messages; skipping");
+			}
+
+			$unifiedDiff = $shell->getSvnUnifiedDiff($svnFile);
+			$isNewFile = $plan->isNewFile($svnFile);
+
+			if ($isNewFile) {
+				$debug('Skipping the linting of the unmodified file as it is a new file.');
+				$phpcsMessages[] = getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson('', $fileName), $modifiedFilePhpcsMessages);
+				continue;
+			}
+
+			$unmodifiedOutput = $outputs->getUnmodifiedOutput($svnFile);
+			$phpcsMessages[] = getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($unmodifiedOutput, $fileName), $modifiedFilePhpcsMessages);
+		} catch( NoChangesException $err ) {
+			$debug($err->getMessage());
+			$unifiedDiff = '';
+			$unmodifiedFilePhpcsOutput = '';
+			$modifiedFilePhpcsMessages = PhpcsMessages::fromPhpcsJson('');
+			$phpcsMessages[] = getNewPhpcsMessages(
+				$unifiedDiff,
+				PhpcsMessages::fromPhpcsJson($unmodifiedFilePhpcsOutput, $fileName),
+				$modifiedFilePhpcsMessages
+			);
+		} catch( \Exception $err ) {
+			$shell->printError($err->getMessage());
+			$shell->exitWithCode(1);
+			throw $err; // Just in case we do not actually exit, like in tests
+		}
+	}
+	return $phpcsMessages;
 }
 
 function runGitWorkflow(CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
@@ -336,92 +422,170 @@ function runGitWorkflow(CliOptions $options, ShellOperator $shell, CacheManager 
 
 	loadCache($cache, $shell, $options->toArray());
 
-	$phpcsMessages = array_map(function(string $gitFile) use ($options, $shell, $cache, $debug): PhpcsMessages {
-		return runGitWorkflowForFile($gitFile, $options, $shell, $cache, $debug);
-	}, $options->files);
+	$plan = prepareGitScanPlan($options, $shell, $cache, $debug);
+	$outputs = runGitBatchScan($plan, $options, $shell, $cache);
+	$phpcsMessages = getNewGitMessagesForFiles($options->files, $plan, $outputs, $shell, $debug);
 
 	saveCache($cache, $shell, $options->toArray());
-
 	$shell->clearCaches();
 	return PhpcsMessages::merge($phpcsMessages);
 }
 
-function runGitWorkflowForFile(string $gitFile, CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): PhpcsMessages {
+/**
+ * Determine which files need fresh phpcs scans and which can be served from the cache.
+ */
+function prepareGitScanPlan(CliOptions $options, ShellOperator $shell, CacheManager $cache, callable $debug): ScanPlan {
 	$phpcsStandard = $options->phpcsStandard;
 	$warningSeverity = $options->warningSeverity;
 	$errorSeverity = $options->errorSeverity;
 
-	try {
-		if (! $shell->isReadable($gitFile)) {
-			throw new ShellException("Cannot read file '{$gitFile}'");
-		}
+	$needsModifiedPhpcs = [];
+	$needsUnmodifiedPhpcs = [];
+	$modifiedOutputs = [];
+	$unmodifiedOutputs = [];
+	$isNewFileMap = [];
+	$modifiedHashMap = [];
+	$unmodifiedHashMap = [];
 
-		$modifiedFilePhpcsOutput = null;
-		$modifiedFileHash = '';
-		if (isCachingEnabled($options->toArray())) {
-			$modifiedFileHash = $shell->getGitHashOfModifiedFile($gitFile);
-			$modifiedFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
-			$debug(($modifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for modified file '{$gitFile}' at hash '{$modifiedFileHash}', and standard '{$phpcsStandard}'");
-		}
-		$modifiedFileTiming = 0.0;
-		if (! $modifiedFilePhpcsOutput) {
-			$modifiedFileStartTime = microtime(true);
-			$modifiedFilePhpcsOutput = $shell->getPhpcsOutputOfModifiedGitFile($gitFile);
-			$modifiedFileTiming = microtime(true) - $modifiedFileStartTime;
-			if (isCachingEnabled($options->toArray())) {
-				$cache->setCacheForFile($gitFile, 'new', $modifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $modifiedFilePhpcsOutput);
+	foreach ($options->files as $gitFile) {
+		try {
+			if (! $shell->isReadable($gitFile)) {
+				throw new ShellException("Cannot read file '{$gitFile}'");
 			}
-		}
 
-		$modifiedFilePhpcsMessages = PhpcsMessages::fromPhpcsJson($modifiedFilePhpcsOutput, $gitFile);
-		$modifiedFilePhpcsMessages->setTiming($gitFile, $modifiedFileTiming);
-		$hasNewPhpcsMessages = count($modifiedFilePhpcsMessages->getMessages()) > 0;
-
-		$unifiedDiff = '';
-		$unmodifiedFilePhpcsOutput = '';
-		if (! $hasNewPhpcsMessages) {
-			throw new NoChangesException("Modified file '{$gitFile}' has no PHPCS messages; skipping");
-		}
-
-		$isNewFile = $shell->doesUnmodifiedFileExistInGit($gitFile);
-		if ($isNewFile) {
-			$debug('Skipping the linting of the unmodified file as it is a new file.');
-		}
-		if (! $isNewFile) {
-			$debug('Checking the unmodified file with PHPCS since the file is not new and contains some messages.');
-			$unifiedDiff = $shell->getGitUnifiedDiff($gitFile);
-			$unmodifiedFilePhpcsOutput = null;
-			$unmodifiedFileHash = '';
+			$modifiedHash = '';
+			$modifiedCached = null;
 			if (isCachingEnabled($options->toArray())) {
-				$unmodifiedFileHash = $shell->getGitHashOfUnmodifiedFile($gitFile);
-				$unmodifiedFilePhpcsOutput = $cache->getCacheForFile($gitFile, 'old', $unmodifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
-				$debug(($unmodifiedFilePhpcsOutput ? 'Using' : 'Not using') . " cache for unmodified file '{$gitFile}' at hash '{$unmodifiedFileHash}', and standard '{$phpcsStandard}'");
+				$modifiedHash = $shell->getGitHashOfModifiedFile($gitFile);
+				$modifiedCached = $cache->getCacheForFile($gitFile, 'new', $modifiedHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
+				$debug(($modifiedCached !== null ? 'Using' : 'Not using') . " cache for modified file '{$gitFile}' at hash '{$modifiedHash}', and standard '{$phpcsStandard}'");
 			}
-			$unmodifiedFileTiming = 0.0;
-			if (! $unmodifiedFilePhpcsOutput) {
-				$unmodifiedFileStartTime = microtime(true);
-				$unmodifiedFilePhpcsOutput = $shell->getPhpcsOutputOfUnmodifiedGitFile($gitFile);
-				$unmodifiedFileTiming = microtime(true) - $unmodifiedFileStartTime;
+			$modifiedHashMap[$gitFile] = $modifiedHash;
+
+			if ($modifiedCached !== null) {
+				$modifiedOutputs[$gitFile] = $modifiedCached;
+			} else {
+				$needsModifiedPhpcs[] = $gitFile;
+			}
+
+			$isNewFile = $shell->doesUnmodifiedFileExistInGit($gitFile);
+			$isNewFileMap[$gitFile] = $isNewFile;
+			if ($isNewFile) {
+				$debug("File '{$gitFile}' is new; unmodified version will not be scanned.");
+			}
+
+			if (! $isNewFile) {
+				$unmodifiedHash = '';
+				$unmodifiedCached = null;
 				if (isCachingEnabled($options->toArray())) {
-					$cache->setCacheForFile($gitFile, 'old', $unmodifiedFileHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $unmodifiedFilePhpcsOutput);
+					$unmodifiedHash = $shell->getGitHashOfUnmodifiedFile($gitFile);
+					$unmodifiedCached = $cache->getCacheForFile($gitFile, 'old', $unmodifiedHash, $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '');
+					$debug(($unmodifiedCached !== null ? 'Using' : 'Not using') . " cache for unmodified file '{$gitFile}' at hash '{$unmodifiedHash}', and standard '{$phpcsStandard}'");
+				}
+				$unmodifiedHashMap[$gitFile] = $unmodifiedHash;
+
+				if ($unmodifiedCached !== null) {
+					$unmodifiedOutputs[$gitFile] = $unmodifiedCached;
+				} else {
+					$needsUnmodifiedPhpcs[] = $gitFile;
 				}
 			}
-			// Add timing for the unmodified scan (accumulated with modified scan time)
-			$modifiedFileTiming += $unmodifiedFileTiming;
+		} catch(ShellException $err) {
+			$shell->printError($err->getMessage());
+			$shell->exitWithCode(1);
+			throw $err; // Just in case we do not actually exit
 		}
-	} catch( NoChangesException $err ) {
-		$debug($err->getMessage());
-		$unifiedDiff = '';
-		$unmodifiedFilePhpcsOutput = '';
-		$modifiedFilePhpcsMessages = PhpcsMessages::fromPhpcsJson('');
-	} catch(\Exception $err) {
-		$shell->printError($err->getMessage());
-		$shell->exitWithCode(1);
-		throw $err; // Just in case we do not actually exit
 	}
 
-	$debug('processing data...');
-	return getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($unmodifiedFilePhpcsOutput, $gitFile), $modifiedFilePhpcsMessages);
+	return new ScanPlan($needsModifiedPhpcs, $needsUnmodifiedPhpcs, $modifiedOutputs, $unmodifiedOutputs, $isNewFileMap, $modifiedHashMap, $unmodifiedHashMap);
+}
+
+/**
+ * Run a single phpcs invocation for all uncached files in the plan and merge the
+ * results with the outputs already served from the cache.
+ */
+function runGitBatchScan(ScanPlan $plan, CliOptions $options, ShellOperator $shell, CacheManager $cache): BatchScanResult {
+	$phpcsStandard = $options->phpcsStandard;
+	$warningSeverity = $options->warningSeverity;
+	$errorSeverity = $options->errorSeverity;
+
+	$needsModifiedPhpcs = $plan->getNeedsModifiedPhpcs();
+	$needsUnmodifiedPhpcs = $plan->getNeedsUnmodifiedPhpcs();
+	$modifiedOutputs = $plan->getModifiedOutputs();
+	$unmodifiedOutputs = $plan->getUnmodifiedOutputs();
+
+	$batchTime = 0.0;
+	$batchSize = count($needsModifiedPhpcs) + count($needsUnmodifiedPhpcs);
+	if ($batchSize > 0) {
+		try {
+			$batchStartTime = microtime(true);
+			$batchResults = $shell->getPhpcsOutputForGitBatch($needsModifiedPhpcs, $needsUnmodifiedPhpcs);
+			$batchTime = microtime(true) - $batchStartTime;
+		} catch(\Exception $err) {
+			$shell->printError($err->getMessage());
+			$shell->exitWithCode(1);
+			throw $err; // Just in case we do not actually exit
+		}
+
+		foreach ($needsModifiedPhpcs as $gitFile) {
+			$modifiedOutputs[$gitFile] = $batchResults['new'][$gitFile] ?? '';
+			if (isCachingEnabled($options->toArray())) {
+				$cache->setCacheForFile($gitFile, 'new', $plan->getModifiedCacheKey($gitFile), $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $modifiedOutputs[$gitFile]);
+			}
+		}
+
+		foreach ($needsUnmodifiedPhpcs as $gitFile) {
+			$unmodifiedOutputs[$gitFile] = $batchResults['old'][$gitFile] ?? '';
+			if (isCachingEnabled($options->toArray())) {
+				$cache->setCacheForFile($gitFile, 'old', $plan->getUnmodifiedCacheKey($gitFile), $phpcsStandard ?? '', $warningSeverity ?? '', $errorSeverity ?? '', $unmodifiedOutputs[$gitFile]);
+			}
+		}
+	}
+
+	return new BatchScanResult($modifiedOutputs, $unmodifiedOutputs, $batchSize > 0 ? $batchTime / $batchSize : 0.0);
+}
+
+/**
+ * Compute the new phpcs messages for each file from its modified/unmodified phpcs output.
+ *
+ * @param string[] $gitFiles
+ *
+ * @return PhpcsMessages[]
+ */
+function getNewGitMessagesForFiles(array $gitFiles, ScanPlan $plan, BatchScanResult $outputs, ShellOperator $shell, callable $debug): array {
+	$phpcsMessages = [];
+	foreach ($gitFiles as $gitFile) {
+		try {
+			$modifiedOutput = $outputs->getModifiedOutput($gitFile);
+			$modifiedFilePhpcsMessages = PhpcsMessages::fromPhpcsJson($modifiedOutput, $gitFile);
+			$modifiedFilePhpcsMessages->setTiming($gitFile, $outputs->getTimePerFile());
+
+			$unifiedDiff = '';
+			$unmodifiedFilePhpcsOutput = '';
+			if (count($modifiedFilePhpcsMessages->getMessages()) === 0) {
+				throw new NoChangesException("Modified file '{$gitFile}' has no PHPCS messages; skipping");
+			}
+
+			$isNewFile = $plan->isNewFile($gitFile);
+			if (! $isNewFile) {
+				$debug('Checking the unmodified file with PHPCS since the file is not new and contains some messages.');
+				$unifiedDiff = $shell->getGitUnifiedDiff($gitFile);
+				$unmodifiedFilePhpcsOutput = $outputs->getUnmodifiedOutput($gitFile);
+			} else {
+				$debug('Skipping the linting of the unmodified file as it is a new file.');
+			}
+
+			$phpcsMessages[] = getNewPhpcsMessages($unifiedDiff, PhpcsMessages::fromPhpcsJson($unmodifiedFilePhpcsOutput, $gitFile), $modifiedFilePhpcsMessages);
+		} catch( NoChangesException $err ) {
+			$debug($err->getMessage());
+			$phpcsMessages[] = PhpcsMessages::fromPhpcsJson('');
+		} catch(\Exception $err) {
+			$shell->printError($err->getMessage());
+			$shell->exitWithCode(1);
+			throw $err; // Just in case we do not actually exit
+		}
+	}
+	return $phpcsMessages;
 }
 
 function reportMessagesAndExit(PhpcsMessages $messages, CliOptions $options, ShellOperator $shell): void {
