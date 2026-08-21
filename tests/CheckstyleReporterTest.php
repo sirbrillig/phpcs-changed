@@ -223,6 +223,32 @@ EOF;
 		$this->assertEquals($expected, $result);
 	}
 
+	public function testXmlEscapingInFilename() {
+		$messages = PhpcsMessages::fromArrays([
+			[
+				'type' => 'ERROR',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 15,
+				'message' => 'Found unused symbol Foo.',
+			],
+		], 'src/file<>&".php');
+		$expected = <<<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="phpcs-changed-2.11.8">
+	<file name="src/file&lt;&gt;&amp;&quot;.php">
+		<error line="15" column="5" severity="error" message="Found unused symbol Foo." source="ImportDetection.Imports.RequireImports.Import"/>
+	</file>
+</checkstyle>
+
+EOF;
+		$reporter = new CheckstyleReporter();
+		$result = $reporter->getFormattedMessages($messages, []);
+		$this->assertEquals($expected, $result);
+	}
+
 	public function testGetExitCodeWithMessages() {
 		$messages = PhpcsMessages::fromArrays([
 			[
