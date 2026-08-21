@@ -38,7 +38,8 @@ class CheckstyleReporter implements Reporter {
 			return '';
 		}
 
-		$xmlOutputForFile = "\t<file name=\"{$file}\">\n";
+		$fileName = $this->escapeXml($file);
+		$xmlOutputForFile = "\t<file name=\"{$fileName}\">\n";
 		$xmlOutputForFile .= array_reduce($messages, function(string $output, LintMessage $message): string {
 			$line = $message->getLineNumber();
 			$column = $message->getColumn();
