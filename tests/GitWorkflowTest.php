@@ -70,10 +70,20 @@ final class GitWorkflowTest extends TestCase {
 		$this->assertFalse($shell->wasCommandCalledContaining("/new/foobar.php"), 'temp file paths must not be inlined as phpcs arguments');
 	}
 
+	private function isWindows(): bool {
+		// PHP_OS_FAMILY is only available in PHP 7.2+.
+		return strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+	}
+
 	public function testFullGitWorkflowCreatesBatchTempDirsPrivateToTheCurrentUser() {
 		// The batch temp tree holds copies of the scanned files' contents. Every directory in
 		// it must be 0700 so other local users cannot read those copies, or swap a temp file
 		// for a symlink between creation and the phpcs run.
+		if ($this->isWindows()) {
+			// Windows ignores mkdir()'s mode argument and reports 0777 for every directory;
+			// access there is governed by ACLs inherited from the parent instead.
+			$this->markTestSkipped('POSIX permissions are not applied on Windows');
+		}
 		$gitFile = 'foobar.php';
 		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'files' => [$gitFile]]);
 		$shell = new TestShell($options, [$gitFile]);
