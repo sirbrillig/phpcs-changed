@@ -18,6 +18,15 @@ class TestShell extends UnixShell {
 
 	private $executables = [];
 
+	/**
+	 * Permissions of each batch temp directory, keyed by path, recorded as
+	 * phpcs-changed builds them. The batch removes the whole tree before it
+	 * returns, so tests cannot stat these directories afterwards.
+	 *
+	 * @var array<string, int>
+	 */
+	private $observedTempDirModes = [];
+
 	public function __construct(CliOptions $options, array $readableFileNames) {
 		foreach ($readableFileNames as $fileName) {
 			$this->registerReadableFileName($fileName);
@@ -80,6 +89,7 @@ class TestShell extends UnixShell {
 	}
 
 	public function writeCommandOutputToFile(string $command, string $filePath): int {
+		$this->recordTempDirModes(dirname($filePath));
 		// The real shell redirects the content command's stdout to the file to preserve exact
 		// bytes. Here we capture the registered output and write it verbatim (file_put_contents
 		// does not alter bytes), keeping the batch test harness working.
@@ -87,6 +97,21 @@ class TestShell extends UnixShell {
 		$content = $this->executeCommand($command, $return_val);
 		file_put_contents($filePath, $content);
 		return $return_val;
+	}
+
+	private function recordTempDirModes(string $dir): void {
+		$tempRoot = sys_get_temp_dir();
+		while ($dir !== $tempRoot && $dir !== dirname($dir) && strpos($dir, $tempRoot . '/') === 0) {
+			$this->observedTempDirModes[$dir] = fileperms($dir) & 0777;
+			$dir = dirname($dir);
+		}
+	}
+
+	/**
+	 * @return array<string, int>
+	 */
+	public function getObservedTempDirModes(): array {
+		return $this->observedTempDirModes;
 	}
 
 	public function executeCommand(string $command, ?int &$return_val = null): string {
