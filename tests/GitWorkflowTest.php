@@ -70,6 +70,70 @@ final class GitWorkflowTest extends TestCase {
 		$this->assertFalse($shell->wasCommandCalledContaining("/new/foobar.php"), 'temp file paths must not be inlined as phpcs arguments');
 	}
 
+	private function isWindows(): bool {
+		// PHP_OS_FAMILY is only available in PHP 7.2+.
+		return strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+	}
+
+	public function testFullGitWorkflowCreatesBatchTempDirsPrivateToTheCurrentUser() {
+		// The batch temp tree holds copies of the scanned files' contents. Every directory in
+		// it must be 0700 so other local users cannot read those copies, or swap a temp file
+		// for a symlink between creation and the phpcs run.
+		if ($this->isWindows()) {
+			// Windows ignores mkdir()'s mode argument and reports 0777 for every directory;
+			// access there is governed by ACLs inherited from the parent instead.
+			$this->markTestSkipped('POSIX permissions are not applied on Windows');
+		}
+		$gitFile = 'foobar.php';
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'files' => [$gitFile]]);
+		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
+		$shell->registerCommand("git show HEAD:'files/foobar.php'", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
+		$shell->registerCommand("git show :0:'files/foobar.php'", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
+		$cache = new CacheManager( new TestCache() );
+		runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
+
+		$modes = $shell->getObservedTempDirModes();
+		$this->assertNotEmpty($modes, 'expected the batch to create temp directories');
+		foreach ($modes as $dir => $mode) {
+			$this->assertSame('0700', sprintf('%04o', $mode), "temp directory '{$dir}' must not be accessible to other users");
+		}
+	}
+
+	public function testFullGitWorkflowNamesTheBatchTempDirUnpredictably() {
+		// uniqid() is derived from the current microtime and so is guessable; another user on
+		// a shared machine could pre-create the predicted directory and plant symlinks in it.
+		$gitFile = 'foobar.php';
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'files' => [$gitFile]]);
+		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
+		$shell->registerCommand("git show HEAD:'files/foobar.php'", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
+		$shell->registerCommand("git show :0:'files/foobar.php'", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
+		$cache = new CacheManager( new TestCache() );
+		runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
+
+		$dirs = array_keys($shell->getObservedTempDirModes());
+		usort($dirs, function(string $a, string $b): int {
+			return strlen($a) - strlen($b);
+		});
+		$batchRoot = basename($dirs[0]);
+		// preg_match() rather than a regex assertion: assertMatchesRegularExpression() needs
+		// PHPUnit 9.1+, and this suite still runs on PHPUnit 8.5 for PHP 7.2.
+		$this->assertSame(1, preg_match('/^phpcs-changed-[0-9a-f]{32}$/', $batchRoot), 'batch temp dir name must be randomly generated');
+	}
+
 	public function testFullGitWorkflowThrowsWhenBatchPhpcsErrors() {
 		// When phpcs cannot run (eg: an uninstalled standard) it writes a non-JSON error to
 		// stdout and exits non-zero. The batch path must surface this as a failure rather than

@@ -338,8 +338,10 @@ class ShellRunner {
 
 	private function writeTempFile(string $contentCommand, string $tempPath): void {
 		$dir = dirname($tempPath);
-		if (! is_dir($dir)) {
-			mkdir($dir, 0777, true);
+		// 0700 matches the batch root created by createTempDir(); these directories mirror
+		// the scanned files' paths and hold copies of their contents.
+		if (! is_dir($dir) && ! mkdir($dir, 0700, true)) {
+			throw new ShellException("Cannot create temp directory '{$dir}'");
 		}
 		// Redirect the content command's stdout straight to the temp file rather than
 		// round-tripping through the line-oriented executeCommand(), which would force a
@@ -410,6 +412,24 @@ class ShellRunner {
 		return $results;
 	}
 
+	/**
+	 * Create the private root directory for one batch of temp files.
+	 *
+	 * The name is random rather than derived from uniqid(), which is microtime-based
+	 * and so guessable: on a shared machine another user could pre-create the
+	 * predicted path with 'new' and 'old' as symlinks and capture, or tamper with,
+	 * the copies phpcs is about to scan. Mode 0700 keeps those copies unreadable by
+	 * other local users, and a failed mkdir() is fatal rather than ignored, since an
+	 * existing path here means something is wrong.
+	 */
+	private function createTempDir(): string {
+		$tempDir = sys_get_temp_dir() . '/phpcs-changed-' . bin2hex(random_bytes(16));
+		if (! mkdir($tempDir, 0700)) {
+			throw new ShellException("Cannot create temp directory '{$tempDir}'");
+		}
+		return $tempDir;
+	}
+
 	private function cleanupTempDir(string $dir): void {
 		if (! is_dir($dir)) {
 			return;
@@ -438,8 +458,7 @@ class ShellRunner {
 			return ['new' => [], 'old' => []];
 		}
 
-		$tempDir = sys_get_temp_dir() . '/phpcs-changed-' . uniqid();
-		mkdir($tempDir);
+		$tempDir = $this->createTempDir();
 		$modifiedTempToOriginal = [];
 		$unmodifiedTempToOriginal = [];
 
@@ -475,8 +494,7 @@ class ShellRunner {
 			return ['new' => [], 'old' => []];
 		}
 
-		$tempDir = sys_get_temp_dir() . '/phpcs-changed-' . uniqid();
-		mkdir($tempDir);
+		$tempDir = $this->createTempDir();
 		$modifiedTempToOriginal = [];
 		$unmodifiedTempToOriginal = [];
 
