@@ -6,6 +6,7 @@ namespace PhpcsChanged;
 use PhpcsChanged\Reporter;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\LintMessage;
+use function PhpcsChanged\getVersion;
 
 class CheckstyleReporter implements Reporter {
 	#[\Override]
@@ -26,7 +27,7 @@ class CheckstyleReporter implements Reporter {
 		}, '');
 
 		$output = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-		$output .= "<checkstyle version=\"phpcs-changed-2.11.8\">\n";
+		$output .= "<checkstyle version=\"phpcs-changed-" . getVersion() . "\">\n";
 		$output .= $outputByFile;
 		$output .= "</checkstyle>\n";
 

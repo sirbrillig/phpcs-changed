@@ -7,6 +7,7 @@ require_once __DIR__ . '/helpers/helpers.php';
 use PHPUnit\Framework\TestCase;
 use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\CheckstyleReporter;
+use function PhpcsChanged\getVersion;
 
 final class CheckstyleReporterTest extends TestCase {
 	public function testSingleWarning() {
@@ -21,9 +22,10 @@ final class CheckstyleReporterTest extends TestCase {
 				'message' => 'Found unused symbol Foo.',
 			],
 		], 'fileA.php');
+		$version = getVersion();
 		$expected = <<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<checkstyle version="phpcs-changed-2.11.8">
+<checkstyle version="phpcs-changed-{$version}">
 	<file name="fileA.php">
 		<error line="15" column="5" severity="warning" message="Found unused symbol Foo." source="ImportDetection.Imports.RequireImports.Import"/>
 	</file>
@@ -47,9 +49,10 @@ EOF;
 				'message' => 'Found unused symbol Foo.',
 			],
 		], 'fileA.php');
+		$version = getVersion();
 		$expected = <<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<checkstyle version="phpcs-changed-2.11.8">
+<checkstyle version="phpcs-changed-{$version}">
 	<file name="fileA.php">
 		<error line="15" column="5" severity="error" message="Found unused symbol Foo." source="ImportDetection.Imports.RequireImports.Import"/>
 	</file>
@@ -82,9 +85,10 @@ EOF;
 				'message' => 'Found unused symbol Bar.',
 			],
 		], 'fileA.php');
+		$version = getVersion();
 		$expected = <<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<checkstyle version="phpcs-changed-2.11.8">
+<checkstyle version="phpcs-changed-{$version}">
 	<file name="fileA.php">
 		<error line="133825" column="5" severity="warning" message="Found unused symbol Foo." source="ImportDetection.Imports.RequireImports.Import"/>
 		<error line="15" column="5" severity="warning" message="Found unused symbol Bar." source="ImportDetection.Imports.RequireImports.Import"/>
@@ -139,9 +143,10 @@ EOF;
 			],
 		], 'fileB.php');
 		$messages = PhpcsMessages::merge([$messagesA, $messagesB]);
+		$version = getVersion();
 		$expected = <<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<checkstyle version="phpcs-changed-2.11.8">
+<checkstyle version="phpcs-changed-{$version}">
 	<file name="fileA.php">
 		<error line="12" column="2" severity="error" message="Found unused symbol Faa." source="ImportDetection.Imports.RequireImports.Something"/>
 		<error line="15" column="5" severity="error" message="Found unused symbol Foo." source="ImportDetection.Imports.RequireImports.Import"/>
@@ -160,9 +165,10 @@ EOF;
 
 	public function testNoWarnings() {
 		$messages = PhpcsMessages::fromArrays([]);
+		$version = getVersion();
 		$expected = <<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<checkstyle version="phpcs-changed-2.11.8">
+<checkstyle version="phpcs-changed-{$version}">
 </checkstyle>
 
 EOF;
@@ -183,9 +189,10 @@ EOF;
 				'message' => 'Found unused symbol Foo.',
 			],
 		]);
+		$version = getVersion();
 		$expected = <<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<checkstyle version="phpcs-changed-2.11.8">
+<checkstyle version="phpcs-changed-{$version}">
 	<file name="STDIN">
 		<error line="15" column="5" severity="warning" message="Found unused symbol Foo." source="ImportDetection.Imports.RequireImports.Import"/>
 	</file>
@@ -209,9 +216,10 @@ EOF;
 				'message' => 'Message with <xml> & "quotes".',
 			],
 		], 'fileA.php');
+		$version = getVersion();
 		$expected = <<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<checkstyle version="phpcs-changed-2.11.8">
+<checkstyle version="phpcs-changed-{$version}">
 	<file name="fileA.php">
 		<error line="15" column="5" severity="error" message="Message with &lt;xml&gt; &amp; &quot;quotes&quot;." source="Test.Source&lt;&gt;&amp;&quot;"/>
 	</file>
@@ -235,9 +243,10 @@ EOF;
 				'message' => 'Found unused symbol Foo.',
 			],
 		], 'src/file<>&".php');
+		$version = getVersion();
 		$expected = <<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<checkstyle version="phpcs-changed-2.11.8">
+<checkstyle version="phpcs-changed-{$version}">
 	<file name="src/file&lt;&gt;&amp;&quot;.php">
 		<error line="15" column="5" severity="error" message="Found unused symbol Foo." source="ImportDetection.Imports.RequireImports.Import"/>
 	</file>
