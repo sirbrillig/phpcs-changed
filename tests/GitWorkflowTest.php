@@ -119,7 +119,9 @@ final class GitWorkflowTest extends TestCase {
 			return strlen($a) - strlen($b);
 		});
 		$batchRoot = basename($dirs[0]);
-		$this->assertMatchesRegularExpression('/^phpcs-changed-[0-9a-f]{32}$/', $batchRoot, 'batch temp dir name must be randomly generated');
+		// preg_match() rather than a regex assertion: assertMatchesRegularExpression() needs
+		// PHPUnit 9.1+, and this suite still runs on PHPUnit 8.5 for PHP 7.2.
+		$this->assertSame(1, preg_match('/^phpcs-changed-[0-9a-f]{32}$/', $batchRoot), 'batch temp dir name must be randomly generated');
 	}
 
 	public function testFullGitWorkflowThrowsWhenBatchPhpcsErrors() {
