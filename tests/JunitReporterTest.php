@@ -257,6 +257,34 @@ EOF;
 		$this->assertEquals($expected, $result);
 	}
 
+	public function testXmlEscapingInFilename() {
+		$messages = PhpcsMessages::fromArrays([
+			[
+				'type' => 'ERROR',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 15,
+				'message' => 'Found unused symbol Foo.',
+			],
+		], 'src/file<>&".php');
+		$expected = <<<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" errors="1" time="0.000">
+	<testsuite name="src/file&lt;&gt;&amp;&quot;.php" tests="1" failures="0" errors="1" time="0.000">
+		<testcase name="line 15, column 5" classname="ImportDetection.Imports.RequireImports.Import" time="0">
+			<error type="ImportDetection.Imports.RequireImports.Import" message="Found unused symbol Foo.">Line 15, Column 5: Found unused symbol Foo. (Severity: 5)</error>
+		</testcase>
+	</testsuite>
+</testsuites>
+
+EOF;
+		$reporter = new JunitReporter();
+		$result = $reporter->getFormattedMessages($messages, []);
+		$this->assertEquals($expected, $result);
+	}
+
 	public function testGetExitCodeWithMessages() {
 		$messages = PhpcsMessages::fromArrays([
 			[

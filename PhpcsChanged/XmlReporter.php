@@ -44,7 +44,7 @@ class XmlReporter implements Reporter {
 			return $output;
 		}, '');
 
-		$phpcsVersion = $this->shell->getPhpcsVersion();
+		$phpcsVersion = $this->escapeXml($this->shell->getPhpcsVersion());
 
 		$output =  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
 		$output .= "<phpcs version=\"{$phpcsVersion}\">\n";
@@ -64,21 +64,26 @@ class XmlReporter implements Reporter {
 		$fixableCount = count(array_values(array_filter($messages, function(LintMessage $message) {
 			return $message->getFixable();
 		})));
-		$xmlOutputForFile = "\t<file name=\"{$file}\" errors=\"{$errorCount}\" warnings=\"{$warningCount}\" fixable=\"{$fixableCount}\">\n";
+		$fileName = $this->escapeXml($file);
+		$xmlOutputForFile = "\t<file name=\"{$fileName}\" errors=\"{$errorCount}\" warnings=\"{$warningCount}\" fixable=\"{$fixableCount}\">\n";
 		$xmlOutputForFile .= array_reduce($messages, function(string $output, LintMessage  $message): string{
 			$type = strtolower( $message->getType() );
 			$line = $message->getLineNumber();
 			$column = $message->getColumn();
-			$source = $message->getSource();
+			$source = $this->escapeXml($message->getSource());
 			$severity = $message->getSeverity();
 			$fixable = $message->getFixable() ? "1" : "0";
-			$messageString = $message->getMessage();
+			$messageString = $this->escapeXml($message->getMessage());
 			$output .= "\t\t<{$type} line=\"{$line}\" column=\"{$column}\" source=\"{$source}\" severity=\"{$severity}\" fixable=\"{$fixable}\">{$messageString}</{$type}>\n";
 			return $output;
 		},'');
 		$xmlOutputForFile .= "\t</file>\n";
 
 		return $xmlOutputForFile;
+	}
+
+	private function escapeXml(string $string): string {
+		return htmlspecialchars($string, ENT_XML1 | ENT_QUOTES, 'UTF-8');
 	}
 
 	#[\Override]
