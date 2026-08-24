@@ -6,6 +6,7 @@ require_once dirname(__DIR__) . '/index.php';
 use PHPUnit\Framework\TestCase;
 use PhpcsChanged\CliOptions;
 use PhpcsChanged\UnixShell;
+use PhpcsChanged\ShellException;
 
 /**
  * Tests for the real (non-mocked) UnixShell platform behavior.
@@ -81,5 +82,38 @@ final class UnixShellTest extends TestCase {
 		$returnVal = $shell->writeCommandOutputToFile('cat ' . escapeshellarg($missing) . ' 2>/dev/null', $dest);
 
 		$this->assertNotSame(0, $returnVal);
+	}
+
+	public function testGetFileHashReturnsMd5OfFileContents() {
+		if ($this->isWindows()) {
+			$this->markTestSkipped('UnixShell test does not run on Windows');
+		}
+		$contents = "<?php\n\$a = 1;\n";
+		$source = $this->makeTempFile($contents);
+
+		$this->assertSame(md5($contents), $this->shell()->getFileHash($source));
+	}
+
+	public function testGetFileHashThrowsShellExceptionWhenFileCannotBeRead() {
+		if ($this->isWindows()) {
+			$this->markTestSkipped('UnixShell test does not run on Windows');
+		}
+		$missing = sys_get_temp_dir() . '/phpcs-changed-does-not-exist-' . getmypid();
+
+		// A ShellException (not a bare Exception) is required here: the per-file catch
+		// blocks in Cli.php only catch ShellException, so any other type escapes as an
+		// uncaught fatal instead of a clean error message and exit code 1.
+		//
+		// md5_file() also emits a PHP warning for an unreadable file, which PHPUnit
+		// would convert into an exception before the ShellException could surface.
+		set_error_handler(static function (): bool {
+			return true;
+		});
+		try {
+			$this->expectException(ShellException::class);
+			$this->shell()->getFileHash($missing);
+		} finally {
+			restore_error_handler();
+		}
 	}
 }

@@ -127,7 +127,7 @@ class WindowsShell implements ShellOperator, ShellPlatform {
 	public function getFileHash(string $fileName): string {
 		$result = md5_file($fileName);
 		if ($result === false) {
-			throw new \Exception("Cannot get hash for file '{$fileName}'.");
+			throw new ShellException("Cannot get hash for file '{$fileName}'.");
 		}
 		return $result;
 	}
