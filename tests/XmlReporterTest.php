@@ -264,6 +264,66 @@ EOF;
 		$this->assertEquals($expected, $result);
 	}
 
+	public function testXmlEscaping() {
+		$messages = PhpcsMessages::fromArrays([
+			[
+				'type' => 'ERROR',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'Test.Source<>&"',
+				'line' => 15,
+				'message' => 'Message with <xml> & "quotes".',
+			],
+		], 'fileA.php');
+		$expected = <<<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<phpcs version="1.2.3">
+	<file name="fileA.php" errors="1" warnings="0" fixable="0">
+		<error line="15" column="5" source="Test.Source&lt;&gt;&amp;&quot;" severity="5" fixable="0">Message with &lt;xml&gt; &amp; &quot;quotes&quot;.</error>
+	</file>
+</phpcs>
+
+EOF;
+		$options = new CliOptions();
+		$shell = new TestShell($options, []);
+		$shell->registerExecutable('phpcs');
+		$shell->registerCommand('phpcs --version', 'PHP_CodeSniffer version 1.2.3 (stable) by Squiz (http://www.squiz.net)');
+		$reporter = new TestXmlReporter($options, $shell);
+		$result = $reporter->getFormattedMessages($messages, []);
+		$this->assertEquals($expected, $result);
+	}
+
+	public function testXmlEscapingInFilename() {
+		$messages = PhpcsMessages::fromArrays([
+			[
+				'type' => 'ERROR',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 15,
+				'message' => 'Found unused symbol Foo.',
+			],
+		], 'src/file<>&".php');
+		$expected = <<<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<phpcs version="1.2.3">
+	<file name="src/file&lt;&gt;&amp;&quot;.php" errors="1" warnings="0" fixable="0">
+		<error line="15" column="5" source="ImportDetection.Imports.RequireImports.Import" severity="5" fixable="0">Found unused symbol Foo.</error>
+	</file>
+</phpcs>
+
+EOF;
+		$options = new CliOptions();
+		$shell = new TestShell($options, []);
+		$shell->registerExecutable('phpcs');
+		$shell->registerCommand('phpcs --version', 'PHP_CodeSniffer version 1.2.3 (stable) by Squiz (http://www.squiz.net)');
+		$reporter = new TestXmlReporter($options, $shell);
+		$result = $reporter->getFormattedMessages($messages, []);
+		$this->assertEquals($expected, $result);
+	}
+
 	public function testGetExitCodeWithMessages() {
 		$messages = PhpcsMessages::fromArrays([
 			[

@@ -57,7 +57,7 @@ class JunitReporter implements Reporter {
 		$fileTime = $allMessages->getTiming($file);
 
 		$xmlOutputForFile = sprintf("\t<testsuite name=\"%s\" tests=\"%d\" failures=\"%d\" errors=\"%d\" time=\"%.3f\">\n",
-			$file, $testCount, $failureCount, $errorCount, $fileTime);
+			$this->escapeXml($file), $testCount, $failureCount, $errorCount, $fileTime);
 		$xmlOutputForFile .= array_reduce($messages, function(string $output, LintMessage $message): string {
 			$line = $message->getLineNumber();
 			$column = $message->getColumn();
