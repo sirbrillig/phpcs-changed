@@ -324,6 +324,66 @@ EOF;
 		$this->assertEquals($expected, $result);
 	}
 
+	public function testUnrecognizedTypeIsReportedAsWarning() {
+		$messages = PhpcsMessages::fromArrays([
+			[
+				'type' => 'INFO',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 15,
+				'message' => 'Found unused symbol Foo.',
+			],
+		], 'fileA.php');
+		$expected = <<<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<phpcs version="1.2.3">
+	<file name="fileA.php" errors="0" warnings="1" fixable="0">
+		<warning line="15" column="5" source="ImportDetection.Imports.RequireImports.Import" severity="5" fixable="0">Found unused symbol Foo.</warning>
+	</file>
+</phpcs>
+
+EOF;
+		$options = new CliOptions();
+		$shell = new TestShell($options, []);
+		$shell->registerExecutable('phpcs');
+		$shell->registerCommand('phpcs --version', 'PHP_CodeSniffer version 1.2.3 (stable) by Squiz (http://www.squiz.net)');
+		$reporter = new TestXmlReporter($options, $shell);
+		$result = $reporter->getFormattedMessages($messages, []);
+		$this->assertEquals($expected, $result);
+	}
+
+	public function testTypeWithXmlMarkupDoesNotChangeElementName() {
+		$messages = PhpcsMessages::fromArrays([
+			[
+				'type' => 'WARNING line="1"><injected/><x a="',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 5,
+				'source' => 'ImportDetection.Imports.RequireImports.Import',
+				'line' => 15,
+				'message' => 'Found unused symbol Foo.',
+			],
+		], 'fileA.php');
+		$expected = <<<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<phpcs version="1.2.3">
+	<file name="fileA.php" errors="0" warnings="1" fixable="0">
+		<warning line="15" column="5" source="ImportDetection.Imports.RequireImports.Import" severity="5" fixable="0">Found unused symbol Foo.</warning>
+	</file>
+</phpcs>
+
+EOF;
+		$options = new CliOptions();
+		$shell = new TestShell($options, []);
+		$shell->registerExecutable('phpcs');
+		$shell->registerCommand('phpcs --version', 'PHP_CodeSniffer version 1.2.3 (stable) by Squiz (http://www.squiz.net)');
+		$reporter = new TestXmlReporter($options, $shell);
+		$result = $reporter->getFormattedMessages($messages, []);
+		$this->assertEquals($expected, $result);
+	}
+
 	public function testGetExitCodeWithMessages() {
 		$messages = PhpcsMessages::fromArrays([
 			[
