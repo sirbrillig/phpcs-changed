@@ -59,7 +59,7 @@ class XmlReporter implements Reporter {
 			return $message->getType() === 'ERROR';
 		})));
 		$warningCount = count(array_values(array_filter($messages, function(LintMessage $message) {
-			return $message->getType() === 'WARNING';
+			return $this->getElementNameForType($message->getType()) === 'warning';
 		})));
 		$fixableCount = count(array_values(array_filter($messages, function(LintMessage $message) {
 			return $message->getFixable();
@@ -67,7 +67,7 @@ class XmlReporter implements Reporter {
 		$fileName = $this->escapeXml($file);
 		$xmlOutputForFile = "\t<file name=\"{$fileName}\" errors=\"{$errorCount}\" warnings=\"{$warningCount}\" fixable=\"{$fixableCount}\">\n";
 		$xmlOutputForFile .= array_reduce($messages, function(string $output, LintMessage  $message): string{
-			$type = strtolower( $message->getType() );
+			$type = $this->getElementNameForType($message->getType());
 			$line = $message->getLineNumber();
 			$column = $message->getColumn();
 			$source = $this->escapeXml($message->getSource());
@@ -80,6 +80,18 @@ class XmlReporter implements Reporter {
 		$xmlOutputForFile .= "\t</file>\n";
 
 		return $xmlOutputForFile;
+	}
+
+	/**
+	 * Return the XML element name to use for a phpcs message type.
+	 *
+	 * The message type is not validated anywhere along the path from the phpcs
+	 * JSON output (which, in manual mode, may come from an untrusted source), so
+	 * it cannot be used directly as an element name. Anything which is not an
+	 * error is reported as a warning.
+	 */
+	private function getElementNameForType(string $type): string {
+		return $type === 'ERROR' ? 'error' : 'warning';
 	}
 
 	private function escapeXml(string $string): string {
