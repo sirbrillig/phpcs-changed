@@ -388,10 +388,24 @@ class ShellRunner {
 			throw new ShellException("Failed to run phpcs on batch of files; phpcs output: " . var_export($phpcsOutput, true));
 		}
 
+		// phpcs does not necessarily report a file under the path we gave it. It reports the
+		// realpath, and when the ruleset sets a basepath it also strips the leading slash from
+		// every reported path, including paths outside that basepath (see the unconditional
+		// ltrim() in PHP_CodeSniffer's Common::stripBasepath()). Our temp files always live
+		// outside the project, so with a basepath in play every one of them comes back
+		// slash-stripped. Index the reported paths by a normalized form so the lookup below
+		// matches regardless.
+		$reportedByNormalizedPath = [];
+		foreach ($decoded['files'] as $reportedPath => $reportedData) {
+			$reportedByNormalizedPath[ltrim((string) $reportedPath, '/\\')] = $reportedData;
+		}
+
 		$results = [];
 		foreach ($tempToOriginal as $tempPath => $originalPath) {
 			$realTempPath = ($resolved = realpath($tempPath)) !== false ? $resolved : $tempPath;
-			$fileData = $decoded['files'][$realTempPath] ?? $decoded['files'][$tempPath] ?? null;
+			$fileData = $reportedByNormalizedPath[ltrim($realTempPath, '/\\')]
+				?? $reportedByNormalizedPath[ltrim($tempPath, '/\\')]
+				?? null;
 			if ($fileData === null) {
 				$results[$tempPath] = '';
 				continue;
