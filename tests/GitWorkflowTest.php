@@ -156,6 +156,79 @@ final class GitWorkflowTest extends TestCase {
 		runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
 	}
 
+	public function testFullGitWorkflowFindsMessagesWhenPhpcsStripsLeadingSlashFromReportedPaths() {
+		// When the ruleset sets a basepath, phpcs strips the leading slash from every path it
+		// reports, including our temp files, which always live outside that basepath. Matching
+		// those results back to the files we scanned must survive that rewrite; when it did
+		// not, every file in the batch looked clean and the whole run exited 0 reporting
+		// nothing. See https://github.com/sirbrillig/phpcs-changed/issues/131
+		$gitFile = 'foobar.php';
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'files' => [$gitFile]]);
+		$shell = new TestShell($options, [$gitFile]);
+		$shell->batchReportPathTransform = function(string $path): string {
+			return ltrim($path, '/');
+		};
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
+		$shell->registerCommand("git show HEAD:'files/foobar.php'", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
+		$shell->registerCommand("git show :0:'files/foobar.php'", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
+		$cache = new CacheManager( new TestCache() );
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
+		$messages = runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
+
+	public function testFullGitWorkflowThrowsWhenBatchPhpcsReportsAnUnmatchedPath() {
+		// phpcs is handed an explicit list of temp files, so a reported path we cannot match
+		// back to one of them means our matching is broken. Treating that as "this file was
+		// clean" would report no violations and exit 0, so it must fail loudly instead.
+		$gitFile = 'foobar.php';
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'files' => [$gitFile]]);
+		$shell = new TestShell($options, [$gitFile]);
+		$shell->batchReportPathTransform = function(string $path): string {
+			return '/somewhere/else' . $path;
+		};
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
+		$shell->registerCommand("git show HEAD:'files/foobar.php'", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
+		$shell->registerCommand("git show :0:'files/foobar.php'", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
+		$cache = new CacheManager( new TestCache() );
+		$this->expectException(ShellException::class);
+		runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
+	}
+
+	public function testFullGitWorkflowDoesNotThrowWhenPhpcsOmitsAFileItDidNotScan() {
+		// phpcs leaves out files it did not scan, such as those the ruleset excludes. That is
+		// not a matching failure, so it must stay a quiet "no messages" rather than an error.
+		$gitFile = 'foobar.php';
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'files' => [$gitFile]]);
+		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
+		// An empty string for the file's contents makes the harness omit it from the batch
+		// report entirely, the way phpcs omits a file it was not configured to scan.
+		$shell->registerCommand("git show HEAD:'files/foobar.php'", '');
+		$shell->registerCommand("git show :0:'files/foobar.php'", '');
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
+		$cache = new CacheManager( new TestCache() );
+		$messages = runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
+		$this->assertEquals([], $messages->getMessages());
+	}
+
 	public function testFullGitWorkflowForOneFileStagedWithReplacedGit() {
 		$gitFile = 'foobar.php';
 		$gitPath = 'bin/foo/git';

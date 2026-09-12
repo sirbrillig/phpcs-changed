@@ -20,7 +20,7 @@ function debugWithOutput(...$messages) {
  * file's data under its temp path exactly as phpcs would, so the production batch and
  * JSON-splitting logic is exercised for real rather than mocked away.
  */
-function buildBatchPhpcsOutput(string $command): string {
+function buildBatchPhpcsOutput(string $command, ?callable $pathTransform = null): string {
 	$tempPaths = readBatchPhpcsFileList($command);
 	$files = [];
 	foreach ($tempPaths as $tempPath) {
@@ -39,6 +39,11 @@ function buildBatchPhpcsOutput(string $command): string {
 			continue;
 		}
 		$key = realpath($tempPath) ?: $tempPath;
+		// phpcs does not always echo back the path it was given. $pathTransform lets a test
+		// reproduce those rewrites, eg: the leading slash a ruleset basepath strips off.
+		if ($pathTransform !== null) {
+			$key = $pathTransform($key);
+		}
 		$files[$key] = reset($decoded['files']);
 	}
 	$output = json_encode(['totals' => ['errors' => 0, 'warnings' => 0, 'fixable' => 0], 'files' => $files]);

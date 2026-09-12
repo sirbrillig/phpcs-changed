@@ -27,6 +27,14 @@ class WindowsTestShell extends WindowsShell {
 	 */
 	private $observedTempDirModes = [];
 
+	/**
+	 * Rewrites the paths the synthesized batch phpcs output reports, mimicking a phpcs whose
+	 * reported paths differ from the ones it was handed. Null reports them back verbatim.
+	 *
+	 * @var callable|null
+	 */
+	public $batchReportPathTransform = null;
+
 	public function __construct(CliOptions $options, array $readableFileNames) {
 		foreach ($readableFileNames as $fileName) {
 			$this->registerReadableFileName($fileName);
@@ -121,7 +129,7 @@ class WindowsTestShell extends WindowsShell {
 		if (strpos($command, 'phpcs-changed-') !== false && strpos($command, '--report=json') !== false) {
 			$return_val = 0;
 			$this->commandsCalled[$command] = $command;
-			return buildBatchPhpcsOutput($command);
+			return buildBatchPhpcsOutput($command, $this->batchReportPathTransform);
 		}
 		// Normalize double quotes to single quotes so commands registered with Unix-style
 		// quoting (single quotes) also match on Windows where escapeshellarg() uses double quotes.
