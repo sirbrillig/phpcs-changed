@@ -7,7 +7,7 @@ use PhpcsChanged\PhpcsMessages;
 use PhpcsChanged\ShellException;
 
 function getVersion(): string {
-	return '3.0.1';
+	return '3.0.2';
 }
 
 function getNewPhpcsMessages(string $unifiedDiff, PhpcsMessages $unmodifiedPhpcsMessages, PhpcsMessages $modifiedPhpcsMessages): PhpcsMessages {
