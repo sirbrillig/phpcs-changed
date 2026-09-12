@@ -388,10 +388,30 @@ class ShellRunner {
 			throw new ShellException("Failed to run phpcs on batch of files; phpcs output: " . var_export($phpcsOutput, true));
 		}
 
+		// phpcs does not necessarily report a file under the path we gave it. It reports the
+		// realpath, and when the ruleset sets a basepath it also strips the leading slash from
+		// every reported path, including paths outside that basepath (see the unconditional
+		// ltrim() in PHP_CodeSniffer's Common::stripBasepath()). Our temp files always live
+		// outside the project, so with a basepath in play every one of them comes back
+		// slash-stripped. Index the reported paths by a normalized form so the lookup below
+		// matches regardless.
+		$reportedByNormalizedPath = [];
+		foreach ($decoded['files'] as $reportedPath => $reportedData) {
+			$reportedByNormalizedPath[ltrim((string) $reportedPath, '/\\')] = $reportedData;
+		}
+
 		$results = [];
+		$matchedReportedPaths = [];
 		foreach ($tempToOriginal as $tempPath => $originalPath) {
 			$realTempPath = ($resolved = realpath($tempPath)) !== false ? $resolved : $tempPath;
-			$fileData = $decoded['files'][$realTempPath] ?? $decoded['files'][$tempPath] ?? null;
+			$fileData = null;
+			foreach ([ltrim($realTempPath, '/\\'), ltrim($tempPath, '/\\')] as $candidate) {
+				if (isset($reportedByNormalizedPath[$candidate])) {
+					$fileData = $reportedByNormalizedPath[$candidate];
+					$matchedReportedPaths[$candidate] = true;
+					break;
+				}
+			}
 			if ($fileData === null) {
 				$results[$tempPath] = '';
 				continue;
@@ -407,6 +427,21 @@ class ShellRunner {
 				],
 			]);
 			$results[$tempPath] = $singleFileJson !== false ? $singleFileJson : '';
+		}
+
+		// We hand phpcs an explicit list of temp files, so every path it reports on should be
+		// one of them. A reported path we cannot match back means our matching is wrong, not
+		// that a file was clean, and silently dropping it would report no violations for the
+		// whole batch and exit 0 -- as a CI gate that enforces nothing. Fail loudly instead.
+		// The reverse is not an error: phpcs legitimately omits files it did not scan, such as
+		// those the ruleset excludes or whose extension it is not configured to check.
+		$unmatchedReportedPaths = array_values(array_diff(
+			array_keys($reportedByNormalizedPath),
+			array_keys($matchedReportedPaths)
+		));
+		if (! empty($unmatchedReportedPaths)) {
+			$count = count($unmatchedReportedPaths);
+			throw new ShellException("phpcs reported results for {$count} path(s) which do not match any of the files it was asked to scan, the first being '{$unmatchedReportedPaths[0]}'; refusing to report possibly incomplete results");
 		}
 
 		return $results;
