@@ -264,3 +264,15 @@ If something isn't working the way you expect, use the `--debug` option. This wi
 ## Inspiration
 
 This was inspired by the amazing work in https://github.com/Automattic/phpcs-diff
+
+## Releasing
+
+Releases are made from `trunk` using the `release.sh` script, which requires the [gh CLI](https://cli.github.com/).
+
+1. Open and merge a PR that updates `getVersion()` in `PhpcsChanged/functions.php` to the new version. Use a minor version bump (eg: `3.1.0`) for new features or options and a patch version bump (eg: `3.0.2`) for bug fixes only.
+2. Check out `trunk` and pull the merged PR.
+3. Run `./release.sh <version>` (eg: `./release.sh 3.1.0`). Add `--dry-run` to run only the checks.
+
+The script refuses to release unless `trunk` is clean and matches `origin/trunk`, `getVersion()` returns the new version, and the new version is higher than the latest release tag. It then creates the tag and a GitHub release with generated notes at the current `trunk` commit.
+
+If you make a release another way, the "Release check" GitHub workflow will fail when the release tag points at a commit that isn't on `trunk` or whose `getVersion()` doesn't match the tag.

@@ -1,0 +1,45 @@
+name: Release check
+
+# Fails if a release tag points at a commit that is not on trunk, or at a
+# commit whose getVersion() does not match the tag. This cannot block the
+# release, but a failed run makes the mistake visible right away. Releases
+# made with ./release.sh already run these checks before tagging.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [published]
+
+jobs:
+  check:
+    name: Tag matches version on trunk
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          coverage: none
+
+      - name: Check that the tagged commit is on trunk
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/trunk; then
+            echo "::error::Tag ${GITHUB_REF_NAME} points at ${GITHUB_SHA}, which is not on trunk. Merge the release commit into trunk."
+            exit 1
+          fi
+
+      - name: Check that getVersion() matches the tag
+        run: |
+          CODE_VERSION="$(php -r 'require "PhpcsChanged/functions.php"; echo PhpcsChanged\getVersion();')"
+          if [ "v${CODE_VERSION}" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match getVersion() in PhpcsChanged/functions.php (${CODE_VERSION}). Bump the version before releasing."
+            exit 1
+          fi
