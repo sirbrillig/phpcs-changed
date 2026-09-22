@@ -448,6 +448,42 @@ class ShellRunner {
 	}
 
 	/**
+	 * Run phpcs once per file, piping each file's contents on stdin with
+	 * --stdin-path set to its real path. This is slower than a batch but phpcs
+	 * sees each file at its real location, so path-based ruleset features (like
+	 * exclude-patterns) and sniffs that inspect the file path behave as they
+	 * would when running phpcs directly.
+	 *
+	 * @param string[] $fileNames
+	 * @param 'modified'|'unmodified' $modifiedOrUnmodified
+	 * @param callable(string): string $getContentsCommand Returns a shell command that prints the file's contents
+	 * @return array<string,string> Maps original file path => single-file phpcs JSON string
+	 */
+	private function runPhpcsPerFile(array $fileNames, string $modifiedOrUnmodified, callable $getContentsCommand): array {
+		$debug = getDebug($this->options->debug);
+		$phpcs = $this->getPhpcsExecutable();
+		$results = [];
+		foreach ($fileNames as $fileName) {
+			$command = $getContentsCommand($fileName) . " | {$phpcs} --report=json -q" . $this->getPhpcsStandardOption() . $this->getPhpcsExtensionsOption() . ' --stdin-path=' . escapeshellarg($fileName) . ' -';
+			$debug("running {$modifiedOrUnmodified} file phpcs command:", $command);
+			$phpcsOutput = $this->platform->executeCommand($command);
+			$debug("{$modifiedOrUnmodified} file phpcs command output:", $phpcsOutput);
+			if (false !== strpos($phpcsOutput, 'You must supply at least one file or directory to process')) {
+				$debug("phpcs output implies {$modifiedOrUnmodified} file is empty");
+				$results[$fileName] = '';
+				continue;
+			}
+			// As with the batch, output that is not a phpcs JSON report means phpcs failed to run.
+			$decoded = json_decode($phpcsOutput, true);
+			if (! is_array($decoded) || ! isset($decoded['files'])) {
+				throw new ShellException("Failed to run phpcs on {$modifiedOrUnmodified} file '{$fileName}'; phpcs output: " . var_export($phpcsOutput, true));
+			}
+			$results[$fileName] = $phpcsOutput;
+		}
+		return $results;
+	}
+
+	/**
 	 * Create the private root directory for one batch of temp files.
 	 *
 	 * The name is random rather than derived from uniqid(), which is microtime-based
@@ -493,6 +529,17 @@ class ShellRunner {
 			return ['new' => [], 'old' => []];
 		}
 
+		if ($this->options->noBatch) {
+			return [
+				'new' => $this->runPhpcsPerFile($modifiedFileNames, 'modified', function (string $fileName): string {
+					return $this->getModifiedFileContentsCommand($fileName);
+				}),
+				'old' => $this->runPhpcsPerFile($unmodifiedFileNames, 'unmodified', function (string $fileName): string {
+					return $this->getUnmodifiedFileContentsCommand($fileName);
+				}),
+			];
+		}
+
 		$tempDir = $this->createTempDir();
 		$modifiedTempToOriginal = [];
 		$unmodifiedTempToOriginal = [];
@@ -529,12 +576,23 @@ class ShellRunner {
 			return ['new' => [], 'old' => []];
 		}
 
+		$svn = $this->options->getExecutablePath('svn');
+		if ($this->options->noBatch) {
+			return [
+				'new' => $this->runPhpcsPerFile($modifiedFileNames, 'modified', function (string $fileName): string {
+					return $this->platform->getLocalFileContentsCommand($fileName);
+				}),
+				'old' => $this->runPhpcsPerFile($unmodifiedFileNames, 'unmodified', function (string $fileName) use ($svn): string {
+					return "{$svn} cat " . escapeshellarg($fileName);
+				}),
+			];
+		}
+
 		$tempDir = $this->createTempDir();
 		$modifiedTempToOriginal = [];
 		$unmodifiedTempToOriginal = [];
 
 		try {
-			$svn = $this->options->getExecutablePath('svn');
 			foreach ($modifiedFileNames as $fileName) {
 				$tempPath = $tempDir . '/new/' . ltrim($fileName, '/');
 				$this->writeTempFile($this->platform->getLocalFileContentsCommand($fileName), $tempPath);

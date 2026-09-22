@@ -229,6 +229,72 @@ final class GitWorkflowTest extends TestCase {
 		$this->assertEquals([], $messages->getMessages());
 	}
 
+	public function testFullGitWorkflowWithNoBatchRunsPhpcsOnEachFileAtItsRealPath() {
+		// With --no-batch, each version of each file is piped to its own phpcs run with
+		// --stdin-path set to the real file path, so path-based ruleset features like
+		// exclude-patterns see the real path rather than a temp copy (see #133).
+		$gitFile = 'foobar.php';
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'no-batch' => false, 'files' => [$gitFile]]);
+		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
+		$shell->registerCommand("git show HEAD:'files/foobar.php' | phpcs --report=json -q --stdin-path='foobar.php' -", $this->phpcs->getResults('STDIN', [20])->toPhpcsJson());
+		$shell->registerCommand("git show :0:'files/foobar.php' | phpcs --report=json -q --stdin-path='foobar.php' -", $this->phpcs->getResults('STDIN', [20, 21], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
+		$cache = new CacheManager( new TestCache() );
+		$expected = $this->phpcs->getResults('bin/foobar.php', [20], 'Found unused symbol Foobar.');
+		$messages = runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertTrue($shell->wasCommandCalled("git show HEAD:'files/foobar.php' | phpcs --report=json -q --stdin-path='foobar.php' -"));
+		$this->assertTrue($shell->wasCommandCalled("git show :0:'files/foobar.php' | phpcs --report=json -q --stdin-path='foobar.php' -"));
+		$this->assertFalse($shell->wasCommandCalledContaining('--file-list='), 'no-batch must not run a batch phpcs');
+		$this->assertEmpty($shell->getObservedTempDirModes(), 'no-batch must not create batch temp directories');
+	}
+
+	public function testFullGitWorkflowWithNoBatchForNewFileOnlyScansModifiedVersion() {
+		$gitFile = 'foobar.php';
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'no-batch' => false, 'files' => [$gitFile]]);
+		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
+		$fixture = $this->fixture->getNewFileDiff('foobar.php');
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getNewFileInfo('foobar.php'));
+		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
+		$shell->registerCommand("git show :0:'files/foobar.php' | phpcs --report=json -q --stdin-path='foobar.php' -", $this->phpcs->getResults('STDIN', [5, 6], 'Found unused symbol Foobar.')->toPhpcsJson());
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
+		$cache = new CacheManager( new TestCache() );
+		$expected = $this->phpcs->getResults('foobar.php', [5, 6], 'Found unused symbol Foobar.');
+		$messages = runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+		$this->assertFalse($shell->wasCommandCalledContaining('git show HEAD:'));
+	}
+
+	public function testFullGitWorkflowWithNoBatchThrowsWhenPhpcsErrors() {
+		// As with the batch, a non-JSON phpcs response must fail loudly rather than be
+		// treated as a file with no messages.
+		$gitFile = 'foobar.php';
+		$options = CliOptions::fromArray(['no-cache-git-root' => false, 'git-staged' => false, 'no-batch' => false, 'files' => [$gitFile]]);
+		$shell = new TestShell($options, [$gitFile]);
+		$shell->registerExecutable('git');
+		$shell->registerExecutable('phpcs');
+		$fixture = $this->fixture->getAddedLineDiff('foobar.php', 'use Foobar;');
+		$shell->registerCommand("git diff --staged --no-prefix 'foobar.php'", $fixture);
+		$shell->registerCommand("git status --porcelain 'foobar.php'", $this->fixture->getModifiedFileInfo('foobar.php'));
+		$shell->registerCommand("git ls-files --full-name 'foobar.php'", "files/foobar.php");
+		$phpcsError = 'ERROR: the "WordPress-Core" coding standard is not installed.';
+		$shell->registerCommand("git show HEAD:'files/foobar.php' | phpcs", $phpcsError);
+		$shell->registerCommand("git show :0:'files/foobar.php' | phpcs", $phpcsError);
+		$shell->registerCommand("git rev-parse --show-toplevel", 'run-from-git-root');
+		$cache = new CacheManager( new TestCache() );
+		$this->expectException(ShellException::class);
+		runGitWorkflow($options, $shell, $cache, '\PhpcsChangedTests\Debug');
+	}
+
 	public function testFullGitWorkflowForOneFileStagedWithReplacedGit() {
 		$gitFile = 'foobar.php';
 		$gitPath = 'bin/foo/git';

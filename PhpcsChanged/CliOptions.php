@@ -142,6 +142,15 @@ class CliOptions {
 	public $noVerifyGitFile = false;
 
 	/**
+	 * Run phpcs separately on each file (via stdin with its real path) rather
+	 * than once on temp copies of all the files. Slower, but path-based phpcs
+	 * rules like exclude-patterns see each file's real path.
+	 *
+	 * @var bool
+	 */
+	public $noBatch = false;
+
+	/**
 	 * @var string|null
 	 *
 	 * Note that this is typically a numeric string and can be '0' which is falsy
@@ -250,6 +259,9 @@ class CliOptions {
 		if (array_key_exists('no-verify-git-file', $options)) {
 			$cliOptions->noVerifyGitFile = true;
 		}
+		if (array_key_exists('no-batch', $options)) {
+			$cliOptions->noBatch = true;
+		}
 		if (array_key_exists('warning-severity', $options)) {
 			$cliOptions->warningSeverity = $options['warning-severity'];
 		}
@@ -331,6 +343,9 @@ class CliOptions {
 		}
 		if (boolval($this->noVerifyGitFile)) {
 			$options['no-verify-git-file'] = true;
+		}
+		if (boolval($this->noBatch)) {
+			$options['no-batch'] = true;
 		}
 		// Note that both warningSeverity and errorSeverity can be the string '0'
 		// which is falsy in PHP but is a valid value here so we must be careful

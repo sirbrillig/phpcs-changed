@@ -163,6 +163,7 @@ EOF;
 		'--always-exit-zero' => 'Always exit the script with a 0 return code. Otherwise, a 1 return code indicates phpcs messages.',
 		'--no-cache-git-root' => 'Prevent caching the git root used by the git workflow.',
 		'--no-verify-git-file' => 'Prevent checking if a file is tracked by git in the git workflow.',
+		'--no-batch' => 'Run phpcs once per file at its real path instead of once on temp copies of all files. Slower, but needed if your phpcs ruleset depends on file paths (eg: exclude-pattern).',
 		'--no-vendor-phpcs' => 'Prevents looking for phpcs executable in vendor directory.',
 		'--phpcs-path <PATH>' => 'The path to the phpcs executable. Overrides env variables.',
 		'--svn-path <PATH>' => 'The path to the svn executable. Overrides env variables.',
