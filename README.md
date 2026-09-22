@@ -120,6 +120,8 @@ The `--always-exit-zero` option will make sure the run will always exit with `0`
 
 The `--no-verify-git-file` option will prevent checking to see if a file is tracked by git during the git workflow. This can save a little time if you can guarantee this otherwise.
 
+The `--no-batch` option will run phpcs separately on each file rather than once for all files. By default, phpcs-changed copies every file it scans (both the old and new versions) into a temporary directory and runs phpcs a single time on those copies, which is much faster. However, that means phpcs sees each file at the temporary path rather than its real path, so anything in your phpcs ruleset or sniffs that depends on a file's path (such as an `<exclude-pattern>` anchored to your project, or a sniff that compares a namespace to its directory) may behave differently. With `--no-batch`, each file is passed to phpcs on stdin with its real path (using `--stdin-path`). If you use `--cache`, add `--clear-cache` the first time you switch this option so results cached by the other mode are not reused. See [#133](https://github.com/sirbrillig/phpcs-changed/issues/133).
+
 The `--no-cache-git-root` option will prevent caching the check used by the git workflow to determine the git root within a single execution. This is probably only useful for automated tests.
 
 The `--arc-lint` option can be used when the phpcs-changed is run via arcanist, as it skips some checks, which are performed by arcanist itself. It leads to better performance when used with arcanist. (Equivalent to `--no-verify-git-file --always-exit-zero`.)
